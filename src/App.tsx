@@ -40,6 +40,7 @@ type Task = {
   subject: string;
   date: string;
   priority: "Baja" | "Media" | "Alta";
+  estimatedMinutes: number;
   done: boolean;
 };
 
