@@ -1238,8 +1238,9 @@ button {
 }
 
 @media (max-width: 560px) {
-  .main-content {
-    padding: 20px 12px 30px;
+  .main {
+  padding: 20px 12px 30px;
+}
   }
 
   .sidebar-nav {
