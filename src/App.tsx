@@ -653,7 +653,8 @@ function TasksPage({
               <div className="task-info">
                 <strong>{task.title}</strong>
                 <span>
-                  {task.subject} · {formatShortDate(task.date)}
+                  {task.subject} · {formatShortDate(task.date)} ·{" "}
+{formatMinutes(task.estimatedMinutes)}
                 </span>
               </div>
 
