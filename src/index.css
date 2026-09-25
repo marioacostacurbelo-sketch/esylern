@@ -1278,3 +1278,15 @@ button {
     max-width: 85%;
   }
 }
+.main-content {
+  font-size: 16px;
+  zoom: 1;
+}
+
+.main-content * {
+  max-width: 100%;
+}
+
+.page-container {
+  zoom: 1;
+}
