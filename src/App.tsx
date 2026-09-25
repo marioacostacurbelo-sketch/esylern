@@ -722,7 +722,8 @@ function TaskForm({
 
       <div className="form-grid">
         <label>
-          Tiempo estimado
+<label>
+  Tiempo estimado
   <select
     value={estimatedMinutes}
     onChange={(event) =>
@@ -738,6 +739,7 @@ function TaskForm({
     <option value={150}>2 horas 30 minutos</option>
     <option value={180}>3 horas</option>
   </select>
+</label>
 </label>
           Tarea
           <input
