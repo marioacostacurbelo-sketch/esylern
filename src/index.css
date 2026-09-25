@@ -53,7 +53,7 @@ button {
    LAYOUT
 ========================= */
 
-.app-shell {
+.app {
   min-height: 100vh;
   background: var(--bg);
 }
@@ -72,18 +72,20 @@ button {
   padding: 22px 14px;
 }
 
-.main-content {
+.main {
   margin-left: 240px;
   min-height: 100vh;
   padding: 30px 34px;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .page-container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
-
 /* =========================
    LOGO
 ========================= */
