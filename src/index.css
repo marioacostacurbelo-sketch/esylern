@@ -1191,9 +1191,10 @@ button {
     display: block;
   }
 
-  .main-content {
-    margin-left: 0;
-    padding: 24px 18px 35px;
+  .main {
+  margin-left: 0;
+  padding: 24px 18px 35px;
+}
   }
 
   .sidebar-nav {
