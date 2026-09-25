@@ -686,6 +686,7 @@ function TaskForm({
   const [date, setDate] = useState(formatDateInput(new Date()));
   const [priority, setPriority] =
     useState<Task["priority"]>("Media");
+  const [estimatedMinutes, setEstimatedMinutes] = useState(30);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
