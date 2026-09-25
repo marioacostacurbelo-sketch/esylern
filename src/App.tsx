@@ -686,7 +686,7 @@ function TaskForm({
   const [priority, setPriority] =
     useState<Task["priority"]>("Media");
 
-  const submit = (event: React.FormEvent) => {
+  const submit = (event: FormEvent) => {
     event.preventDefault();
 
     if (!title.trim() || !subject.trim() || !date) return;
@@ -882,7 +882,7 @@ function ExamForm({
   const [topic, setTopic] = useState("");
   const [date, setDate] = useState("");
 
-  const submit = (event: React.FormEvent) => {
+  const submit = (event: FormEvent) => {
     event.preventDefault();
 
     if (!subject.trim() || !topic.trim() || !date) return;
