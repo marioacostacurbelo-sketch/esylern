@@ -1265,3 +1265,16 @@ button {
     max-width: 88%;
   }
 }
+/* Ajuste principal de contenido */
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 32px;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.main > * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
