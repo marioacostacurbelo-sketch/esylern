@@ -153,20 +153,11 @@ function App() {
   };
 
   const pendingTasks = tasks.filter((task) => !task.done);
-
   const completedTasks = tasks.filter((task) => task.done);
-
   const nextExam = getNextExam(exams);
 
   return (
-   <div
-  className="app"
-  style={{
-    transform: "scale(0.8)",
-    transformOrigin: "top left",
-    width: "125%",
-  }}
->
+    <div className="app">
       <aside className="sidebar">
         <div className="brand">
           <div className="brand-mark">
@@ -230,9 +221,7 @@ function App() {
         </div>
       </aside>
 
-      <main
-  className="main"
-  style={{ fontSize: "14px", transform: "none", zoom: 1 }}
+      <main className="main">
         {currentPage === "Dashboard" && (
           <Dashboard
             tasks={tasks}
@@ -321,9 +310,7 @@ function Dashboard({
     <>
       <header className="topbar">
         <div>
-          <p className="eyebrow">
-            {formatLongDate(today)}
-          </p>
+          <p className="eyebrow">{formatLongDate(today)}</p>
 
           <h1>Buenos días 👋</h1>
 
@@ -532,7 +519,7 @@ function Dashboard({
             </div>
           ) : (
             <div className="mini-exam-list">
-              {exams
+              {[...exams]
                 .sort(
                   (a, b) =>
                     new Date(a.date).getTime() -
@@ -665,8 +652,7 @@ function TasksPage({
               <div className="task-info">
                 <strong>{task.title}</strong>
                 <span>
-                  {task.subject} ·{" "}
-                  {formatShortDate(task.date)}
+                  {task.subject} · {formatShortDate(task.date)}
                 </span>
               </div>
 
@@ -745,9 +731,7 @@ function TaskForm({
           Asignatura
           <input
             value={subject}
-            onChange={(event) =>
-              setSubject(event.target.value)
-            }
+            onChange={(event) => setSubject(event.target.value)}
             placeholder="Ej. Matemáticas"
           />
         </label>
@@ -932,9 +916,7 @@ function ExamForm({
           Asignatura
           <input
             value={subject}
-            onChange={(event) =>
-              setSubject(event.target.value)
-            }
+            onChange={(event) => setSubject(event.target.value)}
             placeholder="Ej. Matemáticas"
           />
         </label>
@@ -1005,9 +987,8 @@ function CalendarPage({
     0,
   ).getDate();
 
-  const totalCells = Math.ceil(
-    (mondayOffset + daysInMonth) / 7,
-  ) * 7;
+  const totalCells =
+    Math.ceil((mondayOffset + daysInMonth) / 7) * 7;
 
   const cells = Array.from(
     { length: totalCells },
@@ -1112,9 +1093,7 @@ function CalendarPage({
               (exam) => exam.date === dateString,
             );
 
-            const todayString = formatDateInput(
-              new Date(),
-            );
+            const todayString = formatDateInput(new Date());
 
             return (
               <div
@@ -1169,7 +1148,8 @@ function StudyPlanPage({
   const nextExam = getNextExam(exams);
 
   const sortedTasks = [...tasks].sort(
-    (a, b) => priorityValue(b.priority) - priorityValue(a.priority),
+    (a, b) =>
+      priorityValue(b.priority) - priorityValue(a.priority),
   );
 
   return (
@@ -1215,7 +1195,9 @@ function StudyPlanPage({
           {sortedTasks.length === 0 ? (
             <div className="empty-state">
               <Target size={28} />
+
               <h4>Aún no hay suficiente información</h4>
+
               <p>
                 Añade tareas y exámenes para construir tu plan.
               </p>
@@ -1230,6 +1212,7 @@ function StudyPlanPage({
 
                   <div>
                     <strong>{task.title}</strong>
+
                     <p>
                       {task.subject} · Prioridad{" "}
                       {task.priority.toLowerCase()}
@@ -1348,9 +1331,7 @@ function AssistantPage() {
         <div className="chat-input">
           <input
             value={message}
-            onChange={(event) =>
-              setMessage(event.target.value)
-            }
+            onChange={(event) => setMessage(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 sendMessage();
@@ -1533,10 +1514,13 @@ function SettingsPage() {
 
             <select defaultValue="bachillerato">
               <option value="eso">ESO</option>
+
               <option value="bachillerato">
                 Bachillerato
               </option>
+
               <option value="fp">FP</option>
+
               <option value="universidad">
                 Universidad
               </option>
@@ -1548,10 +1532,13 @@ function SettingsPage() {
 
             <select defaultValue="2bach">
               <option value="1eso">1º ESO</option>
+
               <option value="4eso">4º ESO</option>
+
               <option value="1bach">
                 1º Bachillerato
               </option>
+
               <option value="2bach">
                 2º Bachillerato
               </option>
@@ -1647,7 +1634,9 @@ function PageHeader({
     <header className="topbar">
       <div>
         <p className="eyebrow">{eyebrow}</p>
+
         <h1>{title}</h1>
+
         <p className="subtitle">{subtitle}</p>
       </div>
 
@@ -1729,10 +1718,12 @@ function Feature({
 
 function formatDateInput(date: Date) {
   const year = date.getFullYear();
+
   const month = String(date.getMonth() + 1).padStart(
     2,
     "0",
   );
+
   const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
@@ -1757,9 +1748,11 @@ function formatShortDate(dateString: string) {
 
 function getDaysRemaining(dateString: string) {
   const today = new Date();
+
   today.setHours(0, 0, 0, 0);
 
   const target = new Date(`${dateString}T00:00:00`);
+
   target.setHours(0, 0, 0, 0);
 
   const difference =
@@ -1772,11 +1765,15 @@ function getDaysRemaining(dateString: string) {
 }
 
 function getNextExam(exams: Exam[]) {
+  const today = new Date();
+
+  today.setHours(0, 0, 0, 0);
+
   const futureExams = exams
     .filter(
       (exam) =>
         new Date(`${exam.date}T00:00:00`).getTime() >=
-        new Date().setHours(0, 0, 0, 0),
+        today.getTime(),
     )
     .sort(
       (a, b) =>
@@ -1789,7 +1786,9 @@ function getNextExam(exams: Exam[]) {
 
 function priorityValue(priority: Task["priority"]) {
   if (priority === "Alta") return 3;
+
   if (priority === "Media") return 2;
+
   return 1;
 }
 
