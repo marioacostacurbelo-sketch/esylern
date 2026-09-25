@@ -159,7 +159,14 @@ function App() {
   const nextExam = getNextExam(exams);
 
   return (
-    <div className="app">
+   <div
+  className="app"
+  style={{
+    transform: "scale(0.8)",
+    transformOrigin: "top left",
+    width: "125%",
+  }}
+>
       <aside className="sidebar">
         <div className="brand">
           <div className="brand-mark">
