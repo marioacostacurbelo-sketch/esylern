@@ -223,7 +223,9 @@ function App() {
         </div>
       </aside>
 
-      <main className="main">
+      <main
+  className="main"
+  style={{ fontSize: "14px", transform: "none", zoom: 1 }}
         {currentPage === "Dashboard" && (
           <Dashboard
             tasks={tasks}
