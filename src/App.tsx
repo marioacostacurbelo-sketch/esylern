@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import {
   CalendarDays,
   CheckSquare,
@@ -19,6 +20,8 @@ import {
   Brain,
   BarChart3,
   CircleCheck,
+  Trash2,
+  X,
 } from "lucide-react";
 
 type Page =
@@ -30,6 +33,22 @@ type Page =
   | "Asistente IA"
   | "Progreso"
   | "Configuración";
+
+type Task = {
+  id: number;
+  title: string;
+  subject: string;
+  date: string;
+  priority: "Baja" | "Media" | "Alta";
+  done: boolean;
+};
+
+type Exam = {
+  id: number;
+  subject: string;
+  topic: string;
+  date: string;
+};
 
 const menuItems: {
   label: Page;
@@ -44,12 +63,100 @@ const menuItems: {
   { label: "Progreso", icon: TrendingUp },
 ];
 
+const initialTasks: Task[] = [];
+
+const initialExams: Exam[] = [];
+
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>("Dashboard");
+
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    const saved = localStorage.getItem("esylern_tasks");
+
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return initialTasks;
+      }
+    }
+
+    return initialTasks;
+  });
+
+  const [exams, setExams] = useState<Exam[]>(() => {
+    const saved = localStorage.getItem("esylern_exams");
+
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return initialExams;
+      }
+    }
+
+    return initialExams;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("esylern_tasks", JSON.stringify(tasks));
+  }, [tasks]);
+
+  useEffect(() => {
+    localStorage.setItem("esylern_exams", JSON.stringify(exams));
+  }, [exams]);
 
   const navigate = (page: Page) => {
     setCurrentPage(page);
   };
+
+  const addTask = (task: Omit<Task, "id">) => {
+    setTasks((current) => [
+      ...current,
+      {
+        ...task,
+        id: Date.now(),
+      },
+    ]);
+  };
+
+  const toggleTask = (id: number) => {
+    setTasks((current) =>
+      current.map((task) =>
+        task.id === id
+          ? { ...task, done: !task.done }
+          : task,
+      ),
+    );
+  };
+
+  const deleteTask = (id: number) => {
+    setTasks((current) =>
+      current.filter((task) => task.id !== id),
+    );
+  };
+
+  const addExam = (exam: Omit<Exam, "id">) => {
+    setExams((current) => [
+      ...current,
+      {
+        ...exam,
+        id: Date.now(),
+      },
+    ]);
+  };
+
+  const deleteExam = (id: number) => {
+    setExams((current) =>
+      current.filter((exam) => exam.id !== id),
+    );
+  };
+
+  const pendingTasks = tasks.filter((task) => !task.done);
+
+  const completedTasks = tasks.filter((task) => task.done);
+
+  const nextExam = getNextExam(exams);
 
   return (
     <div className="app">
@@ -70,10 +177,10 @@ function App() {
 
             return (
               <button
+                key={item.label}
                 className={`nav-item ${
                   currentPage === item.label ? "active" : ""
                 }`}
-                key={item.label}
                 onClick={() => navigate(item.label)}
               >
                 <Icon size={19} />
@@ -118,20 +225,50 @@ function App() {
 
       <main className="main">
         {currentPage === "Dashboard" && (
-          <Dashboard onNavigate={navigate} />
+          <Dashboard
+            tasks={tasks}
+            exams={exams}
+            pendingTasks={pendingTasks}
+            completedTasks={completedTasks}
+            nextExam={nextExam}
+            onNavigate={navigate}
+            onToggleTask={toggleTask}
+          />
         )}
 
-        {currentPage === "Calendario" && <CalendarPage />}
+        {currentPage === "Calendario" && (
+          <CalendarPage tasks={tasks} exams={exams} />
+        )}
 
-        {currentPage === "Tareas" && <TasksPage />}
+        {currentPage === "Tareas" && (
+          <TasksPage
+            tasks={tasks}
+            onAddTask={addTask}
+            onToggleTask={toggleTask}
+            onDeleteTask={deleteTask}
+          />
+        )}
 
-        {currentPage === "Exámenes" && <ExamsPage />}
+        {currentPage === "Exámenes" && (
+          <ExamsPage
+            exams={exams}
+            onAddExam={addExam}
+            onDeleteExam={deleteExam}
+          />
+        )}
 
-        {currentPage === "Plan de estudio" && <StudyPlanPage />}
+        {currentPage === "Plan de estudio" && (
+          <StudyPlanPage tasks={pendingTasks} exams={exams} />
+        )}
 
         {currentPage === "Asistente IA" && <AssistantPage />}
 
-        {currentPage === "Progreso" && <ProgressPage />}
+        {currentPage === "Progreso" && (
+          <ProgressPage
+            tasks={tasks}
+            completedTasks={completedTasks}
+          />
+        )}
 
         {currentPage === "Configuración" && <SettingsPage />}
       </main>
@@ -144,16 +281,43 @@ function App() {
 ========================= */
 
 function Dashboard({
+  tasks,
+  exams,
+  pendingTasks,
+  completedTasks,
+  nextExam,
   onNavigate,
+  onToggleTask,
 }: {
+  tasks: Task[];
+  exams: Exam[];
+  pendingTasks: Task[];
+  completedTasks: Task[];
+  nextExam: Exam | null;
   onNavigate: (page: Page) => void;
+  onToggleTask: (id: number) => void;
 }) {
+  const today = new Date();
+
+  const todayTasks = pendingTasks.filter(
+    (task) => task.date === formatDateInput(today),
+  );
+
+  const progress =
+    tasks.length === 0
+      ? 0
+      : Math.round((completedTasks.length / tasks.length) * 100);
+
   return (
     <>
       <header className="topbar">
         <div>
-          <p className="eyebrow">Viernes, 25 de septiembre</p>
+          <p className="eyebrow">
+            {formatLongDate(today)}
+          </p>
+
           <h1>Buenos días 👋</h1>
+
           <p className="subtitle">
             Esto es lo que tienes pendiente hoy.
           </p>
@@ -175,11 +339,20 @@ function Dashboard({
             Tu plan de hoy
           </div>
 
-          <h2>Un poco cada día.</h2>
+          <h2>
+            {pendingTasks.length === 0
+              ? "Todo despejado."
+              : "Un poco cada día."}
+          </h2>
 
           <p>
-            Organiza tus tareas y exámenes para que Esylern te ayude
-            a decidir qué hacer y cuándo.
+            {pendingTasks.length === 0
+              ? "Añade tus tareas y exámenes para empezar a crear tu planificación."
+              : `Tienes ${pendingTasks.length} ${
+                  pendingTasks.length === 1
+                    ? "tarea pendiente"
+                    : "tareas pendientes"
+                }.`}
           </p>
 
           <button
@@ -191,11 +364,18 @@ function Dashboard({
         </div>
 
         <div className="hero-progress">
-          <div className="progress-ring">
-            <strong>0%</strong>
+          <div
+            className="progress-ring"
+            style={{
+              background: `conic-gradient(#172033 ${progress}%, #edf0f5 ${progress}% 100%)`,
+            }}
+          >
+            <div className="progress-ring-inner">
+              <strong>{progress}%</strong>
+            </div>
           </div>
 
-          <span>Progreso de hoy</span>
+          <span>Progreso total</span>
         </div>
       </section>
 
@@ -207,7 +387,7 @@ function Dashboard({
 
           <div>
             <span>Tareas pendientes</span>
-            <strong>4</strong>
+            <strong>{pendingTasks.length}</strong>
           </div>
         </div>
 
@@ -218,7 +398,11 @@ function Dashboard({
 
           <div>
             <span>Próximo examen</span>
-            <strong>12 días</strong>
+            <strong>
+              {nextExam
+                ? `${getDaysRemaining(nextExam.date)} días`
+                : "—"}
+            </strong>
           </div>
         </div>
 
@@ -240,7 +424,7 @@ function Dashboard({
 
           <div>
             <span>Objetivo semanal</span>
-            <strong>0%</strong>
+            <strong>{progress}%</strong>
           </div>
         </div>
       </section>
@@ -261,25 +445,45 @@ function Dashboard({
             </button>
           </div>
 
-          <div className="empty-state">
-            <div className="empty-icon">
-              <ListTodo size={22} />
+          {todayTasks.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">
+                <ListTodo size={22} />
+              </div>
+
+              <h4>No hay tareas para hoy</h4>
+
+              <p>
+                Añade una tarea con la fecha de hoy para verla aquí.
+              </p>
+
+              <button
+                className="secondary-button"
+                onClick={() => onNavigate("Tareas")}
+              >
+                <Plus size={17} />
+                Añadir tarea
+              </button>
             </div>
+          ) : (
+            <div className="mini-task-list">
+              {todayTasks.slice(0, 4).map((task) => (
+                <div className="mini-task" key={task.id}>
+                  <button
+                    className="task-check"
+                    onClick={() => onToggleTask(task.id)}
+                  />
 
-            <h4>Aún no tienes tareas</h4>
+                  <div>
+                    <strong>{task.title}</strong>
+                    <span>{task.subject}</span>
+                  </div>
 
-            <p>
-              Añade una tarea y empieza a organizar tu estudio.
-            </p>
-
-            <button
-              className="secondary-button"
-              onClick={() => onNavigate("Tareas")}
-            >
-              <Plus size={17} />
-              Añadir tarea
-            </button>
-          </div>
+                  <PriorityBadge priority={task.priority} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="panel">
@@ -297,25 +501,56 @@ function Dashboard({
             </button>
           </div>
 
-          <div className="empty-state">
-            <div className="empty-icon">
-              <CalendarDays size={22} />
+          {exams.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">
+                <CalendarDays size={22} />
+              </div>
+
+              <h4>No hay exámenes próximos</h4>
+
+              <p>
+                Añade tus próximos exámenes para planificar con tiempo.
+              </p>
+
+              <button
+                className="secondary-button"
+                onClick={() => onNavigate("Exámenes")}
+              >
+                <Plus size={17} />
+                Añadir examen
+              </button>
             </div>
+          ) : (
+            <div className="mini-exam-list">
+              {exams
+                .sort(
+                  (a, b) =>
+                    new Date(a.date).getTime() -
+                    new Date(b.date).getTime(),
+                )
+                .slice(0, 3)
+                .map((exam) => (
+                  <div className="mini-exam" key={exam.id}>
+                    <div className="mini-exam-icon">
+                      <GraduationCap size={18} />
+                    </div>
 
-            <h4>No hay exámenes próximos</h4>
+                    <div>
+                      <strong>{exam.subject}</strong>
+                      <span>{exam.topic}</span>
+                    </div>
 
-            <p>
-              Añade tus próximos exámenes para planificar con tiempo.
-            </p>
-
-            <button
-              className="secondary-button"
-              onClick={() => onNavigate("Exámenes")}
-            >
-              <Plus size={17} />
-              Añadir examen
-            </button>
-          </div>
+                    <div className="mini-exam-days">
+                      <strong>
+                        {getDaysRemaining(exam.date)}
+                      </strong>
+                      <span>días</span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
       </section>
     </>
@@ -323,78 +558,585 @@ function Dashboard({
 }
 
 /* =========================
+   TAREAS
+========================= */
+
+function TasksPage({
+  tasks,
+  onAddTask,
+  onToggleTask,
+  onDeleteTask,
+}: {
+  tasks: Task[];
+  onAddTask: (task: Omit<Task, "id">) => void;
+  onToggleTask: (id: number) => void;
+  onDeleteTask: (id: number) => void;
+}) {
+  const [showForm, setShowForm] = useState(false);
+  const [filter, setFilter] = useState<
+    "Todas" | "Pendientes" | "Completadas"
+  >("Todas");
+
+  const filteredTasks = tasks.filter((task) => {
+    if (filter === "Pendientes") return !task.done;
+    if (filter === "Completadas") return task.done;
+
+    return true;
+  });
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="ORGANIZACIÓN"
+        title="Tareas"
+        subtitle="Todo lo que tienes que hacer, en un solo lugar."
+        action={
+          <button
+            className="add-button"
+            onClick={() => setShowForm(true)}
+          >
+            <Plus size={18} />
+            Nueva tarea
+          </button>
+        }
+      />
+
+      <div className="filter-row">
+        {(["Todas", "Pendientes", "Completadas"] as const).map(
+          (item) => (
+            <button
+              key={item}
+              className={`filter ${
+                filter === item ? "active" : ""
+              }`}
+              onClick={() => setFilter(item)}
+            >
+              {item}
+            </button>
+          ),
+        )}
+      </div>
+
+      {showForm && (
+        <TaskForm
+          onAdd={(task) => {
+            onAddTask(task);
+            setShowForm(false);
+          }}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
+
+      {filteredTasks.length === 0 ? (
+        <EmptyBox
+          icon={<ListTodo size={24} />}
+          title="No hay tareas"
+          text="Añade tu primera tarea para empezar a organizarte."
+          buttonText="Añadir tarea"
+          onClick={() => setShowForm(true)}
+        />
+      ) : (
+        <div className="task-list">
+          {filteredTasks.map((task) => (
+            <div
+              className={`task-card ${
+                task.done ? "completed" : ""
+              }`}
+              key={task.id}
+            >
+              <button
+                className={`task-check ${
+                  task.done ? "checked" : ""
+                }`}
+                onClick={() => onToggleTask(task.id)}
+              >
+                {task.done && <CircleCheck size={19} />}
+              </button>
+
+              <div className="task-info">
+                <strong>{task.title}</strong>
+                <span>
+                  {task.subject} ·{" "}
+                  {formatShortDate(task.date)}
+                </span>
+              </div>
+
+              <PriorityBadge priority={task.priority} />
+
+              <button
+                className="delete-button"
+                onClick={() => onDeleteTask(task.id)}
+                aria-label="Eliminar tarea"
+              >
+                <Trash2 size={17} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+function TaskForm({
+  onAdd,
+  onCancel,
+}: {
+  onAdd: (task: Omit<Task, "id">) => void;
+  onCancel: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [subject, setSubject] = useState("");
+  const [date, setDate] = useState(formatDateInput(new Date()));
+  const [priority, setPriority] =
+    useState<Task["priority"]>("Media");
+
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!title.trim() || !subject.trim() || !date) return;
+
+    onAdd({
+      title: title.trim(),
+      subject: subject.trim(),
+      date,
+      priority,
+      done: false,
+    });
+  };
+
+  return (
+    <form className="form-card" onSubmit={submit}>
+      <div className="form-header">
+        <div>
+          <h3>Nueva tarea</h3>
+          <p>Añade algo que tengas pendiente.</p>
+        </div>
+
+        <button
+          type="button"
+          className="close-button"
+          onClick={onCancel}
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      <div className="form-grid">
+        <label>
+          Tarea
+          <input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Ej. Hacer ejercicios de matemáticas"
+          />
+        </label>
+
+        <label>
+          Asignatura
+          <input
+            value={subject}
+            onChange={(event) =>
+              setSubject(event.target.value)
+            }
+            placeholder="Ej. Matemáticas"
+          />
+        </label>
+
+        <label>
+          Fecha
+          <input
+            type="date"
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
+          />
+        </label>
+
+        <label>
+          Prioridad
+          <select
+            value={priority}
+            onChange={(event) =>
+              setPriority(
+                event.target.value as Task["priority"],
+              )
+            }
+          >
+            <option>Baja</option>
+            <option>Media</option>
+            <option>Alta</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="form-actions">
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={onCancel}
+        >
+          Cancelar
+        </button>
+
+        <button type="submit" className="primary-button">
+          <Plus size={17} />
+          Crear tarea
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/* =========================
+   EXÁMENES
+========================= */
+
+function ExamsPage({
+  exams,
+  onAddExam,
+  onDeleteExam,
+}: {
+  exams: Exam[];
+  onAddExam: (exam: Omit<Exam, "id">) => void;
+  onDeleteExam: (id: number) => void;
+}) {
+  const [showForm, setShowForm] = useState(false);
+
+  const sortedExams = [...exams].sort(
+    (a, b) =>
+      new Date(a.date).getTime() -
+      new Date(b.date).getTime(),
+  );
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="ORGANIZACIÓN"
+        title="Exámenes"
+        subtitle="Ten todas tus fechas importantes bajo control."
+        action={
+          <button
+            className="add-button"
+            onClick={() => setShowForm(true)}
+          >
+            <Plus size={18} />
+            Nuevo examen
+          </button>
+        }
+      />
+
+      {showForm && (
+        <ExamForm
+          onAdd={(exam) => {
+            onAddExam(exam);
+            setShowForm(false);
+          }}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
+
+      {sortedExams.length === 0 ? (
+        <EmptyBox
+          icon={<GraduationCap size={24} />}
+          title="No tienes exámenes"
+          text="Añade tus próximos exámenes para que Esylern pueda ayudarte a prepararlos."
+          buttonText="Añadir examen"
+          onClick={() => setShowForm(true)}
+        />
+      ) : (
+        <div className="exam-grid">
+          {sortedExams.map((exam) => (
+            <div className="exam-card" key={exam.id}>
+              <div className="exam-icon">
+                <GraduationCap size={22} />
+              </div>
+
+              <div className="exam-main">
+                <span>{exam.subject}</span>
+                <h3>{exam.topic}</h3>
+                <p>{formatLongDate(new Date(exam.date))}</p>
+              </div>
+
+              <div className="exam-days">
+                <strong>
+                  {getDaysRemaining(exam.date)}
+                </strong>
+                <span>restantes</span>
+              </div>
+
+              <button
+                className="delete-button"
+                onClick={() => onDeleteExam(exam.id)}
+              >
+                <Trash2 size={17} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+function ExamForm({
+  onAdd,
+  onCancel,
+}: {
+  onAdd: (exam: Omit<Exam, "id">) => void;
+  onCancel: () => void;
+}) {
+  const [subject, setSubject] = useState("");
+  const [topic, setTopic] = useState("");
+  const [date, setDate] = useState("");
+
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!subject.trim() || !topic.trim() || !date) return;
+
+    onAdd({
+      subject: subject.trim(),
+      topic: topic.trim(),
+      date,
+    });
+  };
+
+  return (
+    <form className="form-card" onSubmit={submit}>
+      <div className="form-header">
+        <div>
+          <h3>Nuevo examen</h3>
+          <p>Introduce los datos del examen.</p>
+        </div>
+
+        <button
+          type="button"
+          className="close-button"
+          onClick={onCancel}
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      <div className="form-grid">
+        <label>
+          Asignatura
+          <input
+            value={subject}
+            onChange={(event) =>
+              setSubject(event.target.value)
+            }
+            placeholder="Ej. Matemáticas"
+          />
+        </label>
+
+        <label>
+          Temario
+          <input
+            value={topic}
+            onChange={(event) => setTopic(event.target.value)}
+            placeholder="Ej. Funciones y derivadas"
+          />
+        </label>
+
+        <label>
+          Fecha del examen
+          <input
+            type="date"
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
+          />
+        </label>
+      </div>
+
+      <div className="form-actions">
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={onCancel}
+        >
+          Cancelar
+        </button>
+
+        <button type="submit" className="primary-button">
+          <Plus size={17} />
+          Crear examen
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/* =========================
    CALENDARIO
 ========================= */
 
-function CalendarPage() {
-  const [month, setMonth] = useState("Septiembre 2026");
+function CalendarPage({
+  tasks,
+  exams,
+}: {
+  tasks: Task[];
+  exams: Exam[];
+}) {
+  const [currentMonth, setCurrentMonth] = useState(
+    new Date(2026, 8, 1),
+  );
+
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+
+  const firstDay = new Date(year, month, 1).getDay();
+
+  const mondayOffset =
+    firstDay === 0 ? 6 : firstDay - 1;
+
+  const daysInMonth = new Date(
+    year,
+    month + 1,
+    0,
+  ).getDate();
+
+  const totalCells = Math.ceil(
+    (mondayOffset + daysInMonth) / 7,
+  ) * 7;
+
+  const cells = Array.from(
+    { length: totalCells },
+    (_, index) => {
+      const day = index - mondayOffset + 1;
+
+      if (day < 1 || day > daysInMonth) {
+        return null;
+      }
+
+      return day;
+    },
+  );
+
+  const previousMonth = () => {
+    setCurrentMonth(new Date(year, month - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(year, month + 1, 1));
+  };
+
+  const monthName = currentMonth.toLocaleDateString(
+    "es-ES",
+    {
+      month: "long",
+      year: "numeric",
+    },
+  );
 
   return (
     <>
       <PageHeader
         eyebrow="ORGANIZACIÓN"
         title="Calendario"
-        subtitle="Visualiza tus clases, tareas y exámenes."
+        subtitle="Visualiza tus tareas y exámenes."
       />
 
       <div className="calendar-toolbar">
-        <button
-          className="icon-button"
-          onClick={() => setMonth("Agosto 2026")}
-        >
-          <ChevronLeft size={18} />
-        </button>
+        <div className="calendar-navigation">
+          <button
+            className="icon-button"
+            onClick={previousMonth}
+          >
+            <ChevronLeft size={18} />
+          </button>
 
-        <strong>{month}</strong>
+          <strong>
+            {monthName.charAt(0).toUpperCase() +
+              monthName.slice(1)}
+          </strong>
 
-        <button
-          className="icon-button"
-          onClick={() => setMonth("Octubre 2026")}
-        >
-          <ChevronRight size={18} />
-        </button>
-
-        <button className="add-button calendar-add">
-          <Plus size={17} />
-          Añadir evento
-        </button>
+          <button
+            className="icon-button"
+            onClick={nextMonth}
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
       </div>
 
       <div className="calendar-card">
         <div className="calendar-week">
-          {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map(
-            (day) => (
-              <div key={day} className="calendar-day-name">
-                {day}
-              </div>
-            ),
-          )}
+          {[
+            "Lun",
+            "Mar",
+            "Mié",
+            "Jue",
+            "Vie",
+            "Sáb",
+            "Dom",
+          ].map((day) => (
+            <div className="calendar-day-name" key={day}>
+              {day}
+            </div>
+          ))}
         </div>
 
         <div className="calendar-grid">
-          {Array.from({ length: 35 }, (_, index) => {
-            const day = index - 0;
+          {cells.map((day, index) => {
+            if (!day) {
+              return (
+                <div
+                  className="calendar-cell empty"
+                  key={index}
+                />
+              );
+            }
+
+            const dateString = `${year}-${String(
+              month + 1,
+            ).padStart(2, "0")}-${String(day).padStart(
+              2,
+              "0",
+            )}`;
+
+            const dayTasks = tasks.filter(
+              (task) => task.date === dateString,
+            );
+
+            const dayExams = exams.filter(
+              (exam) => exam.date === dateString,
+            );
+
+            const todayString = formatDateInput(
+              new Date(),
+            );
 
             return (
               <div
-                key={index}
                 className={`calendar-cell ${
-                  day === 25 ? "today" : ""
+                  dateString === todayString ? "today" : ""
                 }`}
+                key={index}
               >
-                <span>{day <= 30 ? day : ""}</span>
+                <span className="calendar-number">
+                  {day}
+                </span>
 
-                {day === 25 && (
-                  <div className="calendar-event">
-                    Estudiar
+                {dayTasks.slice(0, 2).map((task) => (
+                  <div
+                    className={`calendar-event ${
+                      task.done ? "done" : ""
+                    }`}
+                    key={task.id}
+                  >
+                    {task.title}
                   </div>
-                )}
+                ))}
 
-                {day === 29 && (
-                  <div className="calendar-event exam">
-                    Examen
+                {dayExams.slice(0, 1).map((exam) => (
+                  <div
+                    className="calendar-event exam"
+                    key={exam.id}
+                  >
+                    Examen: {exam.subject}
                   </div>
-                )}
+                ))}
               </div>
             );
           })}
@@ -405,176 +1147,28 @@ function CalendarPage() {
 }
 
 /* =========================
-   TAREAS
+   PLAN
 ========================= */
 
-function TasksPage() {
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      title: "Ejercicios de matemáticas",
-      subject: "Matemáticas",
-      date: "Hoy",
-      done: false,
-    },
-    {
-      id: 2,
-      title: "Leer capítulo 4",
-      subject: "Lengua",
-      date: "Hoy",
-      done: false,
-    },
-    {
-      id: 3,
-      title: "Trabajo de historia",
-      subject: "Historia",
-      date: "Mañana",
-      done: false,
-    },
-    {
-      id: 4,
-      title: "Problemas de física",
-      subject: "Física",
-      date: "27 sep.",
-      done: false,
-    },
-  ]);
+function StudyPlanPage({
+  tasks,
+  exams,
+}: {
+  tasks: Task[];
+  exams: Exam[];
+}) {
+  const nextExam = getNextExam(exams);
 
-  const toggleTask = (id: number) => {
-    setTasks((current) =>
-      current.map((task) =>
-        task.id === id
-          ? { ...task, done: !task.done }
-          : task,
-      ),
-    );
-  };
-
-  return (
-    <>
-      <PageHeader
-        eyebrow="ORGANIZACIÓN"
-        title="Tareas"
-        subtitle="Todo lo que tienes que hacer, en un solo lugar."
-        action={
-          <button className="add-button">
-            <Plus size={18} />
-            Nueva tarea
-          </button>
-        }
-      />
-
-      <div className="filter-row">
-        <button className="filter active">Todas</button>
-        <button className="filter">Pendientes</button>
-        <button className="filter">Completadas</button>
-      </div>
-
-      <div className="task-list">
-        {tasks.map((task) => (
-          <div
-            className={`task-card ${
-              task.done ? "completed" : ""
-            }`}
-            key={task.id}
-          >
-            <button
-              className={`task-check ${
-                task.done ? "checked" : ""
-              }`}
-              onClick={() => toggleTask(task.id)}
-            >
-              {task.done && <CircleCheck size={19} />}
-            </button>
-
-            <div className="task-info">
-              <strong>{task.title}</strong>
-              <span>{task.subject}</span>
-            </div>
-
-            <div className="task-date">{task.date}</div>
-          </div>
-        ))}
-      </div>
-    </>
+  const sortedTasks = [...tasks].sort(
+    (a, b) => priorityValue(b.priority) - priorityValue(a.priority),
   );
-}
 
-/* =========================
-   EXÁMENES
-========================= */
-
-function ExamsPage() {
-  const exams = [
-    {
-      subject: "Matemáticas",
-      topic: "Funciones y derivadas",
-      date: "7 octubre",
-      days: "12 días",
-    },
-    {
-      subject: "Historia",
-      topic: "La Restauración",
-      date: "14 octubre",
-      days: "19 días",
-    },
-    {
-      subject: "Inglés",
-      topic: "Grammar & Vocabulary",
-      date: "21 octubre",
-      days: "26 días",
-    },
-  ];
-
-  return (
-    <>
-      <PageHeader
-        eyebrow="ORGANIZACIÓN"
-        title="Exámenes"
-        subtitle="Ten todas tus fechas importantes bajo control."
-        action={
-          <button className="add-button">
-            <Plus size={18} />
-            Nuevo examen
-          </button>
-        }
-      />
-
-      <div className="exam-grid">
-        {exams.map((exam) => (
-          <div className="exam-card" key={exam.subject}>
-            <div className="exam-icon">
-              <GraduationCap size={22} />
-            </div>
-
-            <div className="exam-main">
-              <span>{exam.subject}</span>
-              <h3>{exam.topic}</h3>
-              <p>{exam.date}</p>
-            </div>
-
-            <div className="exam-days">
-              <strong>{exam.days}</strong>
-              <span>restantes</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </>
-  );
-}
-
-/* =========================
-   PLAN DE ESTUDIO
-========================= */
-
-function StudyPlanPage() {
   return (
     <>
       <PageHeader
         eyebrow="INTELIGENCIA"
         title="Plan de estudio"
-        subtitle="Esylern organiza tu tiempo y decide qué deberías hacer."
+        subtitle="Esylern organiza tu tiempo según tus prioridades."
       />
 
       <section className="ai-banner">
@@ -584,9 +1178,13 @@ function StudyPlanPage() {
 
         <div>
           <strong>Tu planificación inteligente</strong>
+
           <p>
-            Hemos tenido en cuenta tus exámenes, tareas y tiempo
-            disponible.
+            {nextExam
+              ? `Tu próximo examen es ${nextExam.subject} y quedan ${getDaysRemaining(
+                  nextExam.date,
+                )} días.`
+              : "Añade un examen para que Esylern pueda empezar a planificar tu preparación."}
           </p>
         </div>
 
@@ -600,70 +1198,66 @@ function StudyPlanPage() {
         <div className="panel">
           <div className="panel-header">
             <div>
-              <h3>Hoy · Viernes 25</h3>
-              <p>2 h 15 min de estudio recomendado</p>
+              <h3>Prioridades actuales</h3>
+              <p>Lo que deberías tener en cuenta primero</p>
             </div>
           </div>
 
-          <div className="study-session">
-            <div className="session-time">17:00</div>
-
-            <div className="session-line"></div>
-
-            <div className="session-content">
-              <span className="session-tag">Matemáticas</span>
-              <h4>Funciones y derivadas</h4>
-              <p>Repasar teoría + hacer 8 ejercicios</p>
-              <strong>1 h 15 min</strong>
+          {sortedTasks.length === 0 ? (
+            <div className="empty-state">
+              <Target size={28} />
+              <h4>Aún no hay suficiente información</h4>
+              <p>
+                Añade tareas y exámenes para construir tu plan.
+              </p>
             </div>
-          </div>
+          ) : (
+            <div className="priority-list">
+              {sortedTasks.slice(0, 5).map((task, index) => (
+                <div className="priority-item" key={task.id}>
+                  <span className="priority-number">
+                    {index + 1}
+                  </span>
 
-          <div className="study-session">
-            <div className="session-time">19:00</div>
-
-            <div className="session-line"></div>
-
-            <div className="session-content">
-              <span className="session-tag">Historia</span>
-              <h4>La Restauración</h4>
-              <p>Leer apuntes y crear esquema</p>
-              <strong>1 h</strong>
+                  <div>
+                    <strong>{task.title}</strong>
+                    <p>
+                      {task.subject} · Prioridad{" "}
+                      {task.priority.toLowerCase()}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
         </div>
 
         <div className="panel">
           <div className="panel-header">
             <div>
-              <h3>Prioridades</h3>
-              <p>En qué deberías centrarte</p>
+              <h3>Cómo funcionará</h3>
+              <p>La idea central de Esylern</p>
             </div>
           </div>
 
-          <div className="priority-list">
-            <div className="priority-item">
-              <span className="priority-number">1</span>
-              <div>
-                <strong>Matemáticas</strong>
-                <p>Examen en 12 días</p>
-              </div>
-            </div>
+          <div className="feature-list">
+            <Feature
+              icon={<Target size={18} />}
+              title="Priorizar"
+              text="Detectar qué tienes que hacer primero."
+            />
 
-            <div className="priority-item">
-              <span className="priority-number">2</span>
-              <div>
-                <strong>Historia</strong>
-                <p>Trabajo pendiente</p>
-              </div>
-            </div>
+            <Feature
+              icon={<Clock3 size={18} />}
+              title="Repartir"
+              text="Dividir el estudio entre los días disponibles."
+            />
 
-            <div className="priority-item">
-              <span className="priority-number">3</span>
-              <div>
-                <strong>Inglés</strong>
-                <p>Examen en 26 días</p>
-              </div>
-            </div>
+            <Feature
+              icon={<Brain size={18} />}
+              title="Adaptarse"
+              text="Reorganizar el plan si no puedes estudiar un día."
+            />
           </div>
         </div>
       </div>
@@ -677,6 +1271,7 @@ function StudyPlanPage() {
 
 function AssistantPage() {
   const [message, setMessage] = useState("");
+
   const [messages, setMessages] = useState<
     { role: "user" | "ai"; text: string }[]
   >([
@@ -693,10 +1288,13 @@ function AssistantPage() {
 
     setMessages((current) => [
       ...current,
-      { role: "user", text: userMessage },
+      {
+        role: "user",
+        text: userMessage,
+      },
       {
         role: "ai",
-        text: "Perfecto. Cuando conectemos la IA real podré analizar tu calendario y decirte exactamente qué hacer y cuándo.",
+        text: "Perfecto. Esta es la interfaz del asistente. Más adelante conectaremos una IA real que tendrá acceso a tu calendario, tareas y exámenes.",
       },
     ]);
 
@@ -728,7 +1326,9 @@ function AssistantPage() {
             <div
               key={index}
               className={`message ${
-                item.role === "user" ? "user-message" : "ai-message"
+                item.role === "user"
+                  ? "user-message"
+                  : "ai-message"
               }`}
             >
               {item.text}
@@ -739,9 +1339,13 @@ function AssistantPage() {
         <div className="chat-input">
           <input
             value={message}
-            onChange={(event) => setMessage(event.target.value)}
+            onChange={(event) =>
+              setMessage(event.target.value)
+            }
             onKeyDown={(event) => {
-              if (event.key === "Enter") sendMessage();
+              if (event.key === "Enter") {
+                sendMessage();
+              }
             }}
             placeholder="Pregúntame algo sobre tu estudio..."
           />
@@ -759,27 +1363,29 @@ function AssistantPage() {
    PROGRESO
 ========================= */
 
-function ProgressPage() {
+function ProgressPage({
+  tasks,
+  completedTasks,
+}: {
+  tasks: Task[];
+  completedTasks: Task[];
+}) {
+  const percentage =
+    tasks.length === 0
+      ? 0
+      : Math.round(
+          (completedTasks.length / tasks.length) * 100,
+        );
+
   return (
     <>
       <PageHeader
         eyebrow="PROGRESO"
         title="Tu progreso"
-        subtitle="Mira cómo estás avanzando semana a semana."
+        subtitle="Mira cómo estás avanzando."
       />
 
       <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon">
-            <Clock3 size={19} />
-          </div>
-
-          <div>
-            <span>Tiempo estudiado</span>
-            <strong>8 h 30 min</strong>
-          </div>
-        </div>
-
         <div className="stat-card">
           <div className="stat-icon">
             <CheckSquare size={19} />
@@ -787,7 +1393,7 @@ function ProgressPage() {
 
           <div>
             <span>Tareas completadas</span>
-            <strong>18</strong>
+            <strong>{completedTasks.length}</strong>
           </div>
         </div>
 
@@ -797,8 +1403,19 @@ function ProgressPage() {
           </div>
 
           <div>
-            <span>Objetivo semanal</span>
-            <strong>68%</strong>
+            <span>Progreso total</span>
+            <strong>{percentage}%</strong>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon">
+            <Clock3 size={19} />
+          </div>
+
+          <div>
+            <span>Tiempo estudiado</span>
+            <strong>0 h</strong>
           </div>
         </div>
 
@@ -809,7 +1426,7 @@ function ProgressPage() {
 
           <div>
             <span>Racha actual</span>
-            <strong>5 días</strong>
+            <strong>0 días</strong>
           </div>
         </div>
       </div>
@@ -818,84 +1435,63 @@ function ProgressPage() {
         <div className="panel">
           <div className="panel-header">
             <div>
-              <h3>Horas de estudio</h3>
-              <p>Esta semana</p>
+              <h3>Progreso de tareas</h3>
+              <p>Según las tareas que has creado</p>
             </div>
 
             <BarChart3 size={20} />
           </div>
 
-          <div className="fake-chart">
-            {[35, 55, 42, 70, 48, 82, 30].map(
-              (height, index) => (
-                <div className="chart-column" key={index}>
-                  <div
-                    className="chart-bar"
-                    style={{ height: `${height}%` }}
-                  ></div>
+          <div className="big-progress">
+            <div className="big-progress-number">
+              {percentage}%
+            </div>
 
-                  <span>
-                    {["L", "M", "X", "J", "V", "S", "D"][index]}
-                  </span>
-                </div>
-              ),
-            )}
+            <div className="big-progress-bar">
+              <div
+                style={{
+                  width: `${percentage}%`,
+                }}
+              />
+            </div>
+
+            <span>
+              {completedTasks.length} de {tasks.length} tareas
+              completadas
+            </span>
           </div>
         </div>
 
         <div className="panel">
           <div className="panel-header">
             <div>
-              <h3>Asignaturas</h3>
-              <p>Tiempo dedicado</p>
+              <h3>Próximamente</h3>
+              <p>Estadísticas de estudio</p>
             </div>
           </div>
 
-          <div className="subject-progress">
-            <ProgressItem
-              name="Matemáticas"
-              value={75}
+          <div className="feature-list">
+            <Feature
+              icon={<Clock3 size={18} />}
+              title="Tiempo estudiado"
+              text="Registra cuánto tiempo dedicas a cada asignatura."
             />
 
-            <ProgressItem
-              name="Historia"
-              value={55}
+            <Feature
+              icon={<TrendingUp size={18} />}
+              title="Evolución"
+              text="Observa cómo mejora tu constancia."
             />
 
-            <ProgressItem
-              name="Inglés"
-              value={40}
-            />
-
-            <ProgressItem
-              name="Física"
-              value={30}
+            <Feature
+              icon={<Target size={18} />}
+              title="Objetivos"
+              text="Comprueba si estás cumpliendo tus metas."
             />
           </div>
         </div>
       </div>
     </>
-  );
-}
-
-function ProgressItem({
-  name,
-  value,
-}: {
-  name: string;
-  value: number;
-}) {
-  return (
-    <div className="subject-item">
-      <div className="subject-label">
-        <span>{name}</span>
-        <strong>{value}%</strong>
-      </div>
-
-      <div className="progress-bar">
-        <div style={{ width: `${value}%` }}></div>
-      </div>
-    </div>
   );
 }
 
@@ -916,6 +1512,7 @@ function SettingsPage() {
         <div className="panel settings-panel">
           <div className="settings-title">
             <BookOpen size={19} />
+
             <div>
               <h3>Datos de estudio</h3>
               <p>Información que utiliza Esylern.</p>
@@ -924,22 +1521,31 @@ function SettingsPage() {
 
           <label>
             Nivel educativo
+
             <select defaultValue="bachillerato">
               <option value="eso">ESO</option>
-              <option value="bachillerato">Bachillerato</option>
+              <option value="bachillerato">
+                Bachillerato
+              </option>
               <option value="fp">FP</option>
-              <option value="universidad">Universidad</option>
+              <option value="universidad">
+                Universidad
+              </option>
             </select>
           </label>
 
           <label>
             Curso
+
             <select defaultValue="2bach">
               <option value="1eso">1º ESO</option>
               <option value="4eso">4º ESO</option>
-              <option value="1bach">1º Bachillerato</option>
-              <option value="2bach">2º Bachillerato</option>
-              <option value="universidad">Universidad</option>
+              <option value="1bach">
+                1º Bachillerato
+              </option>
+              <option value="2bach">
+                2º Bachillerato
+              </option>
             </select>
           </label>
         </div>
@@ -947,6 +1553,7 @@ function SettingsPage() {
         <div className="panel settings-panel">
           <div className="settings-title">
             <Clock3 size={19} />
+
             <div>
               <h3>Tiempo disponible</h3>
               <p>Cuánto tiempo puedes estudiar.</p>
@@ -955,6 +1562,7 @@ function SettingsPage() {
 
           <label>
             Horas entre semana
+
             <select defaultValue="2">
               <option value="1">1 hora</option>
               <option value="2">2 horas</option>
@@ -965,6 +1573,7 @@ function SettingsPage() {
 
           <label>
             Horas durante el fin de semana
+
             <select defaultValue="3">
               <option value="1">1 hora</option>
               <option value="2">2 horas</option>
@@ -978,6 +1587,7 @@ function SettingsPage() {
         <div className="panel settings-panel">
           <div className="settings-title">
             <Brain size={19} />
+
             <div>
               <h3>Preferencias de estudio</h3>
               <p>Ayuda a la IA a conocerte mejor.</p>
@@ -986,6 +1596,7 @@ function SettingsPage() {
 
           <label>
             Duración preferida
+
             <select defaultValue="50">
               <option value="25">25 minutos</option>
               <option value="50">50 minutos</option>
@@ -995,6 +1606,7 @@ function SettingsPage() {
 
           <label>
             Momento preferido
+
             <select defaultValue="tarde">
               <option value="manana">Mañana</option>
               <option value="tarde">Tarde</option>
@@ -1020,7 +1632,7 @@ function PageHeader({
   eyebrow: string;
   title: string;
   subtitle: string;
-  action?: React.ReactNode;
+  action?: ReactNode;
 }) {
   return (
     <header className="topbar">
@@ -1033,6 +1645,143 @@ function PageHeader({
       {action}
     </header>
   );
+}
+
+function EmptyBox({
+  icon,
+  title,
+  text,
+  buttonText,
+  onClick,
+}: {
+  icon: ReactNode;
+  title: string;
+  text: string;
+  buttonText: string;
+  onClick: () => void;
+}) {
+  return (
+    <div className="empty-page">
+      <div className="empty-icon">{icon}</div>
+
+      <h3>{title}</h3>
+
+      <p>{text}</p>
+
+      <button
+        className="secondary-button"
+        onClick={onClick}
+      >
+        <Plus size={17} />
+        {buttonText}
+      </button>
+    </div>
+  );
+}
+
+function PriorityBadge({
+  priority,
+}: {
+  priority: Task["priority"];
+}) {
+  return (
+    <span
+      className={`priority-badge priority-${priority.toLowerCase()}`}
+    >
+      {priority}
+    </span>
+  );
+}
+
+function Feature({
+  icon,
+  title,
+  text,
+}: {
+  icon: ReactNode;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="feature-item">
+      <div className="feature-icon">{icon}</div>
+
+      <div>
+        <strong>{title}</strong>
+        <p>{text}</p>
+      </div>
+    </div>
+  );
+}
+
+/* =========================
+   UTILIDADES
+========================= */
+
+function formatDateInput(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(
+    2,
+    "0",
+  );
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatLongDate(date: Date) {
+  return date.toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
+function formatShortDate(dateString: string) {
+  const date = new Date(`${dateString}T12:00:00`);
+
+  return date.toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function getDaysRemaining(dateString: string) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const target = new Date(`${dateString}T00:00:00`);
+  target.setHours(0, 0, 0, 0);
+
+  const difference =
+    target.getTime() - today.getTime();
+
+  return Math.max(
+    0,
+    Math.ceil(difference / (1000 * 60 * 60 * 24)),
+  );
+}
+
+function getNextExam(exams: Exam[]) {
+  const futureExams = exams
+    .filter(
+      (exam) =>
+        new Date(`${exam.date}T00:00:00`).getTime() >=
+        new Date().setHours(0, 0, 0, 0),
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.date).getTime() -
+        new Date(b.date).getTime(),
+    );
+
+  return futureExams[0] ?? null;
+}
+
+function priorityValue(priority: Task["priority"]) {
+  if (priority === "Alta") return 3;
+  if (priority === "Media") return 2;
+  return 1;
 }
 
 export default App;
