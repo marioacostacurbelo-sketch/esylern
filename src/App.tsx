@@ -694,12 +694,13 @@ function TaskForm({
     if (!title.trim() || !subject.trim() || !date) return;
 
     onAdd({
-      title: title.trim(),
-      subject: subject.trim(),
-      date,
-      priority,
-      done: false,
-    });
+  title: title.trim(),
+  subject: subject.trim(),
+  date,
+  priority,
+  estimatedMinutes,
+  done: false,
+});
   };
 
   return (
