@@ -73,7 +73,11 @@ const menuItems: {
   { label: "Plan de estudio", icon: Target },
   { label: "Asistente IA", icon: MessageCircle },
   { label: "Progreso", icon: TrendingUp },
-  { label: "Tiempo disponible", icon: Clock3 },
+  {
+  label: "Tiempo disponible",
+  icon: Clock3,
+  page: "Tiempo disponible",
+},
 ];
 
 const initialTasks: Task[] = [];
@@ -87,17 +91,17 @@ function App() {
     const saved = localStorage.getItem("esylern_tasks");
 
     if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
+  try {
+    const parsed = JSON.parse(saved);
 
-        return parsed.map((task: Task) => ({
-          ...task,
-          estimatedMinutes: task.estimatedMinutes ?? 30,
-        }));
-      } catch {
-        return initialTasks;
-      }
-    }
+    return parsed.map((task: Task) => ({
+      ...task,
+      estimatedMinutes: task.estimatedMinutes ?? 30,
+    }));
+  } catch {
+    return initialTasks;
+  }
+}
 
     return initialTasks;
   });
@@ -106,35 +110,33 @@ function App() {
     const saved = localStorage.getItem("esylern_exams");
 
     if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
+  try {
+    const parsed = JSON.parse(saved);
 
-        return parsed.map((exam: Exam) => ({
-          ...exam,
-          studyMinutes: exam.studyMinutes ?? 120,
-        }));
-      } catch {
-        return initialExams;
-      }
-    }
+    return parsed.map((exam: Exam) => ({
+      ...exam,
+      studyMinutes: exam.studyMinutes ?? 120,
+    }));
+  } catch {
+    return initialExams;
+  }
+}
 
     return initialExams;
   });
+const [busySlots, setBusySlots] = useState<BusySlot[]>(() => {
+  const saved = localStorage.getItem("esylern_busy_slots");
 
-  const [busySlots, setBusySlots] = useState<BusySlot[]>(() => {
-    const saved = localStorage.getItem("esylern_busy_slots");
-
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return [];
-      }
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return [];
     }
+  }
 
-    return [];
-  });
-
+  return [];
+});
   useEffect(() => {
     localStorage.setItem("esylern_tasks", JSON.stringify(tasks));
   }, [tasks]);
@@ -142,14 +144,12 @@ function App() {
   useEffect(() => {
     localStorage.setItem("esylern_exams", JSON.stringify(exams));
   }, [exams]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      "esylern_busy_slots",
-      JSON.stringify(busySlots),
-    );
-  }, [busySlots]);
-
+useEffect(() => {
+  localStorage.setItem(
+    "esylern_busy_slots",
+    JSON.stringify(busySlots),
+  );
+}, [busySlots]);
   const navigate = (page: Page) => {
     setCurrentPage(page);
   };
@@ -300,7 +300,7 @@ function App() {
         )}
 
         {currentPage === "Plan de estudio" && (
-          <StudyPlanPage tasks={pendingTasks} exams={exams} />
+          <StudyPlanPage tasks={pendingTasks} exams={exams} busySlots={busySlots} />
         )}
 
         {currentPage === "Asistente IA" && <AssistantPage />}
@@ -311,13 +311,12 @@ function App() {
             completedTasks={completedTasks}
           />
         )}
-
         {currentPage === "Tiempo disponible" && (
-          <AvailabilityPage
-            busySlots={busySlots}
-            setBusySlots={setBusySlots}
-          />
-        )}
+  <AvailabilityPage
+    busySlots={busySlots}
+    setBusySlots={setBusySlots}
+  />
+)}
 
         {currentPage === "Configuración" && <SettingsPage />}
       </main>
@@ -702,10 +701,9 @@ function TasksPage({
 
               <div className="task-info">
                 <strong>{task.title}</strong>
-
                 <span>
                   {task.subject} · {formatShortDate(task.date)} ·{" "}
-                  {formatMinutes(task.estimatedMinutes)}
+{formatMinutes(task.estimatedMinutes)}
                 </span>
               </div>
 
@@ -746,13 +744,13 @@ function TaskForm({
     if (!title.trim() || !subject.trim() || !date) return;
 
     onAdd({
-      title: title.trim(),
-      subject: subject.trim(),
-      date,
-      priority,
-      estimatedMinutes,
-      done: false,
-    });
+  title: title.trim(),
+  subject: subject.trim(),
+  date,
+  priority,
+  estimatedMinutes,
+  done: false,
+});
   };
 
   return (
@@ -815,25 +813,24 @@ function TaskForm({
             <option>Alta</option>
           </select>
         </label>
-
         <label>
-          Tiempo estimado
-          <select
-            value={estimatedMinutes}
-            onChange={(event) =>
-              setEstimatedMinutes(Number(event.target.value))
-            }
-          >
-            <option value={15}>15 minutos</option>
-            <option value={30}>30 minutos</option>
-            <option value={45}>45 minutos</option>
-            <option value={60}>1 hora</option>
-            <option value={90}>1 hora 30 minutos</option>
-            <option value={120}>2 horas</option>
-            <option value={150}>2 horas 30 minutos</option>
-            <option value={180}>3 horas</option>
-          </select>
-        </label>
+  Tiempo estimado
+  <select
+    value={estimatedMinutes}
+    onChange={(event) =>
+      setEstimatedMinutes(Number(event.target.value))
+    }
+  >
+    <option value={15}>15 minutos</option>
+    <option value={30}>30 minutos</option>
+    <option value={45}>45 minutos</option>
+    <option value={60}>1 hora</option>
+    <option value={90}>1 hora 30 minutos</option>
+    <option value={120}>2 horas</option>
+    <option value={150}>2 horas 30 minutos</option>
+    <option value={180}>3 horas</option>
+  </select>
+</label>
       </div>
 
       <div className="form-actions">
@@ -963,11 +960,11 @@ function ExamForm({
     if (!subject.trim() || !topic.trim() || !date) return;
 
     onAdd({
-      subject: subject.trim(),
-      topic: topic.trim(),
-      date,
-      studyMinutes,
-    });
+  subject: subject.trim(),
+  topic: topic.trim(),
+  date,
+  studyMinutes,
+});
   };
 
   return (
@@ -1014,34 +1011,31 @@ function ExamForm({
             onChange={(event) => setDate(event.target.value)}
           />
         </label>
-
         <label>
-          ¿Cuántas horas quieres dedicarle?
-          <select
-            value={studyMinutes}
-            onChange={(event) =>
-              setStudyMinutes(Number(event.target.value))
-            }
-          >
-            <option value={30}>30 minutos</option>
-            <option value={60}>1 hora</option>
-            <option value={90}>1 h 30 min</option>
-            <option value={120}>2 horas</option>
-            <option value={180}>3 horas</option>
-            <option value={240}>4 horas</option>
-            <option value={300}>5 horas</option>
-            <option value={360}>6 horas</option>
-            <option value={480}>8 horas</option>
-            <option value={600}>10 horas</option>
-            <option value={900}>15 horas</option>
-            <option value={1200}>20+ horas</option>
-          </select>
-
-          <small>
-            Esylern repartirá este tiempo según los días que tengas
-            disponibles.
-          </small>
-        </label>
+  ¿Cuántas horas quieres dedicarle?
+  <select
+    value={studyMinutes}
+    onChange={(event) =>
+      setStudyMinutes(Number(event.target.value))
+    }
+  >
+    <option value={30}>30 minutos</option>
+    <option value={60}>1 hora</option>
+    <option value={90}>1 h 30 min</option>
+    <option value={120}>2 horas</option>
+    <option value={180}>3 horas</option>
+    <option value={240}>4 horas</option>
+    <option value={300}>5 horas</option>
+    <option value={360}>6 horas</option>
+    <option value={480}>8 horas</option>
+    <option value={600}>10 horas</option>
+    <option value={900}>15 horas</option>
+    <option value={1200}>20+ horas</option>
+  </select>
+  <small>
+    Esylern repartirá este tiempo según los días que tengas disponibles.
+  </small>
+</label>
       </div>
 
       <div className="form-actions">
@@ -1261,173 +1255,137 @@ function StudyPlanPage({
     }[]
   >([]);
 
+  const [warning, setWarning] = useState("");
   const nextExam = getNextExam(exams);
 
-  const getDateKey = (date: Date) => {
-    return date.toISOString().split("T")[0];
-  };
+  const getDateKey = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+      date.getDate(),
+    ).padStart(2, "0")}`;
 
-  const getDayNumber = (date: Date) => {
-    return (date.getDay() + 6) % 7;
-  };
+  const getDayNumber = (date: Date) =>
+    (date.getDay() + 6) % 7;
 
   const getAvailableMinutes = (date: Date) => {
     const day = getDayNumber(date);
+    const dateKey = getDateKey(date);
 
-    const occupied = busySlots.filter((slot) => {
-      if (slot.repeatWeekly) {
-        return slot.day === day;
-      }
-
-      return slot.day === day && slot.date === getDateKey(date);
-    });
+    const occupied = busySlots.filter((slot) =>
+      slot.repeatWeekly
+        ? slot.day === day
+        : slot.day === day && slot.date === dateKey,
+    );
 
     const occupiedMinutes = occupied.reduce((total, slot) => {
       const [startHour, startMinute] = slot.startTime
         .split(":")
         .map(Number);
-
       const [endHour, endMinute] = slot.endTime
         .split(":")
         .map(Number);
 
-      const start = startHour * 60 + startMinute;
-      const end = endHour * 60 + endMinute;
-
-      return total + Math.max(0, end - start);
+      return (
+        total +
+        Math.max(
+          0,
+          endHour * 60 + endMinute - (startHour * 60 + startMinute),
+        )
+      );
     }, 0);
 
-    const totalMinutes = 16 * 60;
-
-    return Math.max(0, totalMinutes - occupiedMinutes);
+    // Horario de planificación: 07:00–23:00.
+    return Math.max(0, 16 * 60 - occupiedMinutes);
   };
 
   const generatePlan = () => {
-    const newPlan: {
-      date: string;
-      title: string;
-      subject: string;
-      minutes: number;
-      type: "Examen" | "Tarea";
-    }[] = [];
+    setWarning("");
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const pendingTasks = tasks
-      .filter((task) => !task.done)
-      .sort((a, b) => {
-        const priorityDifference =
-          priorityValue(b.priority) - priorityValue(a.priority);
-
-        if (priorityDifference !== 0) {
-          return priorityDifference;
-        }
-
-        return (
-          new Date(a.date).getTime() -
-          new Date(b.date).getTime()
-        );
-      });
-
-    const upcomingExams = [...exams]
-      .filter((exam) => {
-        const examDate = new Date(exam.date);
-        examDate.setHours(0, 0, 0, 0);
-
-        return examDate >= today;
-      })
-      .sort(
-        (a, b) =>
-          new Date(a.date).getTime() -
-          new Date(b.date).getTime(),
-      );
-
     const items: {
       title: string;
       subject: string;
-      date: string;
+      deadline: string;
       minutes: number;
       type: "Examen" | "Tarea";
       priority: number;
     }[] = [];
 
-    upcomingExams.forEach((exam) => {
-      items.push({
-        title: `Preparar examen: ${exam.topic}`,
-        subject: exam.subject,
-        date: exam.date,
-        minutes: exam.studyMinutes,
-        type: "Examen",
-        priority: 100,
-      });
+    // IMPORTANTE: el día del examen NO se estudia para ese examen.
+    exams.forEach((exam) => {
+      const deadline = new Date(`${exam.date}T00:00:00`);
+      deadline.setHours(0, 0, 0, 0);
+
+      if (deadline > today) {
+        items.push({
+          title: `Preparar examen: ${exam.topic}`,
+          subject: exam.subject,
+          deadline: exam.date,
+          minutes: exam.studyMinutes,
+          type: "Examen",
+          priority: 100,
+        });
+      }
     });
 
-    pendingTasks.forEach((task) => {
-      items.push({
-        title: task.title,
-        subject: task.subject,
-        date: task.date,
-        minutes: task.estimatedMinutes,
-        type: "Tarea",
-        priority: priorityValue(task.priority),
+    // IMPORTANTE: el día de entrega NO se coloca esa tarea.
+    tasks
+      .filter((task) => !task.done)
+      .forEach((task) => {
+        const deadline = new Date(`${task.date}T00:00:00`);
+        deadline.setHours(0, 0, 0, 0);
+
+        if (deadline > today) {
+          items.push({
+            title: task.title,
+            subject: task.subject,
+            deadline: task.date,
+            minutes: task.estimatedMinutes,
+            type: "Tarea",
+            priority: priorityValue(task.priority),
+          });
+        }
       });
-    });
 
     items.sort((a, b) => {
-      const dateDifference =
-        new Date(a.date).getTime() -
-        new Date(b.date).getTime();
+      const deadlineDifference =
+        new Date(a.deadline).getTime() -
+        new Date(b.deadline).getTime();
 
-      if (dateDifference !== 0) {
-        return dateDifference;
-      }
-
-      return b.priority - a.priority;
+      return deadlineDifference || b.priority - a.priority;
     });
 
     const remainingMinutes = new Map<string, number>();
 
+    // Planificamos los próximos 14 días, pero siempre ANTES de la fecha límite.
     for (let i = 0; i < 14; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
-
-      remainingMinutes.set(
-        getDateKey(date),
-        getAvailableMinutes(date),
-      );
+      remainingMinutes.set(getDateKey(date), getAvailableMinutes(date));
     }
+
+    const newPlan: typeof plan = [];
+    let impossibleItems = 0;
 
     items.forEach((item) => {
       let remaining = item.minutes;
-
-      const deadline = new Date(item.date);
+      const deadline = new Date(`${item.deadline}T00:00:00`);
       deadline.setHours(0, 0, 0, 0);
 
+      // El último día permitido es SIEMPRE el día anterior al examen/entrega.
       for (let i = 0; i < 14 && remaining > 0; i++) {
         const date = new Date(today);
         date.setDate(today.getDate() + i);
 
-       if (date > deadline) {
-  break;
-}
+        if (date >= deadline) break;
 
         const dateKey = getDateKey(date);
         const available = remainingMinutes.get(dateKey) ?? 0;
 
-        if (available <= 0) {
-          continue;
-        }
+        if (available <= 0) continue;
 
-        const sessionMinutes = Math.min(
-          remaining,
-          available,
-          90,
-        );
-
-        if (sessionMinutes <= 0) {
-          continue;
-        }
+        const sessionMinutes = Math.min(remaining, available, 90);
 
         newPlan.push({
           date: dateKey,
@@ -1437,44 +1395,43 @@ function StudyPlanPage({
           type: item.type,
         });
 
-        remainingMinutes.set(
-          dateKey,
-          available - sessionMinutes,
-        );
-
+        remainingMinutes.set(dateKey, available - sessionMinutes);
         remaining -= sessionMinutes;
       }
+
+      if (remaining > 0) {
+        impossibleItems += 1;
+      }
     });
+
+    if (newPlan.length === 0 && items.length === 0) {
+      setWarning(
+        "No hay tareas o exámenes con fecha futura para planificar. El día de la entrega o del examen no se utiliza para prepararlo.",
+      );
+    } else if (impossibleItems > 0) {
+      setWarning(
+        `Hay ${impossibleItems} elemento${impossibleItems === 1 ? "" : "s"} que no caben completamente antes de su fecha límite con el tiempo disponible.`,
+      );
+    }
 
     setPlan(newPlan);
   };
 
   const groupedPlan = plan.reduce(
     (groups, item) => {
-      if (!groups[item.date]) {
-        groups[item.date] = [];
-      }
-
+      if (!groups[item.date]) groups[item.date] = [];
       groups[item.date].push(item);
-
       return groups;
     },
-    {} as Record<
-      string,
-      typeof plan
-    >,
+    {} as Record<string, typeof plan>,
   );
 
-  const formatDate = (date: string) => {
-    return new Date(`${date}T00:00:00`).toLocaleDateString(
-      "es-ES",
-      {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-      },
-    );
-  };
+  const formatDate = (date: string) =>
+    new Date(`${date}T00:00:00`).toLocaleDateString("es-ES", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
 
   return (
     <>
@@ -1491,7 +1448,6 @@ function StudyPlanPage({
 
         <div>
           <strong>Tu planificación inteligente</strong>
-
           <p>
             {nextExam
               ? `Tu próximo examen es ${nextExam.subject} y quedan ${getDaysRemaining(
@@ -1502,6 +1458,7 @@ function StudyPlanPage({
         </div>
 
         <button
+          type="button"
           className="primary-button"
           onClick={generatePlan}
         >
@@ -1510,85 +1467,68 @@ function StudyPlanPage({
         </button>
       </section>
 
+      {warning && (
+        <div className="panel" style={{ marginBottom: 16 }}>
+          <strong>{warning}</strong>
+        </div>
+      )}
+
       {plan.length > 0 ? (
         <section className="panel">
           <div className="panel-header">
             <div>
               <h3>Tu plan</h3>
-
               <p>
-                Esylern ha repartido tu estudio teniendo en cuenta
-                tus horas ocupadas.
+                El día del examen o de entrega queda libre: Esylern termina
+                la preparación el día anterior.
               </p>
             </div>
           </div>
 
           <div className="priority-list">
-            {Object.entries(groupedPlan).map(
-              ([date, items]) => (
-                <div
-                  key={date}
-                  className="priority-item"
-                  style={{
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <span className="priority-number">
-                    📅
-                  </span>
+            {Object.entries(groupedPlan).map(([date, items]) => (
+              <div
+                key={date}
+                className="priority-item"
+                style={{ alignItems: "flex-start" }}
+              >
+                <span className="priority-number">📅</span>
 
-                  <div style={{ width: "100%" }}>
-                    <strong
-                      style={{
-                        textTransform: "capitalize",
-                      }}
-                    >
-                      {formatDate(date)}
-                    </strong>
+                <div style={{ width: "100%" }}>
+                  <strong style={{ textTransform: "capitalize" }}>
+                    {formatDate(date)}
+                  </strong>
 
-                    <div
-                      style={{
-                        marginTop: 10,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 8,
-                      }}
-                    >
-                      {items.map((item, index) => (
-                        <div
-                          key={`${date}-${index}`}
-                          style={{
-                            display: "flex",
-                            justifyContent:
-                              "space-between",
-                            gap: 16,
-                          }}
-                        >
-                          <span>
-                            {item.type === "Examen"
-                              ? "📚"
-                              : "📝"}{" "}
-                            {item.title}
-                            <span
-                              style={{
-                                opacity: 0.65,
-                              }}
-                            >
-                              {" "}
-                              · {item.subject}
-                            </span>
+                  <div
+                    style={{
+                      marginTop: 10,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                    }}
+                  >
+                    {items.map((item, index) => (
+                      <div
+                        key={`${date}-${index}`}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          gap: 16,
+                        }}
+                      >
+                        <span>
+                          {item.type === "Examen" ? "📚" : "📝"} {item.title}
+                          <span style={{ opacity: 0.65 }}>
+                            {" "}· {item.subject}
                           </span>
-
-                          <strong>
-                            {item.minutes} min
-                          </strong>
-                        </div>
-                      ))}
-                    </div>
+                        </span>
+                        <strong>{item.minutes} min</strong>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ),
-            )}
+              </div>
+            ))}
           </div>
         </section>
       ) : (
@@ -1597,23 +1537,15 @@ function StudyPlanPage({
             <div className="panel-header">
               <div>
                 <h3>Prioridades actuales</h3>
-                <p>
-                  Lo que Esylern tendrá en cuenta al crear tu
-                  planificación
-                </p>
+                <p>Lo que Esylern tendrá en cuenta al crear tu planificación.</p>
               </div>
             </div>
 
-            {tasks.filter((task) => !task.done).length === 0 &&
-            exams.length === 0 ? (
+            {tasks.filter((task) => !task.done).length === 0 && exams.length === 0 ? (
               <div className="empty-state">
                 <Target size={28} />
-
                 <h4>Aún no hay suficiente información</h4>
-
-                <p>
-                  Añade tareas y exámenes para construir tu plan.
-                </p>
+                <p>Añade tareas y exámenes para construir tu plan.</p>
               </div>
             ) : (
               <div className="priority-list">
@@ -1630,9 +1562,7 @@ function StudyPlanPage({
                       title: task.title,
                       subject: task.subject,
                       date: task.date,
-                      priority: priorityValue(
-                        task.priority,
-                      ),
+                      priority: priorityValue(task.priority),
                     })),
                 ]
                   .sort(
@@ -1643,22 +1573,12 @@ function StudyPlanPage({
                   )
                   .slice(0, 5)
                   .map((item, index) => (
-                    <div
-                      className="priority-item"
-                      key={`${item.title}-${index}`}
-                    >
-                      <span className="priority-number">
-                        {index + 1}
-                      </span>
-
+                    <div className="priority-item" key={`${item.title}-${index}`}>
+                      <span className="priority-number">{index + 1}</span>
                       <div>
                         <strong>{item.title}</strong>
-
                         <p>
-                          {item.subject} ·{" "}
-                          {new Date(
-                            item.date,
-                          ).toLocaleDateString("es-ES")}
+                          {item.subject} · {new Date(item.date).toLocaleDateString("es-ES")}
                         </p>
                       </div>
                     </div>
@@ -1681,13 +1601,11 @@ function StudyPlanPage({
                 title="Priorizar"
                 text="Detectar qué tienes que hacer primero."
               />
-
               <Feature
                 icon={<Clock3 size={18} />}
                 title="Repartir"
                 text="Dividir el estudio entre los días disponibles."
               />
-
               <Feature
                 icon={<Brain size={18} />}
                 title="Adaptarse"
@@ -2058,11 +1976,6 @@ function SettingsPage() {
     </>
   );
 }
-
-/* =========================
-   TIEMPO DISPONIBLE
-========================= */
-
 function AvailabilityPage({
   busySlots,
   setBusySlots,
@@ -2070,22 +1983,13 @@ function AvailabilityPage({
   busySlots: BusySlot[];
   setBusySlots: React.Dispatch<React.SetStateAction<BusySlot[]>>;
 }) {
-  const [mode, setMode] = useState<"weekly" | "this-week">(
-    "weekly",
-  );
+  const [mode, setMode] = useState<"weekly" | "this-week">("weekly");
+const [dragStart, setDragStart] = useState<{
+  day: number;
+  time: string;
+} | null>(null);
 
-  const [dragStart, setDragStart] = useState<{
-    day: number;
-    timeIndex: number;
-  } | null>(null);
-
-  const [dragCurrent, setDragCurrent] = useState<{
-    day: number;
-    timeIndex: number;
-  } | null>(null);
-
-  const [isDragging, setIsDragging] = useState(false);
-
+const [isDragging, setIsDragging] = useState(false);
   const days = [
     { label: "Lunes", day: 0 },
     { label: "Martes", day: 1 },
@@ -2101,225 +2005,54 @@ function AvailabilityPage({
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
 
-    return `${String(hours).padStart(2, "0")}:${String(
-      minutes,
-    ).padStart(2, "0")}`;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+      2,
+      "0",
+    )}`;
   });
 
-  const currentWeek = getMondayOfCurrentWeek();
+  const toggleSlot = (day: number, time: string) => {
+  const nextTime = addThirtyMinutes(time);
 
-  const belongsToCurrentMode = (slot: BusySlot) => {
-    return (
+  const existing = busySlots.find(
+    (slot) =>
+      slot.day === day &&
+      slot.startTime === time &&
+      slot.endTime === nextTime &&
       slot.repeatWeekly === (mode === "weekly") &&
-      (mode === "weekly" || slot.date === currentWeek)
+      (mode === "weekly" ||
+        slot.date === getMondayOfCurrentWeek()),
+  );
+
+  if (existing) {
+    setBusySlots((current) =>
+      current.filter((slot) => slot.id !== existing.id),
     );
-  };
+    return;
+  }
 
-  const isBusy = (day: number, time: string) => {
-    const nextTime = addThirtyMinutes(time);
-
-    return busySlots.some(
-      (slot) =>
-        slot.day === day &&
-        slot.startTime === time &&
-        slot.endTime === nextTime &&
-        belongsToCurrentMode(slot),
-    );
-  };
-
-  const getSelectedIndexes = () => {
-    if (!dragStart || !dragCurrent) return [];
-
-    if (dragStart.day !== dragCurrent.day) return [];
-
-    const firstIndex = Math.min(
-      dragStart.timeIndex,
-      dragCurrent.timeIndex,
-    );
-
-    const lastIndex = Math.max(
-      dragStart.timeIndex,
-      dragCurrent.timeIndex,
-    );
-
-    return Array.from(
-      { length: lastIndex - firstIndex + 1 },
-      (_, index) => firstIndex + index,
-    );
-  };
-
-  const isPreviewSelected = (
-    day: number,
-    timeIndex: number,
-  ) => {
-    if (!isDragging || !dragStart || !dragCurrent) {
-      return false;
-    }
-
-    if (
-      dragStart.day !== day ||
-      dragCurrent.day !== day
-    ) {
-      return false;
-    }
-
-    return getSelectedIndexes().includes(timeIndex);
-  };
-
-  const startDragging = (
-    day: number,
-    timeIndex: number,
-  ) => {
-    setDragStart({
+  setBusySlots((current) => [
+    ...current,
+    {
+      id: Date.now() + Math.random(),
       day,
-      timeIndex,
-    });
-
-    setDragCurrent({
-      day,
-      timeIndex,
-    });
-
-    setIsDragging(true);
-  };
-
-  const dragOverSlot = (
-    day: number,
-    timeIndex: number,
-  ) => {
-    if (!isDragging || !dragStart) return;
-
-    if (day !== dragStart.day) return;
-
-    setDragCurrent({
-      day,
-      timeIndex,
-    });
-  };
-
-  const stopDragging = () => {
-    if (
-      !isDragging ||
-      !dragStart ||
-      !dragCurrent
-    ) {
-      setIsDragging(false);
-      setDragStart(null);
-      setDragCurrent(null);
-      return;
-    }
-
-    if (dragStart.day !== dragCurrent.day) {
-      setIsDragging(false);
-      setDragStart(null);
-      setDragCurrent(null);
-      return;
-    }
-
-    const selectedIndexes = getSelectedIndexes();
-
-    if (selectedIndexes.length === 0) {
-      setIsDragging(false);
-      setDragStart(null);
-      setDragCurrent(null);
-      return;
-    }
-
-    const selectedTimes = selectedIndexes.map(
-      (index) => times[index],
-    );
-
-    const firstTime = selectedTimes[0];
-
-    if (!firstTime) {
-      setIsDragging(false);
-      setDragStart(null);
-      setDragCurrent(null);
-      return;
-    }
-
-    const shouldRemove = isBusy(
-      dragStart.day,
-      firstTime,
-    );
-
-    setBusySlots((current) => {
-      const isMatchingMode = (slot: BusySlot) =>
-        slot.repeatWeekly === (mode === "weekly") &&
-        (mode === "weekly" || slot.date === currentWeek);
-
-      if (shouldRemove) {
-        return current.filter((slot) => {
-          if (
-            slot.day !== dragStart.day ||
-            !isMatchingMode(slot)
-          ) {
-            return true;
-          }
-
-          const slotMatchesSelection = selectedTimes.some(
-            (time) =>
-              slot.startTime === time &&
-              slot.endTime === addThirtyMinutes(time),
-          );
-
-          return !slotMatchesSelection;
-        });
-      }
-
-      const newSlots = [...current];
-
-      selectedTimes.forEach((time) => {
-        const nextTime = addThirtyMinutes(time);
-
-        const alreadyExists = newSlots.some(
-          (slot) =>
-            slot.day === dragStart.day &&
-            slot.startTime === time &&
-            slot.endTime === nextTime &&
-            isMatchingMode(slot),
-        );
-
-        if (!alreadyExists) {
-          newSlots.push({
-            id: Date.now() + Math.random(),
-            day: dragStart.day,
-            startTime: time,
-            endTime: nextTime,
-            repeatWeekly: mode === "weekly",
-            date:
-              mode === "this-week"
-                ? currentWeek
-                : undefined,
-          });
-        }
-      });
-
-      return newSlots;
-    });
-
-    setIsDragging(false);
-    setDragStart(null);
-    setDragCurrent(null);
-  };
-
-  const handleModeChange = (
-    nextMode: "weekly" | "this-week",
-  ) => {
-    setIsDragging(false);
-    setDragStart(null);
-    setDragCurrent(null);
-    setMode(nextMode);
-  };
+      startTime: time,
+      endTime: nextTime,
+      repeatWeekly: mode === "weekly",
+      date:
+        mode === "this-week"
+          ? getMondayOfCurrentWeek()
+          : undefined,
+    },
+  ]);
+};
 
   return (
     <section>
       <div className="topbar">
         <div>
           <div className="eyebrow">ORGANIZACIÓN</div>
-
           <h1>Tiempo disponible</h1>
-
           <p className="subtitle">
             Marca las horas en las que normalmente estás ocupado.
             El resto del tiempo estará disponible para estudiar.
@@ -2331,10 +2064,9 @@ function AvailabilityPage({
         <div className="panel-header">
           <div>
             <h2>¿Cuándo estás ocupado?</h2>
-
             <p>
-              Marca tus clases, entrenamientos, actividades o
-              cualquier otro momento en el que no puedas estudiar.
+              Marca tus clases, entrenamientos, actividades o cualquier
+              otro momento en el que no puedas estudiar.
             </p>
           </div>
         </div>
@@ -2346,7 +2078,7 @@ function AvailabilityPage({
                 ? "primary-button"
                 : "secondary-button"
             }
-            onClick={() => handleModeChange("weekly")}
+            onClick={() => setMode("weekly")}
           >
             🔁 Repetir todas las semanas
           </button>
@@ -2357,7 +2089,7 @@ function AvailabilityPage({
                 ? "primary-button"
                 : "secondary-button"
             }
-            onClick={() => handleModeChange("this-week")}
+            onClick={() => setMode("this-week")}
           >
             📅 Solo esta semana
           </button>
@@ -2375,15 +2107,8 @@ function AvailabilityPage({
           </span>
         </div>
 
-        <div
-          className="availability-calendar"
-          onMouseUp={stopDragging}
-          onMouseLeave={() => {
-            if (isDragging) {
-              stopDragging();
-            }
-          }}
-        >
+        <div className="availability-calendar"
+          onMouseLeave={stopDragging}>
           <div className="availability-corner" />
 
           {days.map((day) => (
@@ -2395,52 +2120,28 @@ function AvailabilityPage({
             </div>
           ))}
 
-          {times.map((time, timeIndex) => (
-            <div
-              key={time}
-              className="availability-row"
-            >
+          {times.map((time) => (
+            <div key={time} className="availability-row">
               <div className="availability-time">
                 {time}
               </div>
 
               {days.map((day) => {
-                const busy = isBusy(
-                  day.day,
-                  time,
-                );
-
-                const preview = isPreviewSelected(
-                  day.day,
-                  timeIndex,
-                );
+                const busy = isBusy(day.day, time);
 
                 return (
                   <button
-                    key={`${day.day}-${time}`}
-                    type="button"
-                    className={`availability-cell ${
-                      busy ? "busy" : ""
-                    } ${
-                      preview ? "drag-selected" : ""
-                    }`}
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-
-                      startDragging(
-                        day.day,
-                        timeIndex,
-                      );
-                    }}
-                    onMouseEnter={() =>
-                      dragOverSlot(
-                        day.day,
-                        timeIndex,
-                      )
-                    }
-                    onMouseUp={stopDragging}
-                    aria-label={`${day.label} ${time}`}
-                  />
+  key={`${day.day}-${time}`}
+  type="button"
+  className={`availability-cell ${
+    busy ? "busy" : ""
+  }`}
+  onClick={() => toggleSlot(day.day, time)}
+  onMouseDown={() => startDragging(day.day, time)}
+  onMouseEnter={() => dragOverSlot(day.day, time)}
+  onMouseUp={stopDragging}
+  aria-label={`${day.label} ${time}`}
+/>
                 );
               })}
             </div>
@@ -2448,15 +2149,105 @@ function AvailabilityPage({
         </div>
 
         <p className="availability-help">
-          💡 Mantén pulsado y arrastra para marcar varias horas
-          seguidas. Si empiezas sobre una hora ocupada, podrás
-          liberarla junto con las demás seleccionadas.
+          💡 No necesitas indicar qué haces durante ese tiempo.
+          Esylern simplemente entenderá que esas horas no están
+          disponibles para estudiar.
         </p>
       </div>
     </section>
   );
 }
+const startDragging = (day: number, time: string) => {
+  setDragStart({ day, time });
+  setIsDragging(true);
+};
 
+const dragOverSlot = (day: number, time: string) => {
+  if (!isDragging || !dragStart) return;
+
+  if (day !== dragStart.day) return;
+
+  const timesForDay = times;
+
+  const startIndex = timesForDay.indexOf(dragStart.time);
+  const currentIndex = timesForDay.indexOf(time);
+
+  if (startIndex === -1 || currentIndex === -1) return;
+
+  const firstIndex = Math.min(startIndex, currentIndex);
+  const lastIndex = Math.max(startIndex, currentIndex);
+
+  const selectedTimes = timesForDay.slice(
+    firstIndex,
+    lastIndex + 1,
+  );
+
+  setBusySlots((current) => {
+    const newSlots = [...current];
+
+    selectedTimes.forEach((selectedTime) => {
+      const nextTime = addThirtyMinutes(selectedTime);
+
+      const alreadyExists = newSlots.some(
+        (slot) =>
+          slot.day === day &&
+          slot.startTime === selectedTime &&
+          slot.endTime === nextTime &&
+          slot.repeatWeekly === (mode === "weekly") &&
+          (mode === "weekly" ||
+            slot.date === getMondayOfCurrentWeek()),
+      );
+
+      if (!alreadyExists) {
+        newSlots.push({
+          id: Date.now() + Math.random(),
+          day,
+          startTime: selectedTime,
+          endTime: nextTime,
+          repeatWeekly: mode === "weekly",
+          date:
+            mode === "this-week"
+              ? getMondayOfCurrentWeek()
+              : undefined,
+        });
+      }
+    });
+
+    return newSlots;
+  });
+};
+
+const stopDragging = () => {
+  setIsDragging(false);
+  setDragStart(null);
+};
+
+function addThirtyMinutes(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+
+  const totalMinutes = hours * 60 + minutes + 30;
+  const nextHours = Math.floor(totalMinutes / 60);
+  const nextMinutes = totalMinutes % 60;
+
+  return `${String(nextHours).padStart(2, "0")}:${String(
+    nextMinutes,
+  ).padStart(2, "0")}`;
+}
+
+function getMondayOfCurrentWeek() {
+  const date = new Date();
+  const day = date.getDay();
+
+  const difference = day === 0 ? -6 : 1 - day;
+
+  date.setDate(date.getDate() + difference);
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const dayOfMonth = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${dayOfMonth}`;
+}
 /* =========================
    COMPONENTES
 ========================= */
@@ -2557,7 +2348,6 @@ function Feature({
 /* =========================
    UTILIDADES
 ========================= */
-
 function formatMinutes(minutes: number) {
   if (minutes < 60) {
     return `${minutes} min`;
@@ -2572,7 +2362,6 @@ function formatMinutes(minutes: number) {
 
   return `${hours} h ${remainingMinutes} min`;
 }
-
 function formatDateInput(date: Date) {
   const year = date.getFullYear();
 
@@ -2649,38 +2438,4 @@ function priorityValue(priority: Task["priority"]) {
   return 1;
 }
 
-function addThirtyMinutes(time: string) {
-  const [hours, minutes] = time.split(":").map(Number);
-
-  const totalMinutes = hours * 60 + minutes + 30;
-  const nextHours = Math.floor(totalMinutes / 60);
-  const nextMinutes = totalMinutes % 60;
-
-  return `${String(nextHours).padStart(2, "0")}:${String(
-    nextMinutes,
-  ).padStart(2, "0")}`;
-}
-
-function getMondayOfCurrentWeek() {
-  const date = new Date();
-  const day = date.getDay();
-
-  const difference = day === 0 ? -6 : 1 - day;
-
-  date.setDate(date.getDate() + difference);
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(
-    2,
-    "0",
-  );
-  const dayOfMonth = String(date.getDate()).padStart(
-    2,
-    "0",
-  );
-
-  return `${year}-${month}-${dayOfMonth}`;
-}
-
 export default App;
-  
