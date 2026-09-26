@@ -1265,6 +1265,7 @@ function StudyPlanPage({
   tasks,
   exams,
   busySlots,
+  studyDailyMinutes,
 }: {
   tasks: Task[];
   exams: Exam[];
