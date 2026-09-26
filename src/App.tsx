@@ -76,12 +76,17 @@ function App() {
     const saved = localStorage.getItem("esylern_tasks");
 
     if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return initialTasks;
-      }
-    }
+  try {
+    const parsed = JSON.parse(saved);
+
+    return parsed.map((task: Task) => ({
+      ...task,
+      estimatedMinutes: task.estimatedMinutes ?? 30,
+    }));
+  } catch {
+    return initialTasks;
+  }
+}
 
     return initialTasks;
   });
@@ -90,12 +95,17 @@ function App() {
     const saved = localStorage.getItem("esylern_exams");
 
     if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return initialExams;
-      }
-    }
+  try {
+    const parsed = JSON.parse(saved);
+
+    return parsed.map((exam: Exam) => ({
+      ...exam,
+      studyMinutes: exam.studyMinutes ?? 120,
+    }));
+  } catch {
+    return initialExams;
+  }
+}
 
     return initialExams;
   });
