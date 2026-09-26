@@ -87,6 +87,13 @@ const initialExams: Exam[] = [];
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>("Dashboard");
 
+  // Límite total de estudio diario. Incluye tareas + exámenes.
+  const [studyDailyMinutes, setStudyDailyMinutes] = useState<number>(() => {
+    const saved = localStorage.getItem("esylern_daily_study_minutes");
+    const value = saved ? Number(saved) : 120;
+    return Number.isFinite(value) && value > 0 ? value : 120;
+  });
+
   const [tasks, setTasks] = useState<Task[]>(() => {
     const saved = localStorage.getItem("esylern_tasks");
 
@@ -150,6 +157,14 @@ useEffect(() => {
     JSON.stringify(busySlots),
   );
 }, [busySlots]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "esylern_daily_study_minutes",
+      String(studyDailyMinutes),
+    );
+  }, [studyDailyMinutes]);
+
   const navigate = (page: Page) => {
     setCurrentPage(page);
   };
@@ -300,7 +315,12 @@ useEffect(() => {
         )}
 
         {currentPage === "Plan de estudio" && (
-          <StudyPlanPage tasks={pendingTasks} exams={exams} busySlots={busySlots} />
+          <StudyPlanPage
+            tasks={pendingTasks}
+            exams={exams}
+            busySlots={busySlots}
+            studyDailyMinutes={studyDailyMinutes}
+          />
         )}
 
         {currentPage === "Asistente IA" && <AssistantPage />}
@@ -318,7 +338,12 @@ useEffect(() => {
   />
 )}
 
-        {currentPage === "Configuración" && <SettingsPage />}
+        {currentPage === "Configuración" && (
+          <SettingsPage
+            studyDailyMinutes={studyDailyMinutes}
+            onStudyDailyMinutesChange={setStudyDailyMinutes}
+          />
+        )}
       </main>
     </div>
   );
@@ -1244,6 +1269,7 @@ function StudyPlanPage({
   tasks: Task[];
   exams: Exam[];
   busySlots: BusySlot[];
+  studyDailyMinutes: number;
 }) {
   const [plan, setPlan] = useState<
     {
@@ -1288,9 +1314,9 @@ function StudyPlanPage({
       );
     }, 0);
 
-    // No queremos que Esylern convierta un día libre en 16 horas de estudio.
-    // Por ahora dejamos un máximo razonable de 4 horas de estudio al día.
-    return Math.max(0, Math.min(240, 16 * 60 - occupiedMinutes));
+    // El límite diario de estudio se aplica después en el plan.
+    // Aquí devolvemos simplemente el tiempo libre real del día.
+    return Math.max(0, Math.min(16 * 60, 16 * 60 - occupiedMinutes));
   };
 
   const generatePlan = () => {
@@ -1365,7 +1391,14 @@ function StudyPlanPage({
     for (let i = 0; i < 14; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
-      dailyCapacity.set(getDateKey(date), getAvailableMinutes(date));
+
+      // Este límite es GLOBAL: dentro de estas horas entran tanto tareas como exámenes.
+      // También respetamos el tiempo realmente libre que el estudiante haya marcado.
+      const freeMinutes = getAvailableMinutes(date);
+      dailyCapacity.set(
+        getDateKey(date),
+        Math.min(studyDailyMinutes, freeMinutes),
+      );
     }
 
     const newPlan: typeof plan = [];
@@ -1509,6 +1542,17 @@ function StudyPlanPage({
           Generar plan
         </button>
       </section>
+
+      <div className="panel" style={{ marginTop: 16, marginBottom: 16 }}>
+        <div className="panel-header">
+          <div>
+            <h3>Límite diario de estudio</h3>
+            <p>
+              Esylern no usará más de <strong>{studyDailyMinutes >= 60 ? `${Math.floor(studyDailyMinutes / 60)}h${studyDailyMinutes % 60 ? ` ${studyDailyMinutes % 60}m` : ""}` : `${studyDailyMinutes} min`}</strong> al día en total. Ese tiempo se reparte entre <strong>tareas y exámenes</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {plan.length > 0 && (
         <div
@@ -1909,7 +1953,13 @@ function ProgressPage({
    CONFIGURACIÓN
 ========================= */
 
-function SettingsPage() {
+function SettingsPage({
+  studyDailyMinutes,
+  onStudyDailyMinutesChange,
+}: {
+  studyDailyMinutes: number;
+  onStudyDailyMinutesChange: (minutes: number) => void;
+}) {
   return (
     <>
       <PageHeader
@@ -1928,6 +1978,31 @@ function SettingsPage() {
               <p>Información que utiliza Esylern.</p>
             </div>
           </div>
+
+          <label>
+            Tiempo máximo de estudio al día
+
+            <select
+              value={studyDailyMinutes}
+              onChange={(event) =>
+                onStudyDailyMinutesChange(Number(event.target.value))
+              }
+            >
+              <option value={30}>30 minutos</option>
+              <option value={45}>45 minutos</option>
+              <option value={60}>1 hora</option>
+              <option value={90}>1 h 30 min</option>
+              <option value={120}>2 horas</option>
+              <option value={150}>2 h 30 min</option>
+              <option value={180}>3 horas</option>
+              <option value={240}>4 horas</option>
+              <option value={300}>5 horas</option>
+              <option value={360}>6 horas</option>
+              <option value={9999}>Sin límite</option>
+            </select>
+
+            <small>Este límite incluye todo: tareas + preparación de exámenes.</small>
+          </label>
 
           <label>
             Nivel educativo
