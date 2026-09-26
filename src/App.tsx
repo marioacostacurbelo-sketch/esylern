@@ -1866,14 +1866,17 @@ const [isDragging, setIsDragging] = useState(false);
 
                 return (
                   <button
-                    key={`${day.day}-${time}`}
-                    type="button"
-                    className={`availability-cell ${
-                      busy ? "busy" : ""
-                    }`}
-                    onClick={() => toggleSlot(day.day, time)}
-                    aria-label={`${day.label} ${time}`}
-                  />
+  key={`${day.day}-${time}`}
+  type="button"
+  className={`availability-cell ${
+    busy ? "busy" : ""
+  }`}
+  onClick={() => toggleSlot(day.day, time)}
+  onMouseDown={() => startDragging(day.day, time)}
+  onMouseEnter={() => dragOverSlot(day.day, time)}
+  onMouseUp={stopDragging}
+  aria-label={`${day.label} ${time}`}
+/>
                 );
               })}
             </div>
