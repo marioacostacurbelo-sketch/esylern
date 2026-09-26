@@ -62,6 +62,16 @@ type BusySlot = {
   date?: string;
 };
 
+type StudySession = {
+  date: string;
+  title: string;
+  subject: string;
+  minutes: number;
+  type: "Examen" | "Tarea";
+  startTime: string;
+  endTime: string;
+};
+
 const menuItems: {
   label: Page;
   icon: typeof LayoutDashboard;
@@ -92,6 +102,17 @@ function App() {
     const saved = localStorage.getItem("esylern_daily_study_minutes");
     const value = saved ? Number(saved) : 120;
     return Number.isFinite(value) && value > 0 ? value : 120;
+  });
+
+  const [studyPlan, setStudyPlan] = useState<StudySession[]>(() => {
+    const saved = localStorage.getItem("esylern_study_plan");
+    if (!saved) return [];
+    try {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   });
 
   const [tasks, setTasks] = useState<Task[]>(() => {
@@ -164,6 +185,10 @@ useEffect(() => {
       String(studyDailyMinutes),
     );
   }, [studyDailyMinutes]);
+
+  useEffect(() => {
+    localStorage.setItem("esylern_study_plan", JSON.stringify(studyPlan));
+  }, [studyPlan]);
 
   const navigate = (page: Page) => {
     setCurrentPage(page);
@@ -288,6 +313,7 @@ useEffect(() => {
             pendingTasks={pendingTasks}
             completedTasks={completedTasks}
             nextExam={nextExam}
+            studyPlan={studyPlan}
             onNavigate={navigate}
             onToggleTask={toggleTask}
           />
@@ -320,6 +346,8 @@ useEffect(() => {
             exams={exams}
             busySlots={busySlots}
             studyDailyMinutes={studyDailyMinutes}
+            savedPlan={studyPlan}
+            onPlanGenerated={setStudyPlan}
           />
         )}
 
@@ -359,6 +387,7 @@ function Dashboard({
   pendingTasks,
   completedTasks,
   nextExam,
+  studyPlan,
   onNavigate,
   onToggleTask,
 }: {
@@ -367,6 +396,7 @@ function Dashboard({
   pendingTasks: Task[];
   completedTasks: Task[];
   nextExam: Exam | null;
+  studyPlan: StudySession[];
   onNavigate: (page: Page) => void;
   onToggleTask: (id: number) => void;
 }) {
@@ -375,6 +405,20 @@ function Dashboard({
   const todayTasks = pendingTasks.filter(
     (task) => task.date === formatDateInput(today),
   );
+
+  const todayPlan = studyPlan.filter(
+    (session) => session.date === formatDateInput(today),
+  );
+
+  const weekStart = new Date(today);
+  const weekEnd = new Date(today);
+  weekEnd.setDate(today.getDate() + 6);
+  const weekStudyMinutes = studyPlan.reduce((total, session) => {
+    const date = new Date(`${session.date}T00:00:00`);
+    return date >= weekStart && date <= weekEnd
+      ? total + session.minutes
+      : total;
+  }, 0);
 
   const progress =
     tasks.length === 0
@@ -484,7 +528,7 @@ function Dashboard({
 
           <div>
             <span>Estudio esta semana</span>
-            <strong>0 h</strong>
+            <strong>{Math.floor(weekStudyMinutes / 60)}h {weekStudyMinutes % 60}m</strong>
           </div>
         </div>
 
@@ -499,6 +543,32 @@ function Dashboard({
           </div>
         </div>
       </section>
+
+      {todayPlan.length > 0 && (
+        <section className="panel" style={{ marginBottom: 16 }}>
+          <div className="panel-header">
+            <div>
+              <h3>Tu plan de hoy</h3>
+              <p>{todayPlan.reduce((sum, item) => sum + item.minutes, 0)} minutos planificados</p>
+            </div>
+            <button className="text-button" onClick={() => onNavigate("Plan de estudio")}>
+              Ver plan completo
+            </button>
+          </div>
+          <div className="priority-list">
+            {todayPlan.map((item, index) => (
+              <div className="priority-item" key={`dashboard-plan-${item.date}-${item.startTime}-${index}`}>
+                <span className="priority-number">{item.type === "Examen" ? "📚" : "📝"}</span>
+                <div style={{ flex: 1 }}>
+                  <strong>{item.startTime} – {item.endTime} · {item.subject}</strong>
+                  <p>{item.title}</p>
+                </div>
+                <strong>{item.minutes} min</strong>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="content-grid">
         <div className="panel">
@@ -1266,21 +1336,17 @@ function StudyPlanPage({
   exams,
   busySlots,
   studyDailyMinutes,
+  savedPlan,
+  onPlanGenerated,
 }: {
   tasks: Task[];
   exams: Exam[];
   busySlots: BusySlot[];
   studyDailyMinutes: number;
+  savedPlan: StudySession[];
+  onPlanGenerated: (plan: StudySession[]) => void;
 }) {
-  const [plan, setPlan] = useState<
-    {
-      date: string;
-      title: string;
-      subject: string;
-      minutes: number;
-      type: "Examen" | "Tarea";
-    }[]
-  >([]);
+  const [plan, setPlan] = useState<StudySession[]>(savedPlan);
 
   const [warning, setWarning] = useState("");
   const nextExam = getNextExam(exams);
@@ -1379,6 +1445,7 @@ function StudyPlanPage({
 
     if (items.length === 0) {
       setPlan([]);
+      onPlanGenerated([]);
       setWarning(
         "No hay tareas o exámenes futuros para planificar. El día de la entrega o del examen nunca se utiliza para prepararlo.",
       );
@@ -1402,73 +1469,97 @@ function StudyPlanPage({
       );
     }
 
-    const newPlan: typeof plan = [];
+    const newPlan: StudySession[] = [];
 
-    // Recorremos día por día. Así Esylern puede repartir varias asignaturas
-    // y dar prioridad a lo que vence antes.
+    const toMinutes = (time: string) => {
+      const [h, m] = time.split(":").map(Number);
+      return h * 60 + m;
+    };
+
+    const toTime = (minutes: number) =>
+      `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+
+    const getFreeWindows = (date: Date) => {
+      const day = getDayNumber(date);
+      const dateKey = getDateKey(date);
+      const occupied = busySlots
+        .filter((slot) =>
+          slot.repeatWeekly
+            ? slot.day === day
+            : slot.day === day && slot.date === dateKey,
+        )
+        .map((slot) => ({ start: toMinutes(slot.startTime), end: toMinutes(slot.endTime) }))
+        .sort((a, b) => a.start - b.start);
+
+      const windows: { start: number; end: number }[] = [];
+      let cursor = 8 * 60;
+
+      for (const slot of occupied) {
+        if (slot.end <= cursor) continue;
+        if (slot.start > cursor) {
+          windows.push({ start: cursor, end: Math.min(slot.start, 22 * 60) });
+        }
+        cursor = Math.max(cursor, slot.end);
+        if (cursor >= 22 * 60) break;
+      }
+
+      if (cursor < 22 * 60) windows.push({ start: cursor, end: 22 * 60 });
+      return windows.filter((window) => window.end - window.start >= 30);
+    };
+
     for (let dayIndex = 0; dayIndex < 14; dayIndex++) {
       const date = new Date(today);
       date.setDate(today.getDate() + dayIndex);
       const dateKey = getDateKey(date);
       let availableToday = dailyCapacity.get(dateKey) ?? 0;
+      const windows = getFreeWindows(date);
 
-      while (availableToday > 0) {
-        const eligible = items
-          .filter((item) => {
-            if (item.remaining <= 0) return false;
+      for (const window of windows) {
+        if (availableToday <= 0) break;
+        let cursor = window.start;
 
-            const deadline = new Date(`${item.deadline}T00:00:00`);
-            deadline.setHours(0, 0, 0, 0);
+        while (cursor + 30 <= window.end && availableToday > 0) {
+          const eligible = items
+            .filter((item) => {
+              if (item.remaining <= 0) return false;
+              const deadline = new Date(`${item.deadline}T00:00:00`);
+              deadline.setHours(0, 0, 0, 0);
+              return date < deadline;
+            })
+            .map((item) => {
+              const deadline = new Date(`${item.deadline}T00:00:00`);
+              deadline.setHours(0, 0, 0, 0);
+              const daysLeft = Math.max(1, Math.ceil((deadline.getTime() - date.getTime()) / 86400000));
+              return { item, daysLeft, urgency: item.remaining / daysLeft };
+            })
+            .sort((a, b) => {
+              if (a.daysLeft !== b.daysLeft) return a.daysLeft - b.daysLeft;
+              if (a.urgency !== b.urgency) return b.urgency - a.urgency;
+              return b.item.priority - a.item.priority;
+            });
 
-            // CRÍTICO: nunca trabajar el mismo día del examen/entrega.
-            return date < deadline;
-          })
-          .map((item) => {
-            const deadline = new Date(`${item.deadline}T00:00:00`);
-            deadline.setHours(0, 0, 0, 0);
+          if (eligible.length === 0) break;
+          const selected = eligible[0].item;
+          const sessionMinutes = Math.min(selected.remaining, availableToday, window.end - cursor, 90);
+          const rounded = sessionMinutes >= 60 ? Math.floor(sessionMinutes / 30) * 30 : 30;
+          const finalMinutes = Math.min(rounded, selected.remaining, availableToday, window.end - cursor);
+          if (finalMinutes < 30) break;
 
-            const daysLeft = Math.max(
-              1,
-              Math.ceil((deadline.getTime() - date.getTime()) / 86400000),
-            );
-
-            // Cuanto menos días quedan y más trabajo queda, más urgente es.
-            const urgency = item.remaining / daysLeft;
-
-            return {
-              item,
-              daysLeft,
-              urgency,
-            };
-          })
-          .sort((a, b) => {
-            if (a.daysLeft !== b.daysLeft) return a.daysLeft - b.daysLeft;
-            if (a.urgency !== b.urgency) return b.urgency - a.urgency;
-            return b.item.priority - a.item.priority;
+          newPlan.push({
+            date: dateKey,
+            title: selected.title,
+            subject: selected.subject,
+            minutes: finalMinutes,
+            type: selected.type,
+            startTime: toTime(cursor),
+            endTime: toTime(cursor + finalMinutes),
           });
 
-        if (eligible.length === 0) break;
-
-        const selected = eligible[0].item;
-
-        // Máximo 90 min seguidos para que el plan no genere sesiones enormes.
-        const sessionMinutes = Math.min(
-          selected.remaining,
-          availableToday,
-          90,
-        );
-
-        newPlan.push({
-          date: dateKey,
-          title: selected.title,
-          subject: selected.subject,
-          minutes: sessionMinutes,
-          type: selected.type,
-        });
-
-        selected.remaining -= sessionMinutes;
-        availableToday -= sessionMinutes;
-        dailyCapacity.set(dateKey, availableToday);
+          selected.remaining -= finalMinutes;
+          availableToday -= finalMinutes;
+          cursor += finalMinutes;
+          dailyCapacity.set(dateKey, availableToday);
+        }
       }
     }
 
@@ -1488,6 +1579,7 @@ function StudyPlanPage({
     }
 
     setPlan(newPlan);
+    onPlanGenerated(newPlan);
   };
 
   const groupedPlan = plan.reduce(
@@ -1620,20 +1712,22 @@ function StudyPlanPage({
                   >
                     {items.map((item, index) => (
                       <div
-                        key={`${date}-${index}`}
+                        key={`${date}-${item.startTime}-${index}`}
                         style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          gap: 16,
+                          display: "grid",
+                          gridTemplateColumns: "120px 1fr auto",
+                          alignItems: "center",
+                          gap: 14,
+                          padding: "10px 12px",
+                          borderRadius: 10,
+                          background: "#f7f8fa",
                         }}
                       >
+                        <strong>{item.startTime} – {item.endTime}</strong>
                         <span>
-                          {item.type === "Examen" ? "📚" : "📝"} {item.title}
-                          <span style={{ opacity: 0.65 }}>
-                            {" "}· {item.subject}
-                          </span>
+                          {item.type === "Examen" ? "📚" : "📝"} <strong>{item.subject}</strong> · {item.title}
                         </span>
-                        <strong>{item.minutes} min</strong>
+                        <span style={{ opacity: 0.7 }}>{item.minutes} min</span>
                       </div>
                     ))}
                   </div>
