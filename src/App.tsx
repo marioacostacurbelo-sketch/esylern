@@ -32,6 +32,7 @@ type Page =
   | "Plan de estudio"
   | "Asistente IA"
   | "Progreso"
+  | "Tiempo disponible"
   | "Configuración";
 
 type Task = {
