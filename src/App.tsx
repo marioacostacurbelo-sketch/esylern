@@ -912,10 +912,11 @@ function ExamForm({
     if (!subject.trim() || !topic.trim() || !date) return;
 
     onAdd({
-      subject: subject.trim(),
-      topic: topic.trim(),
-      date,
-    });
+  subject: subject.trim(),
+  topic: topic.trim(),
+  date,
+  studyMinutes,
+});
   };
 
   return (
