@@ -117,7 +117,19 @@ function App() {
 
     return initialExams;
   });
+const [busySlots, setBusySlots] = useState<BusySlot[]>(() => {
+  const saved = localStorage.getItem("esylern_busy_slots");
 
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+});
   useEffect(() => {
     localStorage.setItem("esylern_tasks", JSON.stringify(tasks));
   }, [tasks]);
