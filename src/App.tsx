@@ -73,11 +73,7 @@ const menuItems: {
   { label: "Plan de estudio", icon: Target },
   { label: "Asistente IA", icon: MessageCircle },
   { label: "Progreso", icon: TrendingUp },
-  {
-  label: "Tiempo disponible",
-  icon: Clock3,
-  page: "Tiempo disponible",
-},
+  { label: "Tiempo disponible", icon: Clock3 },
 ];
 
 const initialTasks: Task[] = [];
@@ -91,17 +87,17 @@ function App() {
     const saved = localStorage.getItem("esylern_tasks");
 
     if (saved) {
-  try {
-    const parsed = JSON.parse(saved);
+      try {
+        const parsed = JSON.parse(saved);
 
-    return parsed.map((task: Task) => ({
-      ...task,
-      estimatedMinutes: task.estimatedMinutes ?? 30,
-    }));
-  } catch {
-    return initialTasks;
-  }
-}
+        return parsed.map((task: Task) => ({
+          ...task,
+          estimatedMinutes: task.estimatedMinutes ?? 30,
+        }));
+      } catch {
+        return initialTasks;
+      }
+    }
 
     return initialTasks;
   });
@@ -110,33 +106,35 @@ function App() {
     const saved = localStorage.getItem("esylern_exams");
 
     if (saved) {
-  try {
-    const parsed = JSON.parse(saved);
+      try {
+        const parsed = JSON.parse(saved);
 
-    return parsed.map((exam: Exam) => ({
-      ...exam,
-      studyMinutes: exam.studyMinutes ?? 120,
-    }));
-  } catch {
-    return initialExams;
-  }
-}
+        return parsed.map((exam: Exam) => ({
+          ...exam,
+          studyMinutes: exam.studyMinutes ?? 120,
+        }));
+      } catch {
+        return initialExams;
+      }
+    }
 
     return initialExams;
   });
-const [busySlots, setBusySlots] = useState<BusySlot[]>(() => {
-  const saved = localStorage.getItem("esylern_busy_slots");
 
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch {
-      return [];
+  const [busySlots, setBusySlots] = useState<BusySlot[]>(() => {
+    const saved = localStorage.getItem("esylern_busy_slots");
+
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return [];
+      }
     }
-  }
 
-  return [];
-});
+    return [];
+  });
+
   useEffect(() => {
     localStorage.setItem("esylern_tasks", JSON.stringify(tasks));
   }, [tasks]);
@@ -144,12 +142,14 @@ const [busySlots, setBusySlots] = useState<BusySlot[]>(() => {
   useEffect(() => {
     localStorage.setItem("esylern_exams", JSON.stringify(exams));
   }, [exams]);
-useEffect(() => {
-  localStorage.setItem(
-    "esylern_busy_slots",
-    JSON.stringify(busySlots),
-  );
-}, [busySlots]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "esylern_busy_slots",
+      JSON.stringify(busySlots),
+    );
+  }, [busySlots]);
+
   const navigate = (page: Page) => {
     setCurrentPage(page);
   };
@@ -311,12 +311,13 @@ useEffect(() => {
             completedTasks={completedTasks}
           />
         )}
+
         {currentPage === "Tiempo disponible" && (
-  <AvailabilityPage
-    busySlots={busySlots}
-    setBusySlots={setBusySlots}
-  />
-)}
+          <AvailabilityPage
+            busySlots={busySlots}
+            setBusySlots={setBusySlots}
+          />
+        )}
 
         {currentPage === "Configuración" && <SettingsPage />}
       </main>
@@ -701,9 +702,10 @@ function TasksPage({
 
               <div className="task-info">
                 <strong>{task.title}</strong>
+
                 <span>
                   {task.subject} · {formatShortDate(task.date)} ·{" "}
-{formatMinutes(task.estimatedMinutes)}
+                  {formatMinutes(task.estimatedMinutes)}
                 </span>
               </div>
 
@@ -744,13 +746,13 @@ function TaskForm({
     if (!title.trim() || !subject.trim() || !date) return;
 
     onAdd({
-  title: title.trim(),
-  subject: subject.trim(),
-  date,
-  priority,
-  estimatedMinutes,
-  done: false,
-});
+      title: title.trim(),
+      subject: subject.trim(),
+      date,
+      priority,
+      estimatedMinutes,
+      done: false,
+    });
   };
 
   return (
@@ -813,24 +815,25 @@ function TaskForm({
             <option>Alta</option>
           </select>
         </label>
+
         <label>
-  Tiempo estimado
-  <select
-    value={estimatedMinutes}
-    onChange={(event) =>
-      setEstimatedMinutes(Number(event.target.value))
-    }
-  >
-    <option value={15}>15 minutos</option>
-    <option value={30}>30 minutos</option>
-    <option value={45}>45 minutos</option>
-    <option value={60}>1 hora</option>
-    <option value={90}>1 hora 30 minutos</option>
-    <option value={120}>2 horas</option>
-    <option value={150}>2 horas 30 minutos</option>
-    <option value={180}>3 horas</option>
-  </select>
-</label>
+          Tiempo estimado
+          <select
+            value={estimatedMinutes}
+            onChange={(event) =>
+              setEstimatedMinutes(Number(event.target.value))
+            }
+          >
+            <option value={15}>15 minutos</option>
+            <option value={30}>30 minutos</option>
+            <option value={45}>45 minutos</option>
+            <option value={60}>1 hora</option>
+            <option value={90}>1 hora 30 minutos</option>
+            <option value={120}>2 horas</option>
+            <option value={150}>2 horas 30 minutos</option>
+            <option value={180}>3 horas</option>
+          </select>
+        </label>
       </div>
 
       <div className="form-actions">
@@ -960,11 +963,11 @@ function ExamForm({
     if (!subject.trim() || !topic.trim() || !date) return;
 
     onAdd({
-  subject: subject.trim(),
-  topic: topic.trim(),
-  date,
-  studyMinutes,
-});
+      subject: subject.trim(),
+      topic: topic.trim(),
+      date,
+      studyMinutes,
+    });
   };
 
   return (
@@ -1011,31 +1014,34 @@ function ExamForm({
             onChange={(event) => setDate(event.target.value)}
           />
         </label>
+
         <label>
-  ¿Cuántas horas quieres dedicarle?
-  <select
-    value={studyMinutes}
-    onChange={(event) =>
-      setStudyMinutes(Number(event.target.value))
-    }
-  >
-    <option value={30}>30 minutos</option>
-    <option value={60}>1 hora</option>
-    <option value={90}>1 h 30 min</option>
-    <option value={120}>2 horas</option>
-    <option value={180}>3 horas</option>
-    <option value={240}>4 horas</option>
-    <option value={300}>5 horas</option>
-    <option value={360}>6 horas</option>
-    <option value={480}>8 horas</option>
-    <option value={600}>10 horas</option>
-    <option value={900}>15 horas</option>
-    <option value={1200}>20+ horas</option>
-  </select>
-  <small>
-    Esylern repartirá este tiempo según los días que tengas disponibles.
-  </small>
-</label>
+          ¿Cuántas horas quieres dedicarle?
+          <select
+            value={studyMinutes}
+            onChange={(event) =>
+              setStudyMinutes(Number(event.target.value))
+            }
+          >
+            <option value={30}>30 minutos</option>
+            <option value={60}>1 hora</option>
+            <option value={90}>1 h 30 min</option>
+            <option value={120}>2 horas</option>
+            <option value={180}>3 horas</option>
+            <option value={240}>4 horas</option>
+            <option value={300}>5 horas</option>
+            <option value={360}>6 horas</option>
+            <option value={480}>8 horas</option>
+            <option value={600}>10 horas</option>
+            <option value={900}>15 horas</option>
+            <option value={1200}>20+ horas</option>
+          </select>
+
+          <small>
+            Esylern repartirá este tiempo según los días que tengas
+            disponibles.
+          </small>
+        </label>
       </div>
 
       <div className="form-actions">
@@ -1712,6 +1718,11 @@ function SettingsPage() {
     </>
   );
 }
+
+/* =========================
+   TIEMPO DISPONIBLE
+========================= */
+
 function AvailabilityPage({
   busySlots,
   setBusySlots,
@@ -1720,12 +1731,14 @@ function AvailabilityPage({
   setBusySlots: React.Dispatch<React.SetStateAction<BusySlot[]>>;
 }) {
   const [mode, setMode] = useState<"weekly" | "this-week">("weekly");
-const [dragStart, setDragStart] = useState<{
-  day: number;
-  time: string;
-} | null>(null);
 
-const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{
+    day: number;
+    time: string;
+  } | null>(null);
+
+  const [isDragging, setIsDragging] = useState(false);
+
   const days = [
     { label: "Lunes", day: 0 },
     { label: "Martes", day: 1 },
@@ -1741,54 +1754,105 @@ const [isDragging, setIsDragging] = useState(false);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
 
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
-      2,
-      "0",
-    )}`;
+    return `${String(hours).padStart(2, "0")}:${String(
+      minutes,
+    ).padStart(2, "0")}`;
   });
 
-  const toggleSlot = (day: number, time: string) => {
-  const nextTime = addThirtyMinutes(time);
+  const currentWeek = getMondayOfCurrentWeek();
 
-  const existing = busySlots.find(
-    (slot) =>
-      slot.day === day &&
-      slot.startTime === time &&
-      slot.endTime === nextTime &&
+  const belongsToCurrentMode = (slot: BusySlot) => {
+    return (
       slot.repeatWeekly === (mode === "weekly") &&
-      (mode === "weekly" ||
-        slot.date === getMondayOfCurrentWeek()),
-  );
-
-  if (existing) {
-    setBusySlots((current) =>
-      current.filter((slot) => slot.id !== existing.id),
+      (mode === "weekly" || slot.date === currentWeek)
     );
-    return;
-  }
+  };
 
-  setBusySlots((current) => [
-    ...current,
-    {
-      id: Date.now() + Math.random(),
-      day,
-      startTime: time,
-      endTime: nextTime,
-      repeatWeekly: mode === "weekly",
-      date:
-        mode === "this-week"
-          ? getMondayOfCurrentWeek()
-          : undefined,
-    },
-  ]);
-};
+  const isBusy = (day: number, time: string) => {
+    return busySlots.some(
+      (slot) =>
+        slot.day === day &&
+        slot.startTime === time &&
+        belongsToCurrentMode(slot),
+    );
+  };
+
+  const addSlot = (day: number, time: string) => {
+    const nextTime = addThirtyMinutes(time);
+
+    const alreadyExists = busySlots.some(
+      (slot) =>
+        slot.day === day &&
+        slot.startTime === time &&
+        slot.endTime === nextTime &&
+        belongsToCurrentMode(slot),
+    );
+
+    if (alreadyExists) return;
+
+    setBusySlots((current) => [
+      ...current,
+      {
+        id: Date.now() + Math.random(),
+        day,
+        startTime: time,
+        endTime: nextTime,
+        repeatWeekly: mode === "weekly",
+        date: mode === "this-week" ? currentWeek : undefined,
+      },
+    ]);
+  };
+
+  const startDragging = (day: number, time: string) => {
+    setDragStart({ day, time });
+    setIsDragging(true);
+
+    addSlot(day, time);
+  };
+
+  const dragOverSlot = (day: number, time: string) => {
+    if (!isDragging || !dragStart) return;
+
+    if (day !== dragStart.day) return;
+
+    const startIndex = times.indexOf(dragStart.time);
+    const currentIndex = times.indexOf(time);
+
+    if (startIndex === -1 || currentIndex === -1) return;
+
+    const firstIndex = Math.min(startIndex, currentIndex);
+    const lastIndex = Math.max(startIndex, currentIndex);
+
+    const selectedTimes = times.slice(
+      firstIndex,
+      lastIndex + 1,
+    );
+
+    selectedTimes.forEach((selectedTime) => {
+      addSlot(day, selectedTime);
+    });
+  };
+
+  const stopDragging = () => {
+    setIsDragging(false);
+    setDragStart(null);
+  };
+
+  const handleModeChange = (
+    nextMode: "weekly" | "this-week",
+  ) => {
+    stopDragging();
+    setMode(nextMode);
+  };
 
   return (
     <section>
       <div className="topbar">
         <div>
           <div className="eyebrow">ORGANIZACIÓN</div>
+
           <h1>Tiempo disponible</h1>
+
           <p className="subtitle">
             Marca las horas en las que normalmente estás ocupado.
             El resto del tiempo estará disponible para estudiar.
@@ -1800,9 +1864,10 @@ const [isDragging, setIsDragging] = useState(false);
         <div className="panel-header">
           <div>
             <h2>¿Cuándo estás ocupado?</h2>
+
             <p>
-              Marca tus clases, entrenamientos, actividades o cualquier
-              otro momento en el que no puedas estudiar.
+              Marca tus clases, entrenamientos, actividades o
+              cualquier otro momento en el que no puedas estudiar.
             </p>
           </div>
         </div>
@@ -1814,7 +1879,7 @@ const [isDragging, setIsDragging] = useState(false);
                 ? "primary-button"
                 : "secondary-button"
             }
-            onClick={() => setMode("weekly")}
+            onClick={() => handleModeChange("weekly")}
           >
             🔁 Repetir todas las semanas
           </button>
@@ -1825,7 +1890,7 @@ const [isDragging, setIsDragging] = useState(false);
                 ? "primary-button"
                 : "secondary-button"
             }
-            onClick={() => setMode("this-week")}
+            onClick={() => handleModeChange("this-week")}
           >
             📅 Solo esta semana
           </button>
@@ -1843,8 +1908,10 @@ const [isDragging, setIsDragging] = useState(false);
           </span>
         </div>
 
-        <div className="availability-calendar"
-          onMouseLeave={stopDragging}>
+        <div
+          className="availability-calendar"
+          onMouseLeave={stopDragging}
+        >
           <div className="availability-corner" />
 
           {days.map((day) => (
@@ -1867,17 +1934,21 @@ const [isDragging, setIsDragging] = useState(false);
 
                 return (
                   <button
-  key={`${day.day}-${time}`}
-  type="button"
-  className={`availability-cell ${
-    busy ? "busy" : ""
-  }`}
-  onClick={() => toggleSlot(day.day, time)}
-  onMouseDown={() => startDragging(day.day, time)}
-  onMouseEnter={() => dragOverSlot(day.day, time)}
-  onMouseUp={stopDragging}
-  aria-label={`${day.label} ${time}`}
-/>
+                    key={`${day.day}-${time}`}
+                    type="button"
+                    className={`availability-cell ${
+                      busy ? "busy" : ""
+                    }`}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      startDragging(day.day, time);
+                    }}
+                    onMouseEnter={() =>
+                      dragOverSlot(day.day, time)
+                    }
+                    onMouseUp={stopDragging}
+                    aria-label={`${day.label} ${time}`}
+                  />
                 );
               })}
             </div>
@@ -1885,105 +1956,15 @@ const [isDragging, setIsDragging] = useState(false);
         </div>
 
         <p className="availability-help">
-          💡 No necesitas indicar qué haces durante ese tiempo.
-          Esylern simplemente entenderá que esas horas no están
-          disponibles para estudiar.
+          💡 Mantén pulsado y arrastra para marcar varias horas
+          seguidas. No necesitas indicar qué haces durante ese
+          tiempo.
         </p>
       </div>
     </section>
   );
 }
-const startDragging = (day: number, time: string) => {
-  setDragStart({ day, time });
-  setIsDragging(true);
-};
 
-const dragOverSlot = (day: number, time: string) => {
-  if (!isDragging || !dragStart) return;
-
-  if (day !== dragStart.day) return;
-
-  const timesForDay = times;
-
-  const startIndex = timesForDay.indexOf(dragStart.time);
-  const currentIndex = timesForDay.indexOf(time);
-
-  if (startIndex === -1 || currentIndex === -1) return;
-
-  const firstIndex = Math.min(startIndex, currentIndex);
-  const lastIndex = Math.max(startIndex, currentIndex);
-
-  const selectedTimes = timesForDay.slice(
-    firstIndex,
-    lastIndex + 1,
-  );
-
-  setBusySlots((current) => {
-    const newSlots = [...current];
-
-    selectedTimes.forEach((selectedTime) => {
-      const nextTime = addThirtyMinutes(selectedTime);
-
-      const alreadyExists = newSlots.some(
-        (slot) =>
-          slot.day === day &&
-          slot.startTime === selectedTime &&
-          slot.endTime === nextTime &&
-          slot.repeatWeekly === (mode === "weekly") &&
-          (mode === "weekly" ||
-            slot.date === getMondayOfCurrentWeek()),
-      );
-
-      if (!alreadyExists) {
-        newSlots.push({
-          id: Date.now() + Math.random(),
-          day,
-          startTime: selectedTime,
-          endTime: nextTime,
-          repeatWeekly: mode === "weekly",
-          date:
-            mode === "this-week"
-              ? getMondayOfCurrentWeek()
-              : undefined,
-        });
-      }
-    });
-
-    return newSlots;
-  });
-};
-
-const stopDragging = () => {
-  setIsDragging(false);
-  setDragStart(null);
-};
-
-function addThirtyMinutes(time: string) {
-  const [hours, minutes] = time.split(":").map(Number);
-
-  const totalMinutes = hours * 60 + minutes + 30;
-  const nextHours = Math.floor(totalMinutes / 60);
-  const nextMinutes = totalMinutes % 60;
-
-  return `${String(nextHours).padStart(2, "0")}:${String(
-    nextMinutes,
-  ).padStart(2, "0")}`;
-}
-
-function getMondayOfCurrentWeek() {
-  const date = new Date();
-  const day = date.getDay();
-
-  const difference = day === 0 ? -6 : 1 - day;
-
-  date.setDate(date.getDate() + difference);
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const dayOfMonth = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${dayOfMonth}`;
-}
 /* =========================
    COMPONENTES
 ========================= */
@@ -2084,6 +2065,7 @@ function Feature({
 /* =========================
    UTILIDADES
 ========================= */
+
 function formatMinutes(minutes: number) {
   if (minutes < 60) {
     return `${minutes} min`;
@@ -2098,6 +2080,7 @@ function formatMinutes(minutes: number) {
 
   return `${hours} h ${remainingMinutes} min`;
 }
+
 function formatDateInput(date: Date) {
   const year = date.getFullYear();
 
@@ -2172,6 +2155,39 @@ function priorityValue(priority: Task["priority"]) {
   if (priority === "Media") return 2;
 
   return 1;
+}
+
+function addThirtyMinutes(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+
+  const totalMinutes = hours * 60 + minutes + 30;
+  const nextHours = Math.floor(totalMinutes / 60);
+  const nextMinutes = totalMinutes % 60;
+
+  return `${String(nextHours).padStart(2, "0")}:${String(
+    nextMinutes,
+  ).padStart(2, "0")}`;
+}
+
+function getMondayOfCurrentWeek() {
+  const date = new Date();
+  const day = date.getDay();
+
+  const difference = day === 0 ? -6 : 1 - day;
+
+  date.setDate(date.getDate() + difference);
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(
+    2,
+    "0",
+  );
+  const dayOfMonth = String(date.getDate()).padStart(
+    2,
+    "0",
+  );
+
+  return `${year}-${month}-${dayOfMonth}`;
 }
 
 export default App;
