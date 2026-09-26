@@ -1408,13 +1408,9 @@ function StudyPlanPage({
         const date = new Date(today);
         date.setDate(today.getDate() + i);
 
-        if (date >= deadline && item.type === "Examen") {
-          break;
-        }
-
-        if (date > deadline) {
-          break;
-        }
+       if (date > deadline) {
+  break;
+}
 
         const dateKey = getDateKey(date);
         const available = remainingMinutes.get(dateKey) ?? 0;
