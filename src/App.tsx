@@ -1712,7 +1712,214 @@ function SettingsPage() {
     </>
   );
 }
+function AvailabilityPage({
+  busySlots,
+  setBusySlots,
+}: {
+  busySlots: BusySlot[];
+  setBusySlots: React.Dispatch<React.SetStateAction<BusySlot[]>>;
+}) {
+  const [mode, setMode] = useState<"weekly" | "this-week">("weekly");
 
+  const days = [
+    { label: "Lunes", day: 0 },
+    { label: "Martes", day: 1 },
+    { label: "Miércoles", day: 2 },
+    { label: "Jueves", day: 3 },
+    { label: "Viernes", day: 4 },
+    { label: "Sábado", day: 5 },
+    { label: "Domingo", day: 6 },
+  ];
+
+  const times = Array.from({ length: 32 }, (_, index) => {
+    const totalMinutes = 7 * 60 + index * 30;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+      2,
+      "0",
+    )}`;
+  });
+
+  const toggleSlot = (day: number, time: string) => {
+    const nextTime = addThirtyMinutes(time);
+
+    const existing = busySlots.find(
+      (slot) =>
+        slot.day === day &&
+        slot.startTime === time &&
+        slot.endTime === nextTime &&
+        slot.repeatWeekly === (mode === "weekly"),
+    );
+
+    if (existing) {
+      setBusySlots((current) =>
+        current.filter((slot) => slot.id !== existing.id),
+      );
+      return;
+    }
+
+    setBusySlots((current) => [
+      ...current,
+      {
+        id: Date.now() + Math.random(),
+        day,
+        startTime: time,
+        endTime: nextTime,
+        repeatWeekly: mode === "weekly",
+        date:
+          mode === "this-week"
+            ? getMondayOfCurrentWeek()
+            : undefined,
+      },
+    ]);
+  };
+
+  const isBusy = (day: number, time: string) => {
+    return busySlots.some(
+      (slot) =>
+        slot.day === day &&
+        slot.startTime === time &&
+        slot.repeatWeekly === (mode === "weekly") &&
+        (mode === "weekly" ||
+          slot.date === getMondayOfCurrentWeek()),
+    );
+  };
+
+  return (
+    <section>
+      <div className="topbar">
+        <div>
+          <div className="eyebrow">ORGANIZACIÓN</div>
+          <h1>Tiempo disponible</h1>
+          <p className="subtitle">
+            Marca las horas en las que normalmente estás ocupado.
+            El resto del tiempo estará disponible para estudiar.
+          </p>
+        </div>
+      </div>
+
+      <div className="panel">
+        <div className="panel-header">
+          <div>
+            <h2>¿Cuándo estás ocupado?</h2>
+            <p>
+              Marca tus clases, entrenamientos, actividades o cualquier
+              otro momento en el que no puedas estudiar.
+            </p>
+          </div>
+        </div>
+
+        <div className="filter-row">
+          <button
+            className={
+              mode === "weekly"
+                ? "primary-button"
+                : "secondary-button"
+            }
+            onClick={() => setMode("weekly")}
+          >
+            🔁 Repetir todas las semanas
+          </button>
+
+          <button
+            className={
+              mode === "this-week"
+                ? "primary-button"
+                : "secondary-button"
+            }
+            onClick={() => setMode("this-week")}
+          >
+            📅 Solo esta semana
+          </button>
+        </div>
+
+        <div className="availability-legend">
+          <span>
+            <span className="availability-dot free" />
+            Disponible
+          </span>
+
+          <span>
+            <span className="availability-dot busy" />
+            Ocupado
+          </span>
+        </div>
+
+        <div className="availability-calendar">
+          <div className="availability-corner" />
+
+          {days.map((day) => (
+            <div
+              key={day.day}
+              className="availability-day-header"
+            >
+              {day.label}
+            </div>
+          ))}
+
+          {times.map((time) => (
+            <div key={time} className="availability-row">
+              <div className="availability-time">
+                {time}
+              </div>
+
+              {days.map((day) => {
+                const busy = isBusy(day.day, time);
+
+                return (
+                  <button
+                    key={`${day.day}-${time}`}
+                    type="button"
+                    className={`availability-cell ${
+                      busy ? "busy" : ""
+                    }`}
+                    onClick={() => toggleSlot(day.day, time)}
+                    aria-label={`${day.label} ${time}`}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        <p className="availability-help">
+          💡 No necesitas indicar qué haces durante ese tiempo.
+          Esylern simplemente entenderá que esas horas no están
+          disponibles para estudiar.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function addThirtyMinutes(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+
+  const totalMinutes = hours * 60 + minutes + 30;
+  const nextHours = Math.floor(totalMinutes / 60);
+  const nextMinutes = totalMinutes % 60;
+
+  return `${String(nextHours).padStart(2, "0")}:${String(
+    nextMinutes,
+  ).padStart(2, "0")}`;
+}
+
+function getMondayOfCurrentWeek() {
+  const date = new Date();
+  const day = date.getDay();
+
+  const difference = day === 0 ? -6 : 1 - day;
+
+  date.setDate(date.getDate() + difference);
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const dayOfMonth = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${dayOfMonth}`;
+}
 /* =========================
    COMPONENTES
 ========================= */
