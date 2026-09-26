@@ -137,7 +137,12 @@ const [busySlots, setBusySlots] = useState<BusySlot[]>(() => {
   useEffect(() => {
     localStorage.setItem("esylern_exams", JSON.stringify(exams));
   }, [exams]);
-
+useEffect(() => {
+  localStorage.setItem(
+    "esylern_busy_slots",
+    JSON.stringify(busySlots),
+  );
+}, [busySlots]);
   const navigate = (page: Page) => {
     setCurrentPage(page);
   };
