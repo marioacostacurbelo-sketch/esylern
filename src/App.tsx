@@ -58,6 +58,7 @@ type BusySlot = {
   startTime: string;
   endTime: string;
   repeatWeekly: boolean;
+  date?: string;
 };
 
 const menuItems: {
