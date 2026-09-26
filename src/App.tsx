@@ -1730,11 +1730,18 @@ function AvailabilityPage({
   busySlots: BusySlot[];
   setBusySlots: React.Dispatch<React.SetStateAction<BusySlot[]>>;
 }) {
-  const [mode, setMode] = useState<"weekly" | "this-week">("weekly");
+  const [mode, setMode] = useState<"weekly" | "this-week">(
+    "weekly",
+  );
 
   const [dragStart, setDragStart] = useState<{
     day: number;
-    time: string;
+    timeIndex: number;
+  } | null>(null);
+
+  const [dragCurrent, setDragCurrent] = useState<{
+    day: number;
+    timeIndex: number;
   } | null>(null);
 
   const [isDragging, setIsDragging] = useState(false);
@@ -1769,79 +1776,199 @@ function AvailabilityPage({
   };
 
   const isBusy = (day: number, time: string) => {
-    return busySlots.some(
-      (slot) =>
-        slot.day === day &&
-        slot.startTime === time &&
-        belongsToCurrentMode(slot),
-    );
-  };
-
-  const addSlot = (day: number, time: string) => {
     const nextTime = addThirtyMinutes(time);
 
-    const alreadyExists = busySlots.some(
+    return busySlots.some(
       (slot) =>
         slot.day === day &&
         slot.startTime === time &&
         slot.endTime === nextTime &&
         belongsToCurrentMode(slot),
     );
-
-    if (alreadyExists) return;
-
-    setBusySlots((current) => [
-      ...current,
-      {
-        id: Date.now() + Math.random(),
-        day,
-        startTime: time,
-        endTime: nextTime,
-        repeatWeekly: mode === "weekly",
-        date: mode === "this-week" ? currentWeek : undefined,
-      },
-    ]);
   };
 
-  const startDragging = (day: number, time: string) => {
-    setDragStart({ day, time });
+  const getSelectedIndexes = () => {
+    if (!dragStart || !dragCurrent) return [];
+
+    if (dragStart.day !== dragCurrent.day) return [];
+
+    const firstIndex = Math.min(
+      dragStart.timeIndex,
+      dragCurrent.timeIndex,
+    );
+
+    const lastIndex = Math.max(
+      dragStart.timeIndex,
+      dragCurrent.timeIndex,
+    );
+
+    return Array.from(
+      { length: lastIndex - firstIndex + 1 },
+      (_, index) => firstIndex + index,
+    );
+  };
+
+  const isPreviewSelected = (
+    day: number,
+    timeIndex: number,
+  ) => {
+    if (!isDragging || !dragStart || !dragCurrent) {
+      return false;
+    }
+
+    if (
+      dragStart.day !== day ||
+      dragCurrent.day !== day
+    ) {
+      return false;
+    }
+
+    return getSelectedIndexes().includes(timeIndex);
+  };
+
+  const startDragging = (
+    day: number,
+    timeIndex: number,
+  ) => {
+    setDragStart({
+      day,
+      timeIndex,
+    });
+
+    setDragCurrent({
+      day,
+      timeIndex,
+    });
+
     setIsDragging(true);
-
-    addSlot(day, time);
   };
 
-  const dragOverSlot = (day: number, time: string) => {
+  const dragOverSlot = (
+    day: number,
+    timeIndex: number,
+  ) => {
     if (!isDragging || !dragStart) return;
 
     if (day !== dragStart.day) return;
 
-    const startIndex = times.indexOf(dragStart.time);
-    const currentIndex = times.indexOf(time);
-
-    if (startIndex === -1 || currentIndex === -1) return;
-
-    const firstIndex = Math.min(startIndex, currentIndex);
-    const lastIndex = Math.max(startIndex, currentIndex);
-
-    const selectedTimes = times.slice(
-      firstIndex,
-      lastIndex + 1,
-    );
-
-    selectedTimes.forEach((selectedTime) => {
-      addSlot(day, selectedTime);
+    setDragCurrent({
+      day,
+      timeIndex,
     });
   };
 
   const stopDragging = () => {
+    if (
+      !isDragging ||
+      !dragStart ||
+      !dragCurrent
+    ) {
+      setIsDragging(false);
+      setDragStart(null);
+      setDragCurrent(null);
+      return;
+    }
+
+    if (dragStart.day !== dragCurrent.day) {
+      setIsDragging(false);
+      setDragStart(null);
+      setDragCurrent(null);
+      return;
+    }
+
+    const selectedIndexes = getSelectedIndexes();
+
+    if (selectedIndexes.length === 0) {
+      setIsDragging(false);
+      setDragStart(null);
+      setDragCurrent(null);
+      return;
+    }
+
+    const selectedTimes = selectedIndexes.map(
+      (index) => times[index],
+    );
+
+    const firstTime = selectedTimes[0];
+
+    if (!firstTime) {
+      setIsDragging(false);
+      setDragStart(null);
+      setDragCurrent(null);
+      return;
+    }
+
+    const shouldRemove = isBusy(
+      dragStart.day,
+      firstTime,
+    );
+
+    setBusySlots((current) => {
+      const isMatchingMode = (slot: BusySlot) =>
+        slot.repeatWeekly === (mode === "weekly") &&
+        (mode === "weekly" || slot.date === currentWeek);
+
+      if (shouldRemove) {
+        return current.filter((slot) => {
+          if (
+            slot.day !== dragStart.day ||
+            !isMatchingMode(slot)
+          ) {
+            return true;
+          }
+
+          const slotMatchesSelection = selectedTimes.some(
+            (time) =>
+              slot.startTime === time &&
+              slot.endTime === addThirtyMinutes(time),
+          );
+
+          return !slotMatchesSelection;
+        });
+      }
+
+      const newSlots = [...current];
+
+      selectedTimes.forEach((time) => {
+        const nextTime = addThirtyMinutes(time);
+
+        const alreadyExists = newSlots.some(
+          (slot) =>
+            slot.day === dragStart.day &&
+            slot.startTime === time &&
+            slot.endTime === nextTime &&
+            isMatchingMode(slot),
+        );
+
+        if (!alreadyExists) {
+          newSlots.push({
+            id: Date.now() + Math.random(),
+            day: dragStart.day,
+            startTime: time,
+            endTime: nextTime,
+            repeatWeekly: mode === "weekly",
+            date:
+              mode === "this-week"
+                ? currentWeek
+                : undefined,
+          });
+        }
+      });
+
+      return newSlots;
+    });
+
     setIsDragging(false);
     setDragStart(null);
+    setDragCurrent(null);
   };
 
   const handleModeChange = (
     nextMode: "weekly" | "this-week",
   ) => {
-    stopDragging();
+    setIsDragging(false);
+    setDragStart(null);
+    setDragCurrent(null);
     setMode(nextMode);
   };
 
@@ -1910,7 +2037,12 @@ function AvailabilityPage({
 
         <div
           className="availability-calendar"
-          onMouseLeave={stopDragging}
+          onMouseUp={stopDragging}
+          onMouseLeave={() => {
+            if (isDragging) {
+              stopDragging();
+            }
+          }}
         >
           <div className="availability-corner" />
 
@@ -1923,14 +2055,25 @@ function AvailabilityPage({
             </div>
           ))}
 
-          {times.map((time) => (
-            <div key={time} className="availability-row">
+          {times.map((time, timeIndex) => (
+            <div
+              key={time}
+              className="availability-row"
+            >
               <div className="availability-time">
                 {time}
               </div>
 
               {days.map((day) => {
-                const busy = isBusy(day.day, time);
+                const busy = isBusy(
+                  day.day,
+                  time,
+                );
+
+                const preview = isPreviewSelected(
+                  day.day,
+                  timeIndex,
+                );
 
                 return (
                   <button
@@ -1938,13 +2081,22 @@ function AvailabilityPage({
                     type="button"
                     className={`availability-cell ${
                       busy ? "busy" : ""
+                    } ${
+                      preview ? "drag-selected" : ""
                     }`}
                     onMouseDown={(event) => {
                       event.preventDefault();
-                      startDragging(day.day, time);
+
+                      startDragging(
+                        day.day,
+                        timeIndex,
+                      );
                     }}
                     onMouseEnter={() =>
-                      dragOverSlot(day.day, time)
+                      dragOverSlot(
+                        day.day,
+                        timeIndex,
+                      )
                     }
                     onMouseUp={stopDragging}
                     aria-label={`${day.label} ${time}`}
@@ -1957,8 +2109,8 @@ function AvailabilityPage({
 
         <p className="availability-help">
           💡 Mantén pulsado y arrastra para marcar varias horas
-          seguidas. No necesitas indicar qué haces durante ese
-          tiempo.
+          seguidas. Si empiezas sobre una hora ocupada, podrás
+          liberarla junto con las demás seleccionadas.
         </p>
       </div>
     </section>
@@ -2191,3 +2343,4 @@ function getMondayOfCurrentWeek() {
 }
 
 export default App;
+  
