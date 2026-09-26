@@ -1889,6 +1889,70 @@ const [isDragging, setIsDragging] = useState(false);
     </section>
   );
 }
+const startDragging = (day: number, time: string) => {
+  setDragStart({ day, time });
+  setIsDragging(true);
+};
+
+const dragOverSlot = (day: number, time: string) => {
+  if (!isDragging || !dragStart) return;
+
+  if (day !== dragStart.day) return;
+
+  const timesForDay = times;
+
+  const startIndex = timesForDay.indexOf(dragStart.time);
+  const currentIndex = timesForDay.indexOf(time);
+
+  if (startIndex === -1 || currentIndex === -1) return;
+
+  const firstIndex = Math.min(startIndex, currentIndex);
+  const lastIndex = Math.max(startIndex, currentIndex);
+
+  const selectedTimes = timesForDay.slice(
+    firstIndex,
+    lastIndex + 1,
+  );
+
+  setBusySlots((current) => {
+    const newSlots = [...current];
+
+    selectedTimes.forEach((selectedTime) => {
+      const nextTime = addThirtyMinutes(selectedTime);
+
+      const alreadyExists = newSlots.some(
+        (slot) =>
+          slot.day === day &&
+          slot.startTime === selectedTime &&
+          slot.endTime === nextTime &&
+          slot.repeatWeekly === (mode === "weekly") &&
+          (mode === "weekly" ||
+            slot.date === getMondayOfCurrentWeek()),
+      );
+
+      if (!alreadyExists) {
+        newSlots.push({
+          id: Date.now() + Math.random(),
+          day,
+          startTime: selectedTime,
+          endTime: nextTime,
+          repeatWeekly: mode === "weekly",
+          date:
+            mode === "this-week"
+              ? getMondayOfCurrentWeek()
+              : undefined,
+        });
+      }
+    });
+
+    return newSlots;
+  });
+};
+
+const stopDragging = () => {
+  setIsDragging(false);
+  setDragStart(null);
+};
 
 function addThirtyMinutes(time: string) {
   const [hours, minutes] = time.split(":").map(Number);
