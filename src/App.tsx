@@ -2011,12 +2011,24 @@ function AvailabilityPage({
   const mondayOfCurrentWeek = getMondayOfCurrentWeek();
 
   const isBusy = (day: number, time: string) => {
+    const timeToMinutes = (value: string) => {
+      const [hours, minutes] = value.split(":").map(Number);
+      return hours * 60 + minutes;
+    };
+
+    const currentMinutes = timeToMinutes(time);
+
     return busySlots.some((slot) => {
       if (slot.day !== day) return false;
 
-      if (slot.repeatWeekly) return true;
+      if (!slot.repeatWeekly && slot.date !== mondayOfCurrentWeek) {
+        return false;
+      }
 
-      return slot.date === mondayOfCurrentWeek;
+      const startMinutes = timeToMinutes(slot.startTime);
+      const endMinutes = timeToMinutes(slot.endTime);
+
+      return currentMinutes >= startMinutes && currentMinutes < endMinutes;
     });
   };
 
