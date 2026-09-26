@@ -1263,8 +1263,7 @@ function StudyPlanPage({
       date.getDate(),
     ).padStart(2, "0")}`;
 
-  const getDayNumber = (date: Date) =>
-    (date.getDay() + 6) % 7;
+  const getDayNumber = (date: Date) => (date.getDay() + 6) % 7;
 
   const getAvailableMinutes = (date: Date) => {
     const day = getDayNumber(date);
@@ -1277,12 +1276,8 @@ function StudyPlanPage({
     );
 
     const occupiedMinutes = occupied.reduce((total, slot) => {
-      const [startHour, startMinute] = slot.startTime
-        .split(":")
-        .map(Number);
-      const [endHour, endMinute] = slot.endTime
-        .split(":")
-        .map(Number);
+      const [startHour, startMinute] = slot.startTime.split(":").map(Number);
+      const [endHour, endMinute] = slot.endTime.split(":").map(Number);
 
       return (
         total +
@@ -1293,8 +1288,9 @@ function StudyPlanPage({
       );
     }, 0);
 
-    // Horario de planificación: 07:00–23:00.
-    return Math.max(0, 16 * 60 - occupiedMinutes);
+    // No queremos que Esylern convierta un día libre en 16 horas de estudio.
+    // Por ahora dejamos un máximo razonable de 4 horas de estudio al día.
+    return Math.max(0, Math.min(240, 16 * 60 - occupiedMinutes));
   };
 
   const generatePlan = () => {
@@ -1303,114 +1299,157 @@ function StudyPlanPage({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const items: {
+    type PlanItem = {
+      id: string;
       title: string;
       subject: string;
       deadline: string;
       minutes: number;
+      remaining: number;
       type: "Examen" | "Tarea";
       priority: number;
-    }[] = [];
+    };
 
-    // IMPORTANTE: el día del examen NO se estudia para ese examen.
+    const items: PlanItem[] = [];
+
     exams.forEach((exam) => {
       const deadline = new Date(`${exam.date}T00:00:00`);
       deadline.setHours(0, 0, 0, 0);
 
-      if (deadline > today) {
+      if (deadline > today && exam.studyMinutes > 0) {
         items.push({
+          id: `exam-${exam.id}`,
           title: `Preparar examen: ${exam.topic}`,
           subject: exam.subject,
           deadline: exam.date,
           minutes: exam.studyMinutes,
+          remaining: exam.studyMinutes,
           type: "Examen",
           priority: 100,
         });
       }
     });
 
-    // IMPORTANTE: el día de entrega NO se coloca esa tarea.
     tasks
       .filter((task) => !task.done)
       .forEach((task) => {
         const deadline = new Date(`${task.date}T00:00:00`);
         deadline.setHours(0, 0, 0, 0);
 
-        if (deadline > today) {
+        if (deadline > today && task.estimatedMinutes > 0) {
           items.push({
+            id: `task-${task.id}`,
             title: task.title,
             subject: task.subject,
             deadline: task.date,
             minutes: task.estimatedMinutes,
+            remaining: task.estimatedMinutes,
             type: "Tarea",
             priority: priorityValue(task.priority),
           });
         }
       });
 
-    items.sort((a, b) => {
-      const deadlineDifference =
-        new Date(a.deadline).getTime() -
-        new Date(b.deadline).getTime();
+    if (items.length === 0) {
+      setPlan([]);
+      setWarning(
+        "No hay tareas o exámenes futuros para planificar. El día de la entrega o del examen nunca se utiliza para prepararlo.",
+      );
+      return;
+    }
 
-      return deadlineDifference || b.priority - a.priority;
-    });
+    // Solo planificamos antes de cada fecha límite.
+    // Guardamos la capacidad disponible de cada día.
+    const dailyCapacity = new Map<string, number>();
 
-    const remainingMinutes = new Map<string, number>();
-
-    // Planificamos los próximos 14 días, pero siempre ANTES de la fecha límite.
     for (let i = 0; i < 14; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
-      remainingMinutes.set(getDateKey(date), getAvailableMinutes(date));
+      dailyCapacity.set(getDateKey(date), getAvailableMinutes(date));
     }
 
     const newPlan: typeof plan = [];
-    let impossibleItems = 0;
 
-    items.forEach((item) => {
-      let remaining = item.minutes;
-      const deadline = new Date(`${item.deadline}T00:00:00`);
-      deadline.setHours(0, 0, 0, 0);
+    // Recorremos día por día. Así Esylern puede repartir varias asignaturas
+    // y dar prioridad a lo que vence antes.
+    for (let dayIndex = 0; dayIndex < 14; dayIndex++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + dayIndex);
+      const dateKey = getDateKey(date);
+      let availableToday = dailyCapacity.get(dateKey) ?? 0;
 
-      // El último día permitido es SIEMPRE el día anterior al examen/entrega.
-      for (let i = 0; i < 14 && remaining > 0; i++) {
-        const date = new Date(today);
-        date.setDate(today.getDate() + i);
+      while (availableToday > 0) {
+        const eligible = items
+          .filter((item) => {
+            if (item.remaining <= 0) return false;
 
-        if (date >= deadline) break;
+            const deadline = new Date(`${item.deadline}T00:00:00`);
+            deadline.setHours(0, 0, 0, 0);
 
-        const dateKey = getDateKey(date);
-        const available = remainingMinutes.get(dateKey) ?? 0;
+            // CRÍTICO: nunca trabajar el mismo día del examen/entrega.
+            return date < deadline;
+          })
+          .map((item) => {
+            const deadline = new Date(`${item.deadline}T00:00:00`);
+            deadline.setHours(0, 0, 0, 0);
 
-        if (available <= 0) continue;
+            const daysLeft = Math.max(
+              1,
+              Math.ceil((deadline.getTime() - date.getTime()) / 86400000),
+            );
 
-        const sessionMinutes = Math.min(remaining, available, 90);
+            // Cuanto menos días quedan y más trabajo queda, más urgente es.
+            const urgency = item.remaining / daysLeft;
+
+            return {
+              item,
+              daysLeft,
+              urgency,
+            };
+          })
+          .sort((a, b) => {
+            if (a.daysLeft !== b.daysLeft) return a.daysLeft - b.daysLeft;
+            if (a.urgency !== b.urgency) return b.urgency - a.urgency;
+            return b.item.priority - a.item.priority;
+          });
+
+        if (eligible.length === 0) break;
+
+        const selected = eligible[0].item;
+
+        // Máximo 90 min seguidos para que el plan no genere sesiones enormes.
+        const sessionMinutes = Math.min(
+          selected.remaining,
+          availableToday,
+          90,
+        );
 
         newPlan.push({
           date: dateKey,
-          title: item.title,
-          subject: item.subject,
+          title: selected.title,
+          subject: selected.subject,
           minutes: sessionMinutes,
-          type: item.type,
+          type: selected.type,
         });
 
-        remainingMinutes.set(dateKey, available - sessionMinutes);
-        remaining -= sessionMinutes;
+        selected.remaining -= sessionMinutes;
+        availableToday -= sessionMinutes;
+        dailyCapacity.set(dateKey, availableToday);
       }
+    }
 
-      if (remaining > 0) {
-        impossibleItems += 1;
-      }
-    });
+    const impossibleItems = items.filter((item) => item.remaining > 0);
 
-    if (newPlan.length === 0 && items.length === 0) {
+    if (impossibleItems.length > 0) {
+      const names = impossibleItems
+        .slice(0, 2)
+        .map((item) => item.title)
+        .join(" y ");
+
       setWarning(
-        "No hay tareas o exámenes con fecha futura para planificar. El día de la entrega o del examen no se utiliza para prepararlo.",
-      );
-    } else if (impossibleItems > 0) {
-      setWarning(
-        `Hay ${impossibleItems} elemento${impossibleItems === 1 ? "" : "s"} que no caben completamente antes de su fecha límite con el tiempo disponible.`,
+        `No cabe todo antes de la fecha límite de ${names}${
+          impossibleItems.length > 2 ? " y otros elementos" : ""
+        }. Esylern ha colocado todo lo que sí cabe sin usar el día de entrega o examen.`,
       );
     }
 
@@ -1433,12 +1472,16 @@ function StudyPlanPage({
       month: "long",
     });
 
+  const totalPlanned = plan.reduce((sum, item) => sum + item.minutes, 0);
+  const currentDate = new Date();
+  currentDate.setHours(0, 0, 0, 0);
+
   return (
     <>
       <PageHeader
         eyebrow="INTELIGENCIA"
         title="Plan de estudio"
-        subtitle="Esylern organiza tu tiempo según tus prioridades."
+        subtitle="Esylern organiza tu tiempo según tus prioridades y fechas límite."
       />
 
       <section className="ai-banner">
@@ -1467,6 +1510,29 @@ function StudyPlanPage({
         </button>
       </section>
 
+      {plan.length > 0 && (
+        <div
+          className="stats-grid"
+          style={{ marginTop: 16, marginBottom: 16 }}
+        >
+          <div className="stat-card">
+            <span className="stat-label">Sesiones</span>
+            <strong>{plan.length}</strong>
+            <span className="stat-helper">bloques de estudio</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-label">Tiempo planificado</span>
+            <strong>{Math.floor(totalPlanned / 60)}h {totalPlanned % 60}m</strong>
+            <span className="stat-helper">antes de las fechas límite</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-label">Regla de Esylern</span>
+            <strong>−1 día</strong>
+            <span className="stat-helper">el examen/entrega queda libre</span>
+          </div>
+        </div>
+      )}
+
       {warning && (
         <div className="panel" style={{ marginBottom: 16 }}>
           <strong>{warning}</strong>
@@ -1479,8 +1545,8 @@ function StudyPlanPage({
             <div>
               <h3>Tu plan</h3>
               <p>
-                El día del examen o de entrega queda libre: Esylern termina
-                la preparación el día anterior.
+                Las actividades se reparten según cercanía de la fecha límite,
+                prioridad y tiempo disponible.
               </p>
             </div>
           </div>
@@ -1537,48 +1603,53 @@ function StudyPlanPage({
             <div className="panel-header">
               <div>
                 <h3>Prioridades actuales</h3>
-                <p>Lo que Esylern tendrá en cuenta al crear tu planificación.</p>
+                <p>
+                  Lo que Esylern tendrá en cuenta al crear tu planificación.
+                </p>
               </div>
             </div>
 
             {tasks.filter((task) => !task.done).length === 0 && exams.length === 0 ? (
               <div className="empty-state">
-                <Target size={28} />
-                <h4>Aún no hay suficiente información</h4>
-                <p>Añade tareas y exámenes para construir tu plan.</p>
+                <div className="empty-icon">
+                  <Sparkles size={22} />
+                </div>
+                <h3>Aún no hay nada que planificar</h3>
+                <p>
+                  Añade tareas o exámenes y Esylern podrá organizar tus días.
+                </p>
               </div>
             ) : (
               <div className="priority-list">
-                {[
-                  ...exams.map((exam) => ({
-                    title: exam.topic,
-                    subject: exam.subject,
-                    date: exam.date,
-                    priority: 100,
-                  })),
-                  ...tasks
-                    .filter((task) => !task.done)
-                    .map((task) => ({
-                      title: task.title,
-                      subject: task.subject,
-                      date: task.date,
-                      priority: priorityValue(task.priority),
-                    })),
-                ]
+                {exams
+                  .filter((exam) => new Date(`${exam.date}T00:00:00`) > currentDate)
+                  .slice(0, 3)
+                  .map((exam) => (
+                    <div className="priority-item" key={`exam-preview-${exam.id}`}>
+                      <span className="priority-number">📚</span>
+                      <div>
+                        <strong>{exam.subject}</strong>
+                        <p>
+                          {exam.topic} · {getDaysRemaining(exam.date)} días
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+
+                {tasks
+                  .filter((task) => !task.done)
                   .sort(
                     (a, b) =>
-                      new Date(a.date).getTime() -
-                        new Date(b.date).getTime() ||
-                      b.priority - a.priority,
+                      new Date(a.date).getTime() - new Date(b.date).getTime(),
                   )
-                  .slice(0, 5)
-                  .map((item, index) => (
-                    <div className="priority-item" key={`${item.title}-${index}`}>
-                      <span className="priority-number">{index + 1}</span>
+                  .slice(0, 3)
+                  .map((task) => (
+                    <div className="priority-item" key={`task-preview-${task.id}`}>
+                      <span className="priority-number">📝</span>
                       <div>
-                        <strong>{item.title}</strong>
+                        <strong>{task.title}</strong>
                         <p>
-                          {item.subject} · {new Date(item.date).toLocaleDateString("es-ES")}
+                          {task.subject} · entrega {formatDate(task.date)}
                         </p>
                       </div>
                     </div>
@@ -1587,31 +1658,18 @@ function StudyPlanPage({
             )}
           </div>
 
-          <div className="panel">
-            <div className="panel-header">
-              <div>
-                <h3>Cómo funcionará</h3>
-                <p>La idea central de Esylern</p>
-              </div>
+          <div className="panel ai-panel">
+            <div className="ai-panel-icon">
+              <Sparkles size={22} />
             </div>
-
-            <div className="feature-list">
-              <Feature
-                icon={<Target size={18} />}
-                title="Priorizar"
-                text="Detectar qué tienes que hacer primero."
-              />
-              <Feature
-                icon={<Clock3 size={18} />}
-                title="Repartir"
-                text="Dividir el estudio entre los días disponibles."
-              />
-              <Feature
-                icon={<Brain size={18} />}
-                title="Adaptarse"
-                text="Reorganizar el plan si no puedes estudiar un día."
-              />
-            </div>
+            <h3>¿Cómo funciona?</h3>
+            <p>
+              Esylern busca los huecos disponibles antes de cada examen o
+              entrega y reparte el trabajo empezando por lo más urgente.
+            </p>
+            <p>
+              Cuando tengas lista tu información, pulsa <strong>Generar plan</strong>.
+            </p>
           </div>
         </div>
       )}
