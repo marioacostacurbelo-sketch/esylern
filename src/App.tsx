@@ -1984,12 +1984,12 @@ function AvailabilityPage({
   setBusySlots: React.Dispatch<React.SetStateAction<BusySlot[]>>;
 }) {
   const [mode, setMode] = useState<"weekly" | "this-week">("weekly");
-const [dragStart, setDragStart] = useState<{
-  day: number;
-  time: string;
-} | null>(null);
+  const [dragStart, setDragStart] = useState<{
+    day: number;
+    time: string;
+  } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-const [isDragging, setIsDragging] = useState(false);
   const days = [
     { label: "Lunes", day: 0 },
     { label: "Martes", day: 1 },
@@ -2005,47 +2005,99 @@ const [isDragging, setIsDragging] = useState(false);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
 
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
-      2,
-      "0",
-    )}`;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
   });
 
+  const mondayOfCurrentWeek = getMondayOfCurrentWeek();
+
+  const isBusy = (day: number, time: string) => {
+    return busySlots.some((slot) => {
+      if (slot.day !== day) return false;
+
+      if (slot.repeatWeekly) return true;
+
+      return slot.date === mondayOfCurrentWeek;
+    });
+  };
+
+  const addBusySlot = (day: number, time: string) => {
+    const nextTime = addThirtyMinutes(time);
+
+    setBusySlots((current) => {
+      const alreadyExists = current.some(
+        (slot) =>
+          slot.day === day &&
+          slot.startTime === time &&
+          slot.endTime === nextTime &&
+          slot.repeatWeekly === (mode === "weekly") &&
+          (mode === "weekly" || slot.date === mondayOfCurrentWeek),
+      );
+
+      if (alreadyExists) return current;
+
+      return [
+        ...current,
+        {
+          id: Date.now() + Math.random(),
+          day,
+          startTime: time,
+          endTime: nextTime,
+          repeatWeekly: mode === "weekly",
+          date: mode === "this-week" ? mondayOfCurrentWeek : undefined,
+        },
+      ];
+    });
+  };
+
   const toggleSlot = (day: number, time: string) => {
-  const nextTime = addThirtyMinutes(time);
+    const nextTime = addThirtyMinutes(time);
 
-  const existing = busySlots.find(
-    (slot) =>
-      slot.day === day &&
-      slot.startTime === time &&
-      slot.endTime === nextTime &&
-      slot.repeatWeekly === (mode === "weekly") &&
-      (mode === "weekly" ||
-        slot.date === getMondayOfCurrentWeek()),
-  );
-
-  if (existing) {
-    setBusySlots((current) =>
-      current.filter((slot) => slot.id !== existing.id),
+    const existing = busySlots.find(
+      (slot) =>
+        slot.day === day &&
+        slot.startTime === time &&
+        slot.endTime === nextTime &&
+        slot.repeatWeekly === (mode === "weekly") &&
+        (mode === "weekly" || slot.date === mondayOfCurrentWeek),
     );
-    return;
-  }
 
-  setBusySlots((current) => [
-    ...current,
-    {
-      id: Date.now() + Math.random(),
-      day,
-      startTime: time,
-      endTime: nextTime,
-      repeatWeekly: mode === "weekly",
-      date:
-        mode === "this-week"
-          ? getMondayOfCurrentWeek()
-          : undefined,
-    },
-  ]);
-};
+    if (existing) {
+      setBusySlots((current) =>
+        current.filter((slot) => slot.id !== existing.id),
+      );
+      return;
+    }
+
+    addBusySlot(day, time);
+  };
+
+  const startDragging = (day: number, time: string) => {
+    setDragStart({ day, time });
+    setIsDragging(true);
+    toggleSlot(day, time);
+  };
+
+  const dragOverSlot = (day: number, time: string) => {
+    if (!isDragging || !dragStart) return;
+    if (day !== dragStart.day) return;
+
+    const startIndex = times.indexOf(dragStart.time);
+    const currentIndex = times.indexOf(time);
+
+    if (startIndex === -1 || currentIndex === -1) return;
+
+    const firstIndex = Math.min(startIndex, currentIndex);
+    const lastIndex = Math.max(startIndex, currentIndex);
+
+    for (let index = firstIndex; index <= lastIndex; index++) {
+      addBusySlot(day, times[index]);
+    }
+  };
+
+  const stopDragging = () => {
+    setIsDragging(false);
+    setDragStart(null);
+  };
 
   return (
     <section>
@@ -2065,18 +2117,17 @@ const [isDragging, setIsDragging] = useState(false);
           <div>
             <h2>¿Cuándo estás ocupado?</h2>
             <p>
-              Marca tus clases, entrenamientos, actividades o cualquier
-              otro momento en el que no puedas estudiar.
+              Marca tus clases, entrenamientos, actividades o cualquier otro
+              momento en el que no puedas estudiar.
             </p>
           </div>
         </div>
 
         <div className="filter-row">
           <button
+            type="button"
             className={
-              mode === "weekly"
-                ? "primary-button"
-                : "secondary-button"
+              mode === "weekly" ? "primary-button" : "secondary-button"
             }
             onClick={() => setMode("weekly")}
           >
@@ -2084,10 +2135,9 @@ const [isDragging, setIsDragging] = useState(false);
           </button>
 
           <button
+            type="button"
             className={
-              mode === "this-week"
-                ? "primary-button"
-                : "secondary-button"
+              mode === "this-week" ? "primary-button" : "secondary-button"
             }
             onClick={() => setMode("this-week")}
           >
@@ -2107,41 +2157,36 @@ const [isDragging, setIsDragging] = useState(false);
           </span>
         </div>
 
-        <div className="availability-calendar"
-          onMouseLeave={stopDragging}>
+        <div
+          className="availability-calendar"
+          onMouseLeave={stopDragging}
+          onMouseUp={stopDragging}
+        >
           <div className="availability-corner" />
 
           {days.map((day) => (
-            <div
-              key={day.day}
-              className="availability-day-header"
-            >
+            <div key={day.day} className="availability-day-header">
               {day.label}
             </div>
           ))}
 
           {times.map((time) => (
             <div key={time} className="availability-row">
-              <div className="availability-time">
-                {time}
-              </div>
+              <div className="availability-time">{time}</div>
 
               {days.map((day) => {
                 const busy = isBusy(day.day, time);
 
                 return (
                   <button
-  key={`${day.day}-${time}`}
-  type="button"
-  className={`availability-cell ${
-    busy ? "busy" : ""
-  }`}
-  onClick={() => toggleSlot(day.day, time)}
-  onMouseDown={() => startDragging(day.day, time)}
-  onMouseEnter={() => dragOverSlot(day.day, time)}
-  onMouseUp={stopDragging}
-  aria-label={`${day.label} ${time}`}
-/>
+                    key={`${day.day}-${time}`}
+                    type="button"
+                    className={`availability-cell ${busy ? "busy" : ""}`}
+                    onMouseDown={() => startDragging(day.day, time)}
+                    onMouseEnter={() => dragOverSlot(day.day, time)}
+                    onMouseUp={stopDragging}
+                    aria-label={`${day.label} ${time}`}
+                  />
                 );
               })}
             </div>
@@ -2149,95 +2194,26 @@ const [isDragging, setIsDragging] = useState(false);
         </div>
 
         <p className="availability-help">
-          💡 No necesitas indicar qué haces durante ese tiempo.
-          Esylern simplemente entenderá que esas horas no están
-          disponibles para estudiar.
+          💡 Haz clic en una franja para marcarla como ocupada. También puedes
+          arrastrar para marcar varias horas seguidas.
         </p>
       </div>
     </section>
   );
 }
-const startDragging = (day: number, time: string) => {
-  setDragStart({ day, time });
-  setIsDragging(true);
-};
-
-const dragOverSlot = (day: number, time: string) => {
-  if (!isDragging || !dragStart) return;
-
-  if (day !== dragStart.day) return;
-
-  const timesForDay = times;
-
-  const startIndex = timesForDay.indexOf(dragStart.time);
-  const currentIndex = timesForDay.indexOf(time);
-
-  if (startIndex === -1 || currentIndex === -1) return;
-
-  const firstIndex = Math.min(startIndex, currentIndex);
-  const lastIndex = Math.max(startIndex, currentIndex);
-
-  const selectedTimes = timesForDay.slice(
-    firstIndex,
-    lastIndex + 1,
-  );
-
-  setBusySlots((current) => {
-    const newSlots = [...current];
-
-    selectedTimes.forEach((selectedTime) => {
-      const nextTime = addThirtyMinutes(selectedTime);
-
-      const alreadyExists = newSlots.some(
-        (slot) =>
-          slot.day === day &&
-          slot.startTime === selectedTime &&
-          slot.endTime === nextTime &&
-          slot.repeatWeekly === (mode === "weekly") &&
-          (mode === "weekly" ||
-            slot.date === getMondayOfCurrentWeek()),
-      );
-
-      if (!alreadyExists) {
-        newSlots.push({
-          id: Date.now() + Math.random(),
-          day,
-          startTime: selectedTime,
-          endTime: nextTime,
-          repeatWeekly: mode === "weekly",
-          date:
-            mode === "this-week"
-              ? getMondayOfCurrentWeek()
-              : undefined,
-        });
-      }
-    });
-
-    return newSlots;
-  });
-};
-
-const stopDragging = () => {
-  setIsDragging(false);
-  setDragStart(null);
-};
 
 function addThirtyMinutes(time: string) {
   const [hours, minutes] = time.split(":").map(Number);
-
   const totalMinutes = hours * 60 + minutes + 30;
   const nextHours = Math.floor(totalMinutes / 60);
   const nextMinutes = totalMinutes % 60;
 
-  return `${String(nextHours).padStart(2, "0")}:${String(
-    nextMinutes,
-  ).padStart(2, "0")}`;
+  return `${String(nextHours).padStart(2, "0")}:${String(nextMinutes).padStart(2, "0")}`;
 }
 
 function getMondayOfCurrentWeek() {
   const date = new Date();
   const day = date.getDay();
-
   const difference = day === 0 ? -6 : 1 - day;
 
   date.setDate(date.getDate() + difference);
@@ -2248,6 +2224,7 @@ function getMondayOfCurrentWeek() {
 
   return `${year}-${month}-${dayOfMonth}`;
 }
+
 /* =========================
    COMPONENTES
 ========================= */
