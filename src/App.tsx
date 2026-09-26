@@ -52,6 +52,14 @@ type Exam = {
   studyMinutes: number;
 };
 
+type BusySlot = {
+  id: number;
+  day: number;
+  startTime: string;
+  endTime: string;
+  repeatWeekly: boolean;
+};
+
 const menuItems: {
   label: Page;
   icon: typeof LayoutDashboard;
