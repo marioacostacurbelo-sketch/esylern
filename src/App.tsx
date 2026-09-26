@@ -73,6 +73,11 @@ const menuItems: {
   { label: "Plan de estudio", icon: Target },
   { label: "Asistente IA", icon: MessageCircle },
   { label: "Progreso", icon: TrendingUp },
+  {
+  label: "Tiempo disponible",
+  icon: Clock3,
+  page: "Tiempo disponible",
+},
 ];
 
 const initialTasks: Task[] = [];
