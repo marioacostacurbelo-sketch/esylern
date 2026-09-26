@@ -1452,24 +1452,11 @@ function StudyPlanPage({
       return;
     }
 
-    // Solo planificamos antes de cada fecha límite.
-    // Guardamos la capacidad disponible de cada día.
+    // La capacidad de cada día es GLOBAL: tareas + exámenes comparten el mismo límite.
+    // Importante: la planificación se construye hacia ATRÁS desde cada fecha límite.
+    // Así, un examen del viernes con 2h y un límite de 30 min/día ocupará:
+    // lunes -> martes -> miércoles -> jueves, sin usar el viernes.
     const dailyCapacity = new Map<string, number>();
-
-    for (let i = 0; i < 14; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-
-      // Este límite es GLOBAL: dentro de estas horas entran tanto tareas como exámenes.
-      // También respetamos el tiempo realmente libre que el estudiante haya marcado.
-      const freeMinutes = getAvailableMinutes(date);
-      dailyCapacity.set(
-        getDateKey(date),
-        Math.min(studyDailyMinutes, freeMinutes),
-      );
-    }
-
-    const newPlan: StudySession[] = [];
 
     const toMinutes = (time: string) => {
       const [h, m] = time.split(":").map(Number);
@@ -1488,7 +1475,10 @@ function StudyPlanPage({
             ? slot.day === day
             : slot.day === day && slot.date === dateKey,
         )
-        .map((slot) => ({ start: toMinutes(slot.startTime), end: toMinutes(slot.endTime) }))
+        .map((slot) => ({
+          start: toMinutes(slot.startTime),
+          end: toMinutes(slot.endTime),
+        }))
         .sort((a, b) => a.start - b.start);
 
       const windows: { start: number; end: number }[] = [];
@@ -1496,72 +1486,144 @@ function StudyPlanPage({
 
       for (const slot of occupied) {
         if (slot.end <= cursor) continue;
+
         if (slot.start > cursor) {
-          windows.push({ start: cursor, end: Math.min(slot.start, 22 * 60) });
+          windows.push({
+            start: cursor,
+            end: Math.min(slot.start, 22 * 60),
+          });
         }
+
         cursor = Math.max(cursor, slot.end);
         if (cursor >= 22 * 60) break;
       }
 
-      if (cursor < 22 * 60) windows.push({ start: cursor, end: 22 * 60 });
+      if (cursor < 22 * 60) {
+        windows.push({ start: cursor, end: 22 * 60 });
+      }
+
       return windows.filter((window) => window.end - window.start >= 30);
     };
 
-    for (let dayIndex = 0; dayIndex < 14; dayIndex++) {
+    // Preparamos la capacidad de todos los días que pueden ser necesarios.
+    // No nos limitamos a 14 días: si hay un examen dentro de un mes,
+    // el planificador también debe poder utilizar esas semanas anteriores.
+    const latestDeadline = items.reduce((latest, item) => {
+      const deadline = new Date(`${item.deadline}T00:00:00`);
+      deadline.setHours(0, 0, 0, 0);
+      return deadline > latest ? deadline : latest;
+    }, new Date(today));
+
+    const daysToPlan = Math.max(
+      1,
+      Math.ceil((latestDeadline.getTime() - today.getTime()) / 86400000),
+    );
+
+    for (let dayIndex = 0; dayIndex <= daysToPlan; dayIndex++) {
       const date = new Date(today);
       date.setDate(today.getDate() + dayIndex);
       const dateKey = getDateKey(date);
-      let availableToday = dailyCapacity.get(dateKey) ?? 0;
-      const windows = getFreeWindows(date);
+      const freeMinutes = getAvailableMinutes(date);
 
-      for (const window of windows) {
-        if (availableToday <= 0) break;
-        let cursor = window.start;
+      dailyCapacity.set(
+        dateKey,
+        Math.min(studyDailyMinutes, freeMinutes),
+      );
+    }
 
-        while (cursor + 30 <= window.end && availableToday > 0) {
-          const eligible = items
-            .filter((item) => {
-              if (item.remaining <= 0) return false;
-              const deadline = new Date(`${item.deadline}T00:00:00`);
-              deadline.setHours(0, 0, 0, 0);
-              return date < deadline;
-            })
-            .map((item) => {
-              const deadline = new Date(`${item.deadline}T00:00:00`);
-              deadline.setHours(0, 0, 0, 0);
-              const daysLeft = Math.max(1, Math.ceil((deadline.getTime() - date.getTime()) / 86400000));
-              return { item, daysLeft, urgency: item.remaining / daysLeft };
-            })
-            .sort((a, b) => {
-              if (a.daysLeft !== b.daysLeft) return a.daysLeft - b.daysLeft;
-              if (a.urgency !== b.urgency) return b.urgency - a.urgency;
-              return b.item.priority - a.item.priority;
+    const newPlan: StudySession[] = [];
+
+    // Los objetivos con fecha más cercana tienen prioridad.
+    // Si coinciden, los exámenes tienen prioridad sobre las tareas y después
+    // usamos la prioridad de la tarea.
+    const itemsByDeadline = [...items].sort((a, b) => {
+      if (a.deadline !== b.deadline) {
+        return a.deadline.localeCompare(b.deadline);
+      }
+      if (a.type !== b.type) {
+        return a.type === "Examen" ? -1 : 1;
+      }
+      return b.priority - a.priority;
+    });
+
+    for (const item of itemsByDeadline) {
+      const deadline = new Date(`${item.deadline}T00:00:00`);
+      deadline.setHours(0, 0, 0, 0);
+
+      // Empezamos por el día inmediatamente anterior a la fecha límite y
+      // vamos hacia atrás. Nunca utilizamos el propio día del examen/entrega.
+      const lastStudyDay = new Date(deadline);
+      lastStudyDay.setDate(lastStudyDay.getDate() - 1);
+
+      for (
+        let date = new Date(lastStudyDay);
+        date >= today && item.remaining > 0;
+        date.setDate(date.getDate() - 1)
+      ) {
+        const dateKey = getDateKey(date);
+        let availableToday = dailyCapacity.get(dateKey) ?? 0;
+
+        if (availableToday <= 0) continue;
+
+        const windows = getFreeWindows(date);
+        if (windows.length === 0) continue;
+
+        // Colocamos la sesión en el primer hueco libre del día. El día ya
+        // está limitado por la capacidad global, así que tareas y exámenes
+        // nunca pueden superar el máximo diario configurado.
+        for (const window of windows) {
+          if (availableToday <= 0 || item.remaining <= 0) break;
+
+          let cursor = window.start;
+
+          while (
+            cursor + 30 <= window.end &&
+            availableToday > 0 &&
+            item.remaining > 0
+          ) {
+            const sessionMinutes = Math.min(
+              item.remaining,
+              availableToday,
+              window.end - cursor,
+              90,
+            );
+
+            // Trabajamos en bloques de 30 minutos para que encaje con
+            // el sistema de disponibilidad de Esylern.
+            const finalMinutes =
+              sessionMinutes >= 30
+                ? Math.floor(sessionMinutes / 30) * 30
+                : 0;
+
+            if (finalMinutes < 30) break;
+
+            newPlan.push({
+              date: dateKey,
+              title: item.title,
+              subject: item.subject,
+              minutes: finalMinutes,
+              type: item.type,
+              startTime: toTime(cursor),
+              endTime: toTime(cursor + finalMinutes),
             });
 
-          if (eligible.length === 0) break;
-          const selected = eligible[0].item;
-          const sessionMinutes = Math.min(selected.remaining, availableToday, window.end - cursor, 90);
-          const rounded = sessionMinutes >= 60 ? Math.floor(sessionMinutes / 30) * 30 : 30;
-          const finalMinutes = Math.min(rounded, selected.remaining, availableToday, window.end - cursor);
-          if (finalMinutes < 30) break;
-
-          newPlan.push({
-            date: dateKey,
-            title: selected.title,
-            subject: selected.subject,
-            minutes: finalMinutes,
-            type: selected.type,
-            startTime: toTime(cursor),
-            endTime: toTime(cursor + finalMinutes),
-          });
-
-          selected.remaining -= finalMinutes;
-          availableToday -= finalMinutes;
-          cursor += finalMinutes;
-          dailyCapacity.set(dateKey, availableToday);
+            item.remaining -= finalMinutes;
+            availableToday -= finalMinutes;
+            cursor += finalMinutes;
+          }
         }
+
+        dailyCapacity.set(dateKey, availableToday);
       }
     }
+
+    // Ordenamos el resultado cronológicamente para mostrarlo correctamente
+    // en el plan y en el dashboard, aunque internamente hayamos planificado
+    // hacia atrás.
+    newPlan.sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return toMinutes(a.startTime) - toMinutes(b.startTime);
+    });
 
     const impossibleItems = items.filter((item) => item.remaining > 0);
 
