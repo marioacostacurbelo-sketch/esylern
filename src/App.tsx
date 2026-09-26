@@ -1843,7 +1843,8 @@ const [isDragging, setIsDragging] = useState(false);
           </span>
         </div>
 
-        <div className="availability-calendar">
+        <div className="availability-calendar"
+          onMouseLeave={stopDragging}>
           <div className="availability-corner" />
 
           {days.map((day) => (
