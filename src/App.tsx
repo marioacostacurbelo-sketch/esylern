@@ -1720,7 +1720,12 @@ function AvailabilityPage({
   setBusySlots: React.Dispatch<React.SetStateAction<BusySlot[]>>;
 }) {
   const [mode, setMode] = useState<"weekly" | "this-week">("weekly");
+const [dragStart, setDragStart] = useState<{
+  day: number;
+  time: string;
+} | null>(null);
 
+const [isDragging, setIsDragging] = useState(false);
   const days = [
     { label: "Lunes", day: 0 },
     { label: "Martes", day: 1 },
