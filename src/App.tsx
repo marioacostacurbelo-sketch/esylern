@@ -1748,49 +1748,40 @@ const [isDragging, setIsDragging] = useState(false);
   });
 
   const toggleSlot = (day: number, time: string) => {
-    const nextTime = addThirtyMinutes(time);
+  const nextTime = addThirtyMinutes(time);
 
-    const existing = busySlots.find(
-      (slot) =>
-        slot.day === day &&
-        slot.startTime === time &&
-        slot.endTime === nextTime &&
-        slot.repeatWeekly === (mode === "weekly"),
+  const existing = busySlots.find(
+    (slot) =>
+      slot.day === day &&
+      slot.startTime === time &&
+      slot.endTime === nextTime &&
+      slot.repeatWeekly === (mode === "weekly") &&
+      (mode === "weekly" ||
+        slot.date === getMondayOfCurrentWeek()),
+  );
+
+  if (existing) {
+    setBusySlots((current) =>
+      current.filter((slot) => slot.id !== existing.id),
     );
+    return;
+  }
 
-    if (existing) {
-      setBusySlots((current) =>
-        current.filter((slot) => slot.id !== existing.id),
-      );
-      return;
-    }
-
-    setBusySlots((current) => [
-      ...current,
-      {
-        id: Date.now() + Math.random(),
-        day,
-        startTime: time,
-        endTime: nextTime,
-        repeatWeekly: mode === "weekly",
-        date:
-          mode === "this-week"
-            ? getMondayOfCurrentWeek()
-            : undefined,
-      },
-    ]);
-  };
-
-  const isBusy = (day: number, time: string) => {
-    return busySlots.some(
-      (slot) =>
-        slot.day === day &&
-        slot.startTime === time &&
-        slot.repeatWeekly === (mode === "weekly") &&
-        (mode === "weekly" ||
-          slot.date === getMondayOfCurrentWeek()),
-    );
-  };
+  setBusySlots((current) => [
+    ...current,
+    {
+      id: Date.now() + Math.random(),
+      day,
+      startTime: time,
+      endTime: nextTime,
+      repeatWeekly: mode === "weekly",
+      date:
+        mode === "this-week"
+          ? getMondayOfCurrentWeek()
+          : undefined,
+    },
+  ]);
+};
 
   return (
     <section>
