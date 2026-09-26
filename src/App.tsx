@@ -311,6 +311,12 @@ useEffect(() => {
             completedTasks={completedTasks}
           />
         )}
+        {currentPage === "Tiempo disponible" && (
+  <AvailabilityPage
+    busySlots={busySlots}
+    setBusySlots={setBusySlots}
+  />
+)}
 
         {currentPage === "Configuración" && <SettingsPage />}
       </main>
