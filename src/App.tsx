@@ -1245,16 +1245,240 @@ function CalendarPage({
 function StudyPlanPage({
   tasks,
   exams,
+  busySlots,
 }: {
   tasks: Task[];
   exams: Exam[];
+  busySlots: BusySlot[];
 }) {
+  const [plan, setPlan] = useState<
+    {
+      date: string;
+      title: string;
+      subject: string;
+      minutes: number;
+      type: "Examen" | "Tarea";
+    }[]
+  >([]);
+
   const nextExam = getNextExam(exams);
 
-  const sortedTasks = [...tasks].sort(
-    (a, b) =>
-      priorityValue(b.priority) - priorityValue(a.priority),
+  const getDateKey = (date: Date) => {
+    return date.toISOString().split("T")[0];
+  };
+
+  const getDayNumber = (date: Date) => {
+    return (date.getDay() + 6) % 7;
+  };
+
+  const getAvailableMinutes = (date: Date) => {
+    const day = getDayNumber(date);
+
+    const occupied = busySlots.filter((slot) => {
+      if (slot.repeatWeekly) {
+        return slot.day === day;
+      }
+
+      return slot.day === day && slot.date === getDateKey(date);
+    });
+
+    const occupiedMinutes = occupied.reduce((total, slot) => {
+      const [startHour, startMinute] = slot.startTime
+        .split(":")
+        .map(Number);
+
+      const [endHour, endMinute] = slot.endTime
+        .split(":")
+        .map(Number);
+
+      const start = startHour * 60 + startMinute;
+      const end = endHour * 60 + endMinute;
+
+      return total + Math.max(0, end - start);
+    }, 0);
+
+    const totalMinutes = 16 * 60;
+
+    return Math.max(0, totalMinutes - occupiedMinutes);
+  };
+
+  const generatePlan = () => {
+    const newPlan: {
+      date: string;
+      title: string;
+      subject: string;
+      minutes: number;
+      type: "Examen" | "Tarea";
+    }[] = [];
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const pendingTasks = tasks
+      .filter((task) => !task.done)
+      .sort((a, b) => {
+        const priorityDifference =
+          priorityValue(b.priority) - priorityValue(a.priority);
+
+        if (priorityDifference !== 0) {
+          return priorityDifference;
+        }
+
+        return (
+          new Date(a.date).getTime() -
+          new Date(b.date).getTime()
+        );
+      });
+
+    const upcomingExams = [...exams]
+      .filter((exam) => {
+        const examDate = new Date(exam.date);
+        examDate.setHours(0, 0, 0, 0);
+
+        return examDate >= today;
+      })
+      .sort(
+        (a, b) =>
+          new Date(a.date).getTime() -
+          new Date(b.date).getTime(),
+      );
+
+    const items: {
+      title: string;
+      subject: string;
+      date: string;
+      minutes: number;
+      type: "Examen" | "Tarea";
+      priority: number;
+    }[] = [];
+
+    upcomingExams.forEach((exam) => {
+      items.push({
+        title: `Preparar examen: ${exam.topic}`,
+        subject: exam.subject,
+        date: exam.date,
+        minutes: exam.studyMinutes,
+        type: "Examen",
+        priority: 100,
+      });
+    });
+
+    pendingTasks.forEach((task) => {
+      items.push({
+        title: task.title,
+        subject: task.subject,
+        date: task.date,
+        minutes: task.estimatedMinutes,
+        type: "Tarea",
+        priority: priorityValue(task.priority),
+      });
+    });
+
+    items.sort((a, b) => {
+      const dateDifference =
+        new Date(a.date).getTime() -
+        new Date(b.date).getTime();
+
+      if (dateDifference !== 0) {
+        return dateDifference;
+      }
+
+      return b.priority - a.priority;
+    });
+
+    const remainingMinutes = new Map<string, number>();
+
+    for (let i = 0; i < 14; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+
+      remainingMinutes.set(
+        getDateKey(date),
+        getAvailableMinutes(date),
+      );
+    }
+
+    items.forEach((item) => {
+      let remaining = item.minutes;
+
+      const deadline = new Date(item.date);
+      deadline.setHours(0, 0, 0, 0);
+
+      for (let i = 0; i < 14 && remaining > 0; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+
+        if (date >= deadline && item.type === "Examen") {
+          break;
+        }
+
+        if (date > deadline) {
+          break;
+        }
+
+        const dateKey = getDateKey(date);
+        const available = remainingMinutes.get(dateKey) ?? 0;
+
+        if (available <= 0) {
+          continue;
+        }
+
+        const sessionMinutes = Math.min(
+          remaining,
+          available,
+          90,
+        );
+
+        if (sessionMinutes <= 0) {
+          continue;
+        }
+
+        newPlan.push({
+          date: dateKey,
+          title: item.title,
+          subject: item.subject,
+          minutes: sessionMinutes,
+          type: item.type,
+        });
+
+        remainingMinutes.set(
+          dateKey,
+          available - sessionMinutes,
+        );
+
+        remaining -= sessionMinutes;
+      }
+    });
+
+    setPlan(newPlan);
+  };
+
+  const groupedPlan = plan.reduce(
+    (groups, item) => {
+      if (!groups[item.date]) {
+        groups[item.date] = [];
+      }
+
+      groups[item.date].push(item);
+
+      return groups;
+    },
+    {} as Record<
+      string,
+      typeof plan
+    >,
   );
+
+  const formatDate = (date: string) => {
+    return new Date(`${date}T00:00:00`).toLocaleDateString(
+      "es-ES",
+      {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      },
+    );
+  };
 
   return (
     <>
@@ -1281,82 +1505,202 @@ function StudyPlanPage({
           </p>
         </div>
 
-        <button className="primary-button">
+        <button
+          className="primary-button"
+          onClick={generatePlan}
+        >
           <Sparkles size={16} />
           Generar plan
         </button>
       </section>
 
-      <div className="plan-layout">
-        <div className="panel">
+      {plan.length > 0 ? (
+        <section className="panel">
           <div className="panel-header">
             <div>
-              <h3>Prioridades actuales</h3>
-              <p>Lo que deberías tener en cuenta primero</p>
-            </div>
-          </div>
-
-          {sortedTasks.length === 0 ? (
-            <div className="empty-state">
-              <Target size={28} />
-
-              <h4>Aún no hay suficiente información</h4>
+              <h3>Tu plan</h3>
 
               <p>
-                Añade tareas y exámenes para construir tu plan.
+                Esylern ha repartido tu estudio teniendo en cuenta
+                tus horas ocupadas.
               </p>
             </div>
-          ) : (
-            <div className="priority-list">
-              {sortedTasks.slice(0, 5).map((task, index) => (
-                <div className="priority-item" key={task.id}>
+          </div>
+
+          <div className="priority-list">
+            {Object.entries(groupedPlan).map(
+              ([date, items]) => (
+                <div
+                  key={date}
+                  className="priority-item"
+                  style={{
+                    alignItems: "flex-start",
+                  }}
+                >
                   <span className="priority-number">
-                    {index + 1}
+                    📅
                   </span>
 
-                  <div>
-                    <strong>{task.title}</strong>
+                  <div style={{ width: "100%" }}>
+                    <strong
+                      style={{
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {formatDate(date)}
+                    </strong>
 
-                    <p>
-                      {task.subject} · Prioridad{" "}
-                      {task.priority.toLowerCase()}
-                    </p>
+                    <div
+                      style={{
+                        marginTop: 10,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                      }}
+                    >
+                      {items.map((item, index) => (
+                        <div
+                          key={`${date}-${index}`}
+                          style={{
+                            display: "flex",
+                            justifyContent:
+                              "space-between",
+                            gap: 16,
+                          }}
+                        >
+                          <span>
+                            {item.type === "Examen"
+                              ? "📚"
+                              : "📝"}{" "}
+                            {item.title}
+                            <span
+                              style={{
+                                opacity: 0.65,
+                              }}
+                            >
+                              {" "}
+                              · {item.subject}
+                            </span>
+                          </span>
+
+                          <strong>
+                            {item.minutes} min
+                          </strong>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              ))}
+              ),
+            )}
+          </div>
+        </section>
+      ) : (
+        <div className="plan-layout">
+          <div className="panel">
+            <div className="panel-header">
+              <div>
+                <h3>Prioridades actuales</h3>
+                <p>
+                  Lo que Esylern tendrá en cuenta al crear tu
+                  planificación
+                </p>
+              </div>
             </div>
-          )}
-        </div>
 
-        <div className="panel">
-          <div className="panel-header">
-            <div>
-              <h3>Cómo funcionará</h3>
-              <p>La idea central de Esylern</p>
-            </div>
+            {tasks.filter((task) => !task.done).length === 0 &&
+            exams.length === 0 ? (
+              <div className="empty-state">
+                <Target size={28} />
+
+                <h4>Aún no hay suficiente información</h4>
+
+                <p>
+                  Añade tareas y exámenes para construir tu plan.
+                </p>
+              </div>
+            ) : (
+              <div className="priority-list">
+                {[
+                  ...exams.map((exam) => ({
+                    title: exam.topic,
+                    subject: exam.subject,
+                    date: exam.date,
+                    priority: 100,
+                  })),
+                  ...tasks
+                    .filter((task) => !task.done)
+                    .map((task) => ({
+                      title: task.title,
+                      subject: task.subject,
+                      date: task.date,
+                      priority: priorityValue(
+                        task.priority,
+                      ),
+                    })),
+                ]
+                  .sort(
+                    (a, b) =>
+                      new Date(a.date).getTime() -
+                        new Date(b.date).getTime() ||
+                      b.priority - a.priority,
+                  )
+                  .slice(0, 5)
+                  .map((item, index) => (
+                    <div
+                      className="priority-item"
+                      key={`${item.title}-${index}`}
+                    >
+                      <span className="priority-number">
+                        {index + 1}
+                      </span>
+
+                      <div>
+                        <strong>{item.title}</strong>
+
+                        <p>
+                          {item.subject} ·{" "}
+                          {new Date(
+                            item.date,
+                          ).toLocaleDateString("es-ES")}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
 
-          <div className="feature-list">
-            <Feature
-              icon={<Target size={18} />}
-              title="Priorizar"
-              text="Detectar qué tienes que hacer primero."
-            />
+          <div className="panel">
+            <div className="panel-header">
+              <div>
+                <h3>Cómo funcionará</h3>
+                <p>La idea central de Esylern</p>
+              </div>
+            </div>
 
-            <Feature
-              icon={<Clock3 size={18} />}
-              title="Repartir"
-              text="Dividir el estudio entre los días disponibles."
-            />
+            <div className="feature-list">
+              <Feature
+                icon={<Target size={18} />}
+                title="Priorizar"
+                text="Detectar qué tienes que hacer primero."
+              />
 
-            <Feature
-              icon={<Brain size={18} />}
-              title="Adaptarse"
-              text="Reorganizar el plan si no puedes estudiar un día."
-            />
+              <Feature
+                icon={<Clock3 size={18} />}
+                title="Repartir"
+                text="Dividir el estudio entre los días disponibles."
+              />
+
+              <Feature
+                icon={<Brain size={18} />}
+                title="Adaptarse"
+                text="Reorganizar el plan si no puedes estudiar un día."
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 }
