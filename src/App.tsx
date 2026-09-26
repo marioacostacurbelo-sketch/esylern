@@ -49,6 +49,7 @@ type Exam = {
   subject: string;
   topic: string;
   date: string;
+  studyMinutes: number;
 };
 
 const menuItems: {
