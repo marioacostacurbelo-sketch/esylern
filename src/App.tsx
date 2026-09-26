@@ -904,6 +904,7 @@ function ExamForm({
   const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
   const [date, setDate] = useState("");
+  const [studyMinutes, setStudyMinutes] = useState(120);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
