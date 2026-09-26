@@ -963,6 +963,31 @@ function ExamForm({
             onChange={(event) => setDate(event.target.value)}
           />
         </label>
+        <label>
+  ¿Cuántas horas quieres dedicarle?
+  <select
+    value={studyMinutes}
+    onChange={(event) =>
+      setStudyMinutes(Number(event.target.value))
+    }
+  >
+    <option value={30}>30 minutos</option>
+    <option value={60}>1 hora</option>
+    <option value={90}>1 h 30 min</option>
+    <option value={120}>2 horas</option>
+    <option value={180}>3 horas</option>
+    <option value={240}>4 horas</option>
+    <option value={300}>5 horas</option>
+    <option value={360}>6 horas</option>
+    <option value={480}>8 horas</option>
+    <option value={600}>10 horas</option>
+    <option value={900}>15 horas</option>
+    <option value={1200}>20+ horas</option>
+  </select>
+  <small>
+    Esylern repartirá este tiempo según los días que tengas disponibles.
+  </small>
+</label>
       </div>
 
       <div className="form-actions">
