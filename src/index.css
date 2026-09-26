@@ -1865,3 +1865,352 @@ select {
 .panel:has(.availability-calendar) {
   overflow-x: auto;
 }
+/* =========================================================
+   COLORES DE ASIGNATURAS
+   Sistema visual sutil y consistente
+   ========================================================= */
+
+:root {
+  /* Matemáticas — azul grisáceo */
+  --subject-blue: #5f7fa8;
+  --subject-blue-soft: #f2f6fa;
+
+  /* Lengua — morado apagado */
+  --subject-purple: #85729c;
+  --subject-purple-soft: #f6f2f8;
+
+  /* Historia — terracota suave */
+  --subject-terracotta: #b18470;
+  --subject-terracotta-soft: #faf4f1;
+
+  /* Biología — verde salvia */
+  --subject-sage: #71927f;
+  --subject-sage-soft: #f1f6f3;
+
+  /* Física — rojo teja */
+  --subject-brick: #a86f6f;
+  --subject-brick-soft: #faf2f2;
+
+  /* Química — mostaza apagado */
+  --subject-mustard: #a18b55;
+  --subject-mustard-soft: #faf7ed;
+
+  /* Inglés — rosa empolvado */
+  --subject-rose: #a4778d;
+  --subject-rose-soft: #f9f3f6;
+
+  /* Filosofía — turquesa grisáceo */
+  --subject-teal: #648d91;
+  --subject-teal-soft: #f0f6f6;
+}
+
+
+/* =========================================================
+   BASE
+   ========================================================= */
+
+.task-card,
+.exam-card,
+.mini-task,
+.mini-exam,
+.calendar-event {
+  --subject-color: #68758a;
+  --subject-soft: #f4f5f7;
+}
+
+
+/* =========================================================
+   ASIGNACIÓN DE COLORES
+   ========================================================= */
+
+.subject-blue {
+  --subject-color: var(--subject-blue);
+  --subject-soft: var(--subject-blue-soft);
+}
+
+.subject-purple {
+  --subject-color: var(--subject-purple);
+  --subject-soft: var(--subject-purple-soft);
+}
+
+.subject-terracotta {
+  --subject-color: var(--subject-terracotta);
+  --subject-soft: var(--subject-terracotta-soft);
+}
+
+.subject-sage {
+  --subject-color: var(--subject-sage);
+  --subject-soft: var(--subject-sage-soft);
+}
+
+.subject-brick {
+  --subject-color: var(--subject-brick);
+  --subject-soft: var(--subject-brick-soft);
+}
+
+.subject-mustard {
+  --subject-color: var(--subject-mustard);
+  --subject-soft: var(--subject-mustard-soft);
+}
+
+.subject-rose {
+  --subject-color: var(--subject-rose);
+  --subject-soft: var(--subject-rose-soft);
+}
+
+.subject-teal {
+  --subject-color: var(--subject-teal);
+  --subject-soft: var(--subject-teal-soft);
+}
+
+
+/* =========================================================
+   TAREAS
+   ========================================================= */
+
+.task-card {
+  position: relative;
+  overflow: hidden;
+  border-left: 1px solid var(--border);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+/* Franja lateral */
+.task-card::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: var(--subject-color);
+  opacity: 0.9;
+}
+
+/* Tinte muy ligero */
+.task-card {
+  background:
+    linear-gradient(
+      90deg,
+      var(--subject-soft) 0,
+      rgba(255, 255, 255, 0) 22%
+    ),
+    var(--surface);
+}
+
+
+/* Nombre de asignatura */
+.task-info span {
+  color: var(--subject-color);
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   MINI TAREAS — DASHBOARD
+   ========================================================= */
+
+.mini-task {
+  position: relative;
+  padding-left: 9px;
+}
+
+.mini-task::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: var(--subject-color);
+  opacity: 0.85;
+}
+
+.mini-task span {
+  color: var(--subject-color);
+  font-weight: 550;
+}
+
+
+/* =========================================================
+   EXÁMENES
+   ========================================================= */
+
+.exam-card {
+  position: relative;
+  overflow: hidden;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.exam-card::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: var(--subject-color);
+  opacity: 0.9;
+}
+
+.exam-card {
+  background:
+    linear-gradient(
+      90deg,
+      var(--subject-soft) 0,
+      rgba(255, 255, 255, 0) 25%
+    ),
+    var(--surface);
+}
+
+.exam-icon {
+  background: var(--subject-soft);
+  color: var(--subject-color);
+}
+
+.exam-main > span {
+  color: var(--subject-color);
+}
+
+
+/* =========================================================
+   MINI EXÁMENES — DASHBOARD
+   ========================================================= */
+
+.mini-exam {
+  position: relative;
+  padding-left: 9px;
+}
+
+.mini-exam::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: var(--subject-color);
+  opacity: 0.85;
+}
+
+.mini-exam-icon {
+  background: var(--subject-soft);
+  color: var(--subject-color);
+}
+
+.mini-exam > div:nth-child(2) span {
+  color: var(--subject-color);
+}
+
+
+/* =========================================================
+   CALENDARIO
+   ========================================================= */
+
+.calendar-event {
+  position: relative;
+  padding-left: 8px;
+  border-left: 3px solid var(--subject-color);
+  background: var(--subject-soft);
+  color: var(--subject-color);
+  transition:
+    background 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.calendar-event:hover {
+  background: color-mix(
+    in srgb,
+    var(--subject-soft) 75%,
+    var(--subject-color)
+  );
+}
+
+.calendar-event.exam {
+  border-left-width: 3px;
+  background: var(--subject-soft);
+  color: var(--subject-color);
+  font-weight: 700;
+}
+
+.calendar-event.done {
+  opacity: 0.45;
+}
+
+
+/* =========================================================
+   PLAN DE ESTUDIO
+   ========================================================= */
+
+/*
+   Estas clases también sirven para las sesiones del
+   planificador si el elemento lleva:
+   
+   className={`study-session subject-${getSubjectColor(session.subject)}`}
+*/
+
+.study-session {
+  --subject-color: #68758a;
+  --subject-soft: #f4f5f7;
+
+  position: relative;
+  overflow: hidden;
+  border-left: 3px solid var(--subject-color);
+  background: var(--subject-soft);
+}
+
+.study-session strong,
+.study-session h4 {
+  color: var(--subject-color);
+}
+
+
+/* =========================================================
+   HOVER SUTIL
+   ========================================================= */
+
+.task-card:hover,
+.exam-card:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--border) 70%,
+    var(--subject-color)
+  );
+
+  box-shadow: 0 5px 18px rgba(16, 24, 40, 0.06);
+}
+
+
+/* =========================================================
+   TAREAS COMPLETADAS
+   ========================================================= */
+
+.task-card.completed {
+  opacity: 0.58;
+}
+
+.task-card.completed::before {
+  opacity: 0.45;
+}
+
+
+/* =========================================================
+   MÓVIL
+   ========================================================= */
+
+@media (max-width: 480px) {
+  .task-card::before,
+  .exam-card::before {
+    top: 8px;
+    bottom: 8px;
+  }
+}
