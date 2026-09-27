@@ -2254,19 +2254,19 @@ select {
   text-transform: capitalize;
 }
 
-/* HOY */
+/* =========================
+   HOY
+========================= */
 
 .study-plan-day-header.is-today {
-  background: #f0ecff;
-  border: 1px solid #ddd5fa;
+  background: #f5f6f8;
+  border: 1px solid #dfe3e8;
 }
 
 .study-plan-day-header.is-today .study-plan-day-label {
-  color: #56459d;
+  color: #172033;
   font-weight: 800;
 }
-
-/* ETIQUETA HOY */
 
 .study-plan-day-today {
   display: inline-flex;
@@ -2274,10 +2274,10 @@ select {
   justify-content: center;
   padding: 5px 9px;
   border-radius: 7px;
-  background: #6f5bd3;
+  background: #172033;
   color: #ffffff;
   font-size: 10px;
-  font-weight: 850;
+  font-weight: 800;
   letter-spacing: 0.08em;
 }
 
@@ -2292,8 +2292,8 @@ select {
 }
 
 .study-plan-day-header.is-today .study-plan-day-dot {
-  background: #6f5bd3;
-  box-shadow: 0 0 0 4px #e3ddff;
+  background: #172033;
+  box-shadow: 0 0 0 4px #e5e7eb;
 }
 
 /* Contenedor de las sesiones */
