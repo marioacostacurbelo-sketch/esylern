@@ -1782,63 +1782,68 @@ function StudyPlanPage({
             </div>
           </div>
 
-          <div className="priority-list">
-            {Object.entries(groupedPlan).map(([date, items]) => (
-              <div
-                key={date}
-                className="priority-item"
-                style={{ alignItems: "flex-start" }}
-              >
-                <span className="priority-number">📅</span>
+          <div className="study-plan-timeline">
+            {Object.entries(groupedPlan).map(([date, items]) => {
+              const todayKey = formatDateInput(new Date());
+              const isToday = date === todayKey;
 
-                <div style={{ width: "100%" }}>
-                  <strong style={{ textTransform: "capitalize" }}>
-                    {formatDate(date)}
-                  </strong>
+              return (
+                <section className="study-plan-day" key={date}>
+                  <div className={`study-plan-day-header ${isToday ? "is-today" : ""}`}>
+                    <span className="study-plan-day-dot" />
+                    <div>
+                      <span className="study-plan-day-label">
+                        {isToday ? "HOY · " : ""}
+                        {formatDate(date)}
+                      </span>
+                    </div>
+                  </div>
 
-                  <div
-                    style={{
-                      marginTop: 10,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 8,
-                    }}
-                  >
+                  <div className="study-plan-sessions">
                     {items.map((item, index) => (
                       <div
                         key={`${date}-${item.startTime}-${index}`}
-                        className={`study-session subject-${getSubjectColor(item.subject)} ${
-                          item.type === "Examen"
-                            ? "study-session-exam"
-                            : "study-session-task"
-                        }`}
+                        className={`study-plan-row study-session-${getSubjectColor(item.subject)}`}
                       >
-                        <div className="study-session-time">
-                          <strong>
-                            {item.startTime} – {item.endTime}
-                          </strong>
+                        <div className="study-plan-time">
+                          <strong>{item.startTime}</strong>
+                          <span>{item.endTime}</span>
                         </div>
 
-                        <div className="study-session-content">
-                          <div className="study-session-type">
-                            {item.type === "Examen" ? "Examen" : "Tarea"}
+                        <div
+                          className={`study-plan-card ${
+                            item.type === "Examen"
+                              ? "study-plan-card-exam"
+                              : "study-plan-card-task"
+                          }`}
+                        >
+                          <div className="study-plan-card-main">
+                            <div className="study-plan-type">
+                              <span className="study-plan-type-icon">
+                                {item.type === "Examen" ? "🎓" : "✓"}
+                              </span>
+                              <span>{item.type.toUpperCase()}</span>
+                            </div>
+
+                            <div className="study-plan-subject">
+                              {item.subject}
+                            </div>
+
+                            <div className="study-plan-title">
+                              {item.title}
+                            </div>
                           </div>
 
-                          <div className="study-session-title">
-                            <strong>{item.subject}</strong>
-                            <span> · {item.title}</span>
+                          <div className="study-plan-duration">
+                            {item.minutes} min
                           </div>
-                        </div>
-
-                        <div className="study-session-duration">
-                          {item.minutes} min
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
-              </div>
-            ))}
+                </section>
+              );
+            })}
           </div>
         </section>
       ) : (
