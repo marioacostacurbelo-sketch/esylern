@@ -18,7 +18,6 @@ import {
   Send,
   BookOpen,
   Brain,
-  BarChart3,
   CircleCheck,
   Trash2,
   X,
@@ -72,6 +71,70 @@ type StudySession = {
   endTime: string;
 };
 
+/* =========================
+   ACCIONES DE ESYLERN AI
+========================= */
+
+type AssistantAction =
+  | {
+      type: "create_task";
+      task: Omit<Task, "id">;
+    }
+  | {
+      type: "update_task";
+      id: number;
+      changes: Partial<Omit<Task, "id">>;
+    }
+  | {
+      type: "set_task_done";
+      id: number;
+      done: boolean;
+    }
+  | {
+      type: "delete_task";
+      id: number;
+    }
+  | {
+      type: "create_exam";
+      exam: Omit<Exam, "id">;
+    }
+  | {
+      type: "update_exam";
+      id: number;
+      changes: Partial<Omit<Exam, "id">>;
+    }
+  | {
+      type: "delete_exam";
+      id: number;
+    }
+  | {
+      type: "create_busy_slot";
+      slot: Omit<BusySlot, "id">;
+    }
+  | {
+      type: "delete_busy_slot";
+      id: number;
+    }
+  | {
+      type: "set_daily_study_minutes";
+      minutes: number;
+    }
+  | {
+      type: "set_setting";
+      setting:
+        | "educationLevel"
+        | "course"
+        | "weekdayHours"
+        | "weekendHours"
+        | "preferredSessionMinutes"
+        | "preferredStudyMoment";
+      value: string | number;
+    }
+  | {
+      type: "navigate";
+      page: Page;
+    };
+
 function getSubjectColor(subject: string): string {
   const value = subject.trim().toLowerCase();
 
@@ -96,6 +159,7 @@ function getSubjectColor(subject: string): string {
   ];
 
   let hash = 0;
+
   for (let i = 0; i < value.length; i++) {
     hash = (hash << 5) - hash + value.charCodeAt(i);
     hash |= 0;
@@ -116,9 +180,9 @@ const menuItems: {
   { label: "Asistente IA", icon: MessageCircle },
   { label: "Progreso", icon: TrendingUp },
   {
-  label: "Tiempo disponible",
-  icon: Clock3,
-},
+    label: "Tiempo disponible",
+    icon: Clock3,
+  },
 ];
 
 const initialTasks: Task[] = [];
@@ -128,18 +192,77 @@ const initialExams: Exam[] = [];
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>("Dashboard");
 
-  // Límite total de estudio diario. Incluye tareas + exámenes.
+  // Límite total de estudio diario.
+  // Incluye tareas + exámenes.
   const [studyDailyMinutes, setStudyDailyMinutes] = useState<number>(() => {
     const saved = localStorage.getItem("esylern_daily_study_minutes");
     const value = saved ? Number(saved) : 120;
+
     return Number.isFinite(value) && value > 0 ? value : 120;
   });
 
+  /*
+   * =========================
+   * CONFIGURACIÓN PERSISTENTE
+   * =========================
+   */
+
+  const [educationLevel, setEducationLevel] = useState<string>(() => {
+    return (
+      localStorage.getItem("esylern_education_level") ??
+      "bachillerato"
+    );
+  });
+
+  const [course, setCourse] = useState<string>(() => {
+    return (
+      localStorage.getItem("esylern_course") ??
+      "2bach"
+    );
+  });
+
+  const [weekdayHours, setWeekdayHours] = useState<number>(() => {
+    const saved = localStorage.getItem("esylern_weekday_hours");
+    const value = saved ? Number(saved) : 2;
+
+    return Number.isFinite(value) && value > 0 ? value : 2;
+  });
+
+  const [weekendHours, setWeekendHours] = useState<number>(() => {
+    const saved = localStorage.getItem("esylern_weekend_hours");
+    const value = saved ? Number(saved) : 3;
+
+    return Number.isFinite(value) && value > 0 ? value : 3;
+  });
+
+  const [preferredSessionMinutes, setPreferredSessionMinutes] =
+    useState<number>(() => {
+      const saved = localStorage.getItem(
+        "esylern_preferred_session_minutes",
+      );
+
+      const value = saved ? Number(saved) : 50;
+
+      return Number.isFinite(value) && value > 0 ? value : 50;
+    });
+
+  const [preferredStudyMoment, setPreferredStudyMoment] =
+    useState<string>(() => {
+      return (
+        localStorage.getItem(
+          "esylern_preferred_study_moment",
+        ) ?? "tarde"
+      );
+    });
+
   const [studyPlan, setStudyPlan] = useState<StudySession[]>(() => {
     const saved = localStorage.getItem("esylern_study_plan");
+
     if (!saved) return [];
+
     try {
       const parsed = JSON.parse(saved);
+
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
@@ -150,17 +273,17 @@ function App() {
     const saved = localStorage.getItem("esylern_tasks");
 
     if (saved) {
-  try {
-    const parsed = JSON.parse(saved);
+      try {
+        const parsed = JSON.parse(saved);
 
-    return parsed.map((task: Task) => ({
-      ...task,
-      estimatedMinutes: task.estimatedMinutes ?? 30,
-    }));
-  } catch {
-    return initialTasks;
-  }
-}
+        return parsed.map((task: Task) => ({
+          ...task,
+          estimatedMinutes: task.estimatedMinutes ?? 30,
+        }));
+      } catch {
+        return initialTasks;
+      }
+    }
 
     return initialTasks;
   });
@@ -169,46 +292,61 @@ function App() {
     const saved = localStorage.getItem("esylern_exams");
 
     if (saved) {
-  try {
-    const parsed = JSON.parse(saved);
+      try {
+        const parsed = JSON.parse(saved);
 
-    return parsed.map((exam: Exam) => ({
-      ...exam,
-      studyMinutes: exam.studyMinutes ?? 120,
-    }));
-  } catch {
-    return initialExams;
-  }
-}
+        return parsed.map((exam: Exam) => ({
+          ...exam,
+          studyMinutes: exam.studyMinutes ?? 120,
+        }));
+      } catch {
+        return initialExams;
+      }
+    }
 
     return initialExams;
   });
-const [busySlots, setBusySlots] = useState<BusySlot[]>(() => {
-  const saved = localStorage.getItem("esylern_busy_slots");
 
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch {
-      return [];
+  const [busySlots, setBusySlots] = useState<BusySlot[]>(() => {
+    const saved = localStorage.getItem("esylern_busy_slots");
+
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return [];
+      }
     }
-  }
 
-  return [];
-});
+    return [];
+  });
+
+  /*
+   * =========================
+   * LOCAL STORAGE
+   * =========================
+   */
+
   useEffect(() => {
-    localStorage.setItem("esylern_tasks", JSON.stringify(tasks));
+    localStorage.setItem(
+      "esylern_tasks",
+      JSON.stringify(tasks),
+    );
   }, [tasks]);
 
   useEffect(() => {
-    localStorage.setItem("esylern_exams", JSON.stringify(exams));
+    localStorage.setItem(
+      "esylern_exams",
+      JSON.stringify(exams),
+    );
   }, [exams]);
-useEffect(() => {
-  localStorage.setItem(
-    "esylern_busy_slots",
-    JSON.stringify(busySlots),
-  );
-}, [busySlots]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "esylern_busy_slots",
+      JSON.stringify(busySlots),
+    );
+  }, [busySlots]);
 
   useEffect(() => {
     localStorage.setItem(
@@ -218,12 +356,69 @@ useEffect(() => {
   }, [studyDailyMinutes]);
 
   useEffect(() => {
-    localStorage.setItem("esylern_study_plan", JSON.stringify(studyPlan));
+    localStorage.setItem(
+      "esylern_study_plan",
+      JSON.stringify(studyPlan),
+    );
   }, [studyPlan]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "esylern_education_level",
+      educationLevel,
+    );
+  }, [educationLevel]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "esylern_course",
+      course,
+    );
+  }, [course]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "esylern_weekday_hours",
+      String(weekdayHours),
+    );
+  }, [weekdayHours]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "esylern_weekend_hours",
+      String(weekendHours),
+    );
+  }, [weekendHours]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "esylern_preferred_session_minutes",
+      String(preferredSessionMinutes),
+    );
+  }, [preferredSessionMinutes]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "esylern_preferred_study_moment",
+      preferredStudyMoment,
+    );
+  }, [preferredStudyMoment]);
+
+  /*
+   * =========================
+   * NAVEGACIÓN
+   * =========================
+   */
 
   const navigate = (page: Page) => {
     setCurrentPage(page);
   };
+
+  /*
+   * =========================
+   * TAREAS
+   * =========================
+   */
 
   const addTask = (task: Omit<Task, "id">) => {
     setTasks((current) => [
@@ -233,6 +428,19 @@ useEffect(() => {
         id: Date.now(),
       },
     ]);
+  };
+
+  const updateTask = (
+    id: number,
+    changes: Partial<Omit<Task, "id">>,
+  ) => {
+    setTasks((current) =>
+      current.map((task) =>
+        task.id === id
+          ? { ...task, ...changes }
+          : task,
+      ),
+    );
   };
 
   const toggleTask = (id: number) => {
@@ -245,11 +453,30 @@ useEffect(() => {
     );
   };
 
+  const setTaskDone = (
+    id: number,
+    done: boolean,
+  ) => {
+    setTasks((current) =>
+      current.map((task) =>
+        task.id === id
+          ? { ...task, done }
+          : task,
+      ),
+    );
+  };
+
   const deleteTask = (id: number) => {
     setTasks((current) =>
       current.filter((task) => task.id !== id),
     );
   };
+
+  /*
+   * =========================
+   * EXÁMENES
+   * =========================
+   */
 
   const addExam = (exam: Omit<Exam, "id">) => {
     setExams((current) => [
@@ -261,14 +488,154 @@ useEffect(() => {
     ]);
   };
 
+  const updateExam = (
+    id: number,
+    changes: Partial<Omit<Exam, "id">>,
+  ) => {
+    setExams((current) =>
+      current.map((exam) =>
+        exam.id === id
+          ? { ...exam, ...changes }
+          : exam,
+      ),
+    );
+  };
+
   const deleteExam = (id: number) => {
     setExams((current) =>
       current.filter((exam) => exam.id !== id),
     );
   };
 
-  const pendingTasks = tasks.filter((task) => !task.done);
-  const completedTasks = tasks.filter((task) => task.done);
+  /*
+   * =========================
+   * ACCIONES DE LA IA
+   * =========================
+   *
+   * Esta función todavía no está conectada al modelo.
+   * La dejamos preparada para la siguiente fase.
+   */
+
+  const executeAssistantAction = (
+    action: AssistantAction,
+  ) => {
+    switch (action.type) {
+      case "create_task":
+        addTask(action.task);
+        return;
+
+      case "update_task":
+        updateTask(action.id, action.changes);
+        return;
+
+      case "set_task_done":
+        setTaskDone(action.id, action.done);
+        return;
+
+      case "delete_task":
+        deleteTask(action.id);
+        return;
+
+      case "create_exam":
+        addExam(action.exam);
+        return;
+
+      case "update_exam":
+        updateExam(action.id, action.changes);
+        return;
+
+      case "delete_exam":
+        deleteExam(action.id);
+        return;
+
+      case "create_busy_slot":
+        setBusySlots((current) => [
+          ...current,
+          {
+            ...action.slot,
+            id: Date.now() + Math.random(),
+          },
+        ]);
+        return;
+
+      case "delete_busy_slot":
+        setBusySlots((current) =>
+          current.filter(
+            (slot) => slot.id !== action.id,
+          ),
+        );
+        return;
+
+      case "set_daily_study_minutes":
+        if (
+          Number.isFinite(action.minutes) &&
+          action.minutes > 0
+        ) {
+          setStudyDailyMinutes(action.minutes);
+        }
+        return;
+
+      case "set_setting":
+        switch (action.setting) {
+          case "educationLevel":
+            setEducationLevel(String(action.value));
+            return;
+
+          case "course":
+            setCourse(String(action.value));
+            return;
+
+          case "weekdayHours": {
+            const value = Number(action.value);
+
+            if (Number.isFinite(value) && value > 0) {
+              setWeekdayHours(value);
+            }
+
+            return;
+          }
+
+          case "weekendHours": {
+            const value = Number(action.value);
+
+            if (Number.isFinite(value) && value > 0) {
+              setWeekendHours(value);
+            }
+
+            return;
+          }
+
+          case "preferredSessionMinutes": {
+            const value = Number(action.value);
+
+            if (Number.isFinite(value) && value > 0) {
+              setPreferredSessionMinutes(value);
+            }
+
+            return;
+          }
+
+          case "preferredStudyMoment":
+            setPreferredStudyMoment(String(action.value));
+            return;
+        }
+
+        return;
+
+      case "navigate":
+        navigate(action.page);
+        return;
+    }
+  };
+
+  const pendingTasks = tasks.filter(
+    (task) => !task.done,
+  );
+
+  const completedTasks = tasks.filter(
+    (task) => task.done,
+  );
+
   const nextExam = getNextExam(exams);
 
   return (
@@ -292,7 +659,9 @@ useEffect(() => {
               <button
                 key={item.label}
                 className={`nav-item ${
-                  currentPage === item.label ? "active" : ""
+                  currentPage === item.label
+                    ? "active"
+                    : ""
                 }`}
                 onClick={() => navigate(item.label)}
               >
@@ -306,7 +675,9 @@ useEffect(() => {
         <div className="sidebar-bottom">
           <button
             className={`nav-item ${
-              currentPage === "Configuración" ? "active" : ""
+              currentPage === "Configuración"
+                ? "active"
+                : ""
             }`}
             onClick={() => navigate("Configuración")}
           >
@@ -351,7 +722,10 @@ useEffect(() => {
         )}
 
         {currentPage === "Calendario" && (
-          <CalendarPage tasks={tasks} exams={exams} />
+          <CalendarPage
+            tasks={tasks}
+            exams={exams}
+          />
         )}
 
         {currentPage === "Tareas" && (
@@ -383,14 +757,14 @@ useEffect(() => {
         )}
 
         {currentPage === "Asistente IA" && (
-  <AssistantPage
-    tasks={tasks}
-    exams={exams}
-    studyPlan={studyPlan}
-    busySlots={busySlots}
-    studyDailyMinutes={studyDailyMinutes}
-  />
-)}
+          <AssistantPage
+            tasks={tasks}
+            exams={exams}
+            studyPlan={studyPlan}
+            busySlots={busySlots}
+            studyDailyMinutes={studyDailyMinutes}
+          />
+        )}
 
         {currentPage === "Progreso" && (
           <ProgressPage
@@ -398,17 +772,38 @@ useEffect(() => {
             completedTasks={completedTasks}
           />
         )}
+
         {currentPage === "Tiempo disponible" && (
-  <AvailabilityPage
-    busySlots={busySlots}
-    setBusySlots={setBusySlots}
-  />
-)}
+          <AvailabilityPage
+            busySlots={busySlots}
+            setBusySlots={setBusySlots}
+          />
+        )}
 
         {currentPage === "Configuración" && (
           <SettingsPage
             studyDailyMinutes={studyDailyMinutes}
-            onStudyDailyMinutesChange={setStudyDailyMinutes}
+            onStudyDailyMinutesChange={
+              setStudyDailyMinutes
+            }
+            educationLevel={educationLevel}
+            onEducationLevelChange={setEducationLevel}
+            course={course}
+            onCourseChange={setCourse}
+            weekdayHours={weekdayHours}
+            onWeekdayHoursChange={setWeekdayHours}
+            weekendHours={weekendHours}
+            onWeekendHoursChange={setWeekendHours}
+            preferredSessionMinutes={
+              preferredSessionMinutes
+            }
+            onPreferredSessionMinutesChange={
+              setPreferredSessionMinutes
+            }
+            preferredStudyMoment={preferredStudyMoment}
+            onPreferredStudyMomentChange={
+              setPreferredStudyMoment
+            }
           />
         )}
       </main>
@@ -442,33 +837,49 @@ function Dashboard({
   const today = new Date();
 
   const todayTasks = pendingTasks.filter(
-    (task) => task.date === formatDateInput(today),
+    (task) =>
+      task.date === formatDateInput(today),
   );
 
   const todayPlan = studyPlan.filter(
-    (session) => session.date === formatDateInput(today),
+    (session) =>
+      session.date === formatDateInput(today),
   );
 
   const weekStart = new Date(today);
+
   const weekEnd = new Date(today);
   weekEnd.setDate(today.getDate() + 6);
-  const weekStudyMinutes = studyPlan.reduce((total, session) => {
-    const date = new Date(`${session.date}T00:00:00`);
-    return date >= weekStart && date <= weekEnd
-      ? total + session.minutes
-      : total;
-  }, 0);
+
+  const weekStudyMinutes = studyPlan.reduce(
+    (total, session) => {
+      const date = new Date(
+        `${session.date}T00:00:00`,
+      );
+
+      return date >= weekStart && date <= weekEnd
+        ? total + session.minutes
+        : total;
+    },
+    0,
+  );
 
   const progress =
     tasks.length === 0
       ? 0
-      : Math.round((completedTasks.length / tasks.length) * 100);
+      : Math.round(
+          (completedTasks.length /
+            tasks.length) *
+            100,
+        );
 
   return (
     <>
       <header className="topbar">
         <div>
-          <p className="eyebrow">{formatLongDate(today)}</p>
+          <p className="eyebrow">
+            {formatLongDate(today)}
+          </p>
 
           <h1>Buenos días 👋</h1>
 
@@ -511,7 +922,9 @@ function Dashboard({
 
           <button
             className="primary-button"
-            onClick={() => onNavigate("Plan de estudio")}
+            onClick={() =>
+              onNavigate("Plan de estudio")
+            }
           >
             Crear mi plan de estudio
           </button>
@@ -541,7 +954,9 @@ function Dashboard({
 
           <div>
             <span>Tareas pendientes</span>
-            <strong>{pendingTasks.length}</strong>
+            <strong>
+              {pendingTasks.length}
+            </strong>
           </div>
         </div>
 
@@ -554,7 +969,9 @@ function Dashboard({
             <span>Próximo examen</span>
             <strong>
               {nextExam
-                ? `${getDaysRemaining(nextExam.date)} días`
+                ? `${getDaysRemaining(
+                    nextExam.date,
+                  )} días`
                 : "—"}
             </strong>
           </div>
@@ -567,7 +984,14 @@ function Dashboard({
 
           <div>
             <span>Estudio esta semana</span>
-            <strong>{Math.floor(weekStudyMinutes / 60)}h {weekStudyMinutes % 60}m</strong>
+
+            <strong>
+              {Math.floor(
+                weekStudyMinutes / 60,
+              )}
+              h{" "}
+              {weekStudyMinutes % 60}m
+            </strong>
           </div>
         </div>
 
@@ -584,27 +1008,67 @@ function Dashboard({
       </section>
 
       {todayPlan.length > 0 && (
-        <section className="panel" style={{ marginBottom: 16 }}>
+        <section
+          className="panel"
+          style={{ marginBottom: 16 }}
+        >
           <div className="panel-header">
             <div>
               <h3>Tu plan de hoy</h3>
-              <p>{todayPlan.reduce((sum, item) => sum + item.minutes, 0)} minutos planificados</p>
+
+              <p>
+                {todayPlan.reduce(
+                  (sum, item) =>
+                    sum + item.minutes,
+                  0,
+                )}{" "}
+                minutos planificados
+              </p>
             </div>
-            <button className="text-button" onClick={() => onNavigate("Plan de estudio")}>
+
+            <button
+              className="text-button"
+              onClick={() =>
+                onNavigate("Plan de estudio")
+              }
+            >
               Ver plan completo
             </button>
           </div>
+
           <div className="priority-list">
-            {todayPlan.map((item, index) => (
-              <div className="priority-item" key={`dashboard-plan-${item.date}-${item.startTime}-${index}`}>
-                <span className="priority-number">{item.type === "Examen" ? "📚" : "📝"}</span>
-                <div style={{ flex: 1 }}>
-                  <strong>{item.startTime} – {item.endTime} · {item.subject}</strong>
-                  <p>{item.title}</p>
+            {todayPlan.map(
+              (item, index) => (
+                <div
+                  className="priority-item"
+                  key={`dashboard-plan-${item.date}-${item.startTime}-${index}`}
+                >
+                  <span className="priority-number">
+                    {item.type === "Examen"
+                      ? "📚"
+                      : "📝"}
+                  </span>
+
+                  <div
+                    style={{ flex: 1 }}
+                  >
+                    <strong>
+                      {item.startTime} –{" "}
+                      {item.endTime} ·{" "}
+                      {item.subject}
+                    </strong>
+
+                    <p>
+                      {item.title}
+                    </p>
+                  </div>
+
+                  <strong>
+                    {item.minutes} min
+                  </strong>
                 </div>
-                <strong>{item.minutes} min</strong>
-              </div>
-            ))}
+              ),
+            )}
           </div>
         </section>
       )}
@@ -619,7 +1083,9 @@ function Dashboard({
 
             <button
               className="text-button"
-              onClick={() => onNavigate("Tareas")}
+              onClick={() =>
+                onNavigate("Tareas")
+              }
             >
               Ver todas
             </button>
@@ -631,7 +1097,9 @@ function Dashboard({
                 <ListTodo size={22} />
               </div>
 
-              <h4>No hay tareas para hoy</h4>
+              <h4>
+                No hay tareas para hoy
+              </h4>
 
               <p>
                 Añade una tarea con la fecha de hoy para verla aquí.
@@ -639,7 +1107,9 @@ function Dashboard({
 
               <button
                 className="secondary-button"
-                onClick={() => onNavigate("Tareas")}
+                onClick={() =>
+                  onNavigate("Tareas")
+                }
               >
                 <Plus size={17} />
                 Añadir tarea
@@ -647,21 +1117,39 @@ function Dashboard({
             </div>
           ) : (
             <div className="mini-task-list">
-              {todayTasks.slice(0, 4).map((task) => (
-                <div className={`mini-task subject-${getSubjectColor(task.subject)}`} key={task.id}>
-                  <button
-                    className="task-check"
-                    onClick={() => onToggleTask(task.id)}
-                  />
+              {todayTasks
+                .slice(0, 4)
+                .map((task) => (
+                  <div
+                    className={`mini-task subject-${getSubjectColor(
+                      task.subject,
+                    )}`}
+                    key={task.id}
+                  >
+                    <button
+                      className="task-check"
+                      onClick={() =>
+                        onToggleTask(task.id)
+                      }
+                    />
 
-                  <div>
-                    <strong>{task.title}</strong>
-                    <span>{task.subject}</span>
+                    <div>
+                      <strong>
+                        {task.title}
+                      </strong>
+
+                      <span>
+                        {task.subject}
+                      </span>
+                    </div>
+
+                    <PriorityBadge
+                      priority={
+                        task.priority
+                      }
+                    />
                   </div>
-
-                  <PriorityBadge priority={task.priority} />
-                </div>
-              ))}
+                ))}
             </div>
           )}
         </div>
@@ -669,13 +1157,20 @@ function Dashboard({
         <div className="panel">
           <div className="panel-header">
             <div>
-              <h3>Próximos exámenes</h3>
-              <p>Mantén tus fechas bajo control</p>
+              <h3>
+                Próximos exámenes
+              </h3>
+
+              <p>
+                Mantén tus fechas bajo control
+              </p>
             </div>
 
             <button
               className="text-button"
-              onClick={() => onNavigate("Exámenes")}
+              onClick={() =>
+                onNavigate("Exámenes")
+              }
             >
               Ver exámenes
             </button>
@@ -687,7 +1182,9 @@ function Dashboard({
                 <CalendarDays size={22} />
               </div>
 
-              <h4>No hay exámenes próximos</h4>
+              <h4>
+                No hay exámenes próximos
+              </h4>
 
               <p>
                 Añade tus próximos exámenes para planificar con tiempo.
@@ -695,7 +1192,9 @@ function Dashboard({
 
               <button
                 className="secondary-button"
-                onClick={() => onNavigate("Exámenes")}
+                onClick={() =>
+                  onNavigate("Exámenes")
+                }
               >
                 <Plus size={17} />
                 Añadir examen
@@ -706,25 +1205,44 @@ function Dashboard({
               {[...exams]
                 .sort(
                   (a, b) =>
-                    new Date(a.date).getTime() -
-                    new Date(b.date).getTime(),
+                    new Date(
+                      a.date,
+                    ).getTime() -
+                    new Date(
+                      b.date,
+                    ).getTime(),
                 )
                 .slice(0, 3)
                 .map((exam) => (
-                  <div className={`mini-exam subject-${getSubjectColor(exam.subject)}`} key={exam.id}>
+                  <div
+                    className={`mini-exam subject-${getSubjectColor(
+                      exam.subject,
+                    )}`}
+                    key={exam.id}
+                  >
                     <div className="mini-exam-icon">
-                      <GraduationCap size={18} />
+                      <GraduationCap
+                        size={18}
+                      />
                     </div>
 
                     <div>
-                      <strong>{exam.subject}</strong>
-                      <span>{exam.topic}</span>
+                      <strong>
+                        {exam.subject}
+                      </strong>
+
+                      <span>
+                        {exam.topic}
+                      </span>
                     </div>
 
                     <div className="mini-exam-days">
                       <strong>
-                        {getDaysRemaining(exam.date)}
+                        {getDaysRemaining(
+                          exam.date,
+                        )}
                       </strong>
+
                       <span>días</span>
                     </div>
                   </div>
@@ -748,21 +1266,30 @@ function TasksPage({
   onDeleteTask,
 }: {
   tasks: Task[];
-  onAddTask: (task: Omit<Task, "id">) => void;
+  onAddTask: (
+    task: Omit<Task, "id">,
+  ) => void;
   onToggleTask: (id: number) => void;
   onDeleteTask: (id: number) => void;
 }) {
-  const [showForm, setShowForm] = useState(false);
-  const [filter, setFilter] = useState<
-    "Todas" | "Pendientes" | "Completadas"
-  >("Todas");
+  const [showForm, setShowForm] =
+    useState(false);
 
-  const filteredTasks = tasks.filter((task) => {
-    if (filter === "Pendientes") return !task.done;
-    if (filter === "Completadas") return task.done;
+  const [filter, setFilter] =
+    useState<
+      "Todas" | "Pendientes" | "Completadas"
+    >("Todas");
 
-    return true;
-  });
+  const filteredTasks =
+    tasks.filter((task) => {
+      if (filter === "Pendientes")
+        return !task.done;
+
+      if (filter === "Completadas")
+        return task.done;
+
+      return true;
+    });
 
   return (
     <>
@@ -773,7 +1300,9 @@ function TasksPage({
         action={
           <button
             className="add-button"
-            onClick={() => setShowForm(true)}
+            onClick={() =>
+              setShowForm(true)
+            }
           >
             <Plus size={18} />
             Nueva tarea
@@ -782,19 +1311,27 @@ function TasksPage({
       />
 
       <div className="filter-row">
-        {(["Todas", "Pendientes", "Completadas"] as const).map(
-          (item) => (
-            <button
-              key={item}
-              className={`filter ${
-                filter === item ? "active" : ""
-              }`}
-              onClick={() => setFilter(item)}
-            >
-              {item}
-            </button>
-          ),
-        )}
+        {(
+          [
+            "Todas",
+            "Pendientes",
+            "Completadas",
+          ] as const
+        ).map((item) => (
+          <button
+            key={item}
+            className={`filter ${
+              filter === item
+                ? "active"
+                : ""
+            }`}
+            onClick={() =>
+              setFilter(item)
+            }
+          >
+            {item}
+          </button>
+        ))}
       </div>
 
       {showForm && (
@@ -803,7 +1340,9 @@ function TasksPage({
             onAddTask(task);
             setShowForm(false);
           }}
-          onCancel={() => setShowForm(false)}
+          onCancel={() =>
+            setShowForm(false)
+          }
         />
       )}
 
@@ -813,39 +1352,62 @@ function TasksPage({
           title="No hay tareas"
           text="Añade tu primera tarea para empezar a organizarte."
           buttonText="Añadir tarea"
-          onClick={() => setShowForm(true)}
+          onClick={() =>
+            setShowForm(true)
+          }
         />
       ) : (
         <div className="task-list">
           {filteredTasks.map((task) => (
             <div
               className={`task-card ${
-                task.done ? "completed" : ""
+                task.done
+                  ? "completed"
+                  : ""
               }`}
               key={task.id}
             >
               <button
                 className={`task-check ${
-                  task.done ? "checked" : ""
+                  task.done
+                    ? "checked"
+                    : ""
                 }`}
-                onClick={() => onToggleTask(task.id)}
+                onClick={() =>
+                  onToggleTask(task.id)
+                }
               >
-                {task.done && <CircleCheck size={19} />}
+                {task.done && (
+                  <CircleCheck size={19} />
+                )}
               </button>
 
               <div className="task-info">
-                <strong>{task.title}</strong>
+                <strong>
+                  {task.title}
+                </strong>
+
                 <span>
-                  {task.subject} · {formatShortDate(task.date)} ·{" "}
-{formatMinutes(task.estimatedMinutes)}
+                  {task.subject} ·{" "}
+                  {formatShortDate(
+                    task.date,
+                  )}{" "}
+                  ·{" "}
+                  {formatMinutes(
+                    task.estimatedMinutes,
+                  )}
                 </span>
               </div>
 
-              <PriorityBadge priority={task.priority} />
+              <PriorityBadge
+                priority={task.priority}
+              />
 
               <button
                 className="delete-button"
-                onClick={() => onDeleteTask(task.id)}
+                onClick={() =>
+                  onDeleteTask(task.id)
+                }
                 aria-label="Eliminar tarea"
               >
                 <Trash2 size={17} />
@@ -862,37 +1424,66 @@ function TaskForm({
   onAdd,
   onCancel,
 }: {
-  onAdd: (task: Omit<Task, "id">) => void;
+  onAdd: (
+    task: Omit<Task, "id">,
+  ) => void;
   onCancel: () => void;
 }) {
-  const [title, setTitle] = useState("");
-  const [subject, setSubject] = useState("");
-  const [date, setDate] = useState(formatDateInput(new Date()));
-  const [priority, setPriority] =
-    useState<Task["priority"]>("Media");
-  const [estimatedMinutes, setEstimatedMinutes] = useState(30);
+  const [title, setTitle] =
+    useState("");
 
-  const submit = (event: FormEvent) => {
+  const [subject, setSubject] =
+    useState("");
+
+  const [date, setDate] =
+    useState(
+      formatDateInput(new Date()),
+    );
+
+  const [priority, setPriority] =
+    useState<Task["priority"]>(
+      "Media",
+    );
+
+  const [
+    estimatedMinutes,
+    setEstimatedMinutes,
+  ] = useState(30);
+
+  const submit = (
+    event: FormEvent,
+  ) => {
     event.preventDefault();
 
-    if (!title.trim() || !subject.trim() || !date) return;
+    if (
+      !title.trim() ||
+      !subject.trim() ||
+      !date
+    ) {
+      return;
+    }
 
     onAdd({
-  title: title.trim(),
-  subject: subject.trim(),
-  date,
-  priority,
-  estimatedMinutes,
-  done: false,
-});
+      title: title.trim(),
+      subject: subject.trim(),
+      date,
+      priority,
+      estimatedMinutes,
+      done: false,
+    });
   };
 
   return (
-    <form className="form-card" onSubmit={submit}>
+    <form
+      className="form-card"
+      onSubmit={submit}
+    >
       <div className="form-header">
         <div>
           <h3>Nueva tarea</h3>
-          <p>Añade algo que tengas pendiente.</p>
+          <p>
+            Añade algo que tengas pendiente.
+          </p>
         </div>
 
         <button
@@ -907,38 +1498,51 @@ function TaskForm({
       <div className="form-grid">
         <label>
           Tarea
+
           <input
             value={title}
-            onChange={(event) => setTitle(event.target.value)}
+            onChange={(event) =>
+              setTitle(event.target.value)
+            }
             placeholder="Ej. Hacer ejercicios de matemáticas"
           />
         </label>
 
         <label>
           Asignatura
+
           <input
             value={subject}
-            onChange={(event) => setSubject(event.target.value)}
+            onChange={(event) =>
+              setSubject(
+                event.target.value,
+              )
+            }
             placeholder="Ej. Matemáticas"
           />
         </label>
 
         <label>
           Fecha
+
           <input
             type="date"
             value={date}
-            onChange={(event) => setDate(event.target.value)}
+            onChange={(event) =>
+              setDate(event.target.value)
+            }
           />
         </label>
 
         <label>
           Prioridad
+
           <select
             value={priority}
             onChange={(event) =>
               setPriority(
-                event.target.value as Task["priority"],
+                event.target
+                  .value as Task["priority"],
               )
             }
           >
@@ -947,24 +1551,53 @@ function TaskForm({
             <option>Alta</option>
           </select>
         </label>
+
         <label>
-  Tiempo estimado
-  <select
-    value={estimatedMinutes}
-    onChange={(event) =>
-      setEstimatedMinutes(Number(event.target.value))
-    }
-  >
-    <option value={15}>15 minutos</option>
-    <option value={30}>30 minutos</option>
-    <option value={45}>45 minutos</option>
-    <option value={60}>1 hora</option>
-    <option value={90}>1 hora 30 minutos</option>
-    <option value={120}>2 horas</option>
-    <option value={150}>2 horas 30 minutos</option>
-    <option value={180}>3 horas</option>
-  </select>
-</label>
+          Tiempo estimado
+
+          <select
+            value={estimatedMinutes}
+            onChange={(event) =>
+              setEstimatedMinutes(
+                Number(
+                  event.target.value,
+                ),
+              )
+            }
+          >
+            <option value={15}>
+              15 minutos
+            </option>
+
+            <option value={30}>
+              30 minutos
+            </option>
+
+            <option value={45}>
+              45 minutos
+            </option>
+
+            <option value={60}>
+              1 hora
+            </option>
+
+            <option value={90}>
+              1 hora 30 minutos
+            </option>
+
+            <option value={120}>
+              2 horas
+            </option>
+
+            <option value={150}>
+              2 horas 30 minutos
+            </option>
+
+            <option value={180}>
+              3 horas
+            </option>
+          </select>
+        </label>
       </div>
 
       <div className="form-actions">
@@ -976,7 +1609,10 @@ function TaskForm({
           Cancelar
         </button>
 
-        <button type="submit" className="primary-button">
+        <button
+          type="submit"
+          className="primary-button"
+        >
           <Plus size={17} />
           Crear tarea
         </button>
@@ -995,10 +1631,13 @@ function ExamsPage({
   onDeleteExam,
 }: {
   exams: Exam[];
-  onAddExam: (exam: Omit<Exam, "id">) => void;
+  onAddExam: (
+    exam: Omit<Exam, "id">,
+  ) => void;
   onDeleteExam: (id: number) => void;
 }) {
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] =
+    useState(false);
 
   const sortedExams = [...exams].sort(
     (a, b) =>
@@ -1015,7 +1654,9 @@ function ExamsPage({
         action={
           <button
             className="add-button"
-            onClick={() => setShowForm(true)}
+            onClick={() =>
+              setShowForm(true)
+            }
           >
             <Plus size={18} />
             Nuevo examen
@@ -1029,42 +1670,70 @@ function ExamsPage({
             onAddExam(exam);
             setShowForm(false);
           }}
-          onCancel={() => setShowForm(false)}
+          onCancel={() =>
+            setShowForm(false)
+          }
         />
       )}
 
       {sortedExams.length === 0 ? (
         <EmptyBox
-          icon={<GraduationCap size={24} />}
+          icon={
+            <GraduationCap size={24} />
+          }
           title="No tienes exámenes"
           text="Añade tus próximos exámenes para que Esylern pueda ayudarte a prepararlos."
           buttonText="Añadir examen"
-          onClick={() => setShowForm(true)}
+          onClick={() =>
+            setShowForm(true)
+          }
         />
       ) : (
         <div className="exam-grid">
           {sortedExams.map((exam) => (
-            <div className={`exam-card subject-${getSubjectColor(exam.subject)}`} key={exam.id}>
+            <div
+              className={`exam-card subject-${getSubjectColor(
+                exam.subject,
+              )}`}
+              key={exam.id}
+            >
               <div className="exam-icon">
                 <GraduationCap size={22} />
               </div>
 
               <div className="exam-main">
-                <span>{exam.subject}</span>
+                <span>
+                  {exam.subject}
+                </span>
+
                 <h3>{exam.topic}</h3>
-                <p>{formatLongDate(new Date(exam.date))}</p>
+
+                <p>
+                  {formatLongDate(
+                    new Date(
+                      exam.date,
+                    ),
+                  )}
+                </p>
               </div>
 
               <div className="exam-days">
                 <strong>
-                  {getDaysRemaining(exam.date)}
+                  {getDaysRemaining(
+                    exam.date,
+                  )}
                 </strong>
+
                 <span>restantes</span>
               </div>
 
               <button
                 className="delete-button"
-                onClick={() => onDeleteExam(exam.id)}
+                onClick={() =>
+                  onDeleteExam(
+                    exam.id,
+                  )
+                }
               >
                 <Trash2 size={17} />
               </button>
@@ -1080,33 +1749,56 @@ function ExamForm({
   onAdd,
   onCancel,
 }: {
-  onAdd: (exam: Omit<Exam, "id">) => void;
+  onAdd: (
+    exam: Omit<Exam, "id">,
+  ) => void;
   onCancel: () => void;
 }) {
-  const [subject, setSubject] = useState("");
-  const [topic, setTopic] = useState("");
-  const [date, setDate] = useState("");
-  const [studyMinutes, setStudyMinutes] = useState(120);
+  const [subject, setSubject] =
+    useState("");
 
-  const submit = (event: FormEvent) => {
+  const [topic, setTopic] =
+    useState("");
+
+  const [date, setDate] =
+    useState("");
+
+  const [studyMinutes, setStudyMinutes] =
+    useState(120);
+
+  const submit = (
+    event: FormEvent,
+  ) => {
     event.preventDefault();
 
-    if (!subject.trim() || !topic.trim() || !date) return;
+    if (
+      !subject.trim() ||
+      !topic.trim() ||
+      !date
+    ) {
+      return;
+    }
 
     onAdd({
-  subject: subject.trim(),
-  topic: topic.trim(),
-  date,
-  studyMinutes,
-});
+      subject: subject.trim(),
+      topic: topic.trim(),
+      date,
+      studyMinutes,
+    });
   };
 
   return (
-    <form className="form-card" onSubmit={submit}>
+    <form
+      className="form-card"
+      onSubmit={submit}
+    >
       <div className="form-header">
         <div>
           <h3>Nuevo examen</h3>
-          <p>Introduce los datos del examen.</p>
+
+          <p>
+            Introduce los datos del examen.
+          </p>
         </div>
 
         <button
@@ -1121,55 +1813,110 @@ function ExamForm({
       <div className="form-grid">
         <label>
           Asignatura
+
           <input
             value={subject}
-            onChange={(event) => setSubject(event.target.value)}
+            onChange={(event) =>
+              setSubject(
+                event.target.value,
+              )
+            }
             placeholder="Ej. Matemáticas"
           />
         </label>
 
         <label>
           Temario
+
           <input
             value={topic}
-            onChange={(event) => setTopic(event.target.value)}
+            onChange={(event) =>
+              setTopic(
+                event.target.value,
+              )
+            }
             placeholder="Ej. Funciones y derivadas"
           />
         </label>
 
         <label>
           Fecha del examen
+
           <input
             type="date"
             value={date}
-            onChange={(event) => setDate(event.target.value)}
+            onChange={(event) =>
+              setDate(event.target.value)
+            }
           />
         </label>
+
         <label>
-  ¿Cuántas horas quieres dedicarle?
-  <select
-    value={studyMinutes}
-    onChange={(event) =>
-      setStudyMinutes(Number(event.target.value))
-    }
-  >
-    <option value={30}>30 minutos</option>
-    <option value={60}>1 hora</option>
-    <option value={90}>1 h 30 min</option>
-    <option value={120}>2 horas</option>
-    <option value={180}>3 horas</option>
-    <option value={240}>4 horas</option>
-    <option value={300}>5 horas</option>
-    <option value={360}>6 horas</option>
-    <option value={480}>8 horas</option>
-    <option value={600}>10 horas</option>
-    <option value={900}>15 horas</option>
-    <option value={1200}>20+ horas</option>
-  </select>
-  <small>
-    Esylern repartirá este tiempo según los días que tengas disponibles.
-  </small>
-</label>
+          ¿Cuántas horas quieres dedicarle?
+
+          <select
+            value={studyMinutes}
+            onChange={(event) =>
+              setStudyMinutes(
+                Number(
+                  event.target.value,
+                ),
+              )
+            }
+          >
+            <option value={30}>
+              30 minutos
+            </option>
+
+            <option value={60}>
+              1 hora
+            </option>
+
+            <option value={90}>
+              1 h 30 min
+            </option>
+
+            <option value={120}>
+              2 horas
+            </option>
+
+            <option value={180}>
+              3 horas
+            </option>
+
+            <option value={240}>
+              4 horas
+            </option>
+
+            <option value={300}>
+              5 horas
+            </option>
+
+            <option value={360}>
+              6 horas
+            </option>
+
+            <option value={480}>
+              8 horas
+            </option>
+
+            <option value={600}>
+              10 horas
+            </option>
+
+            <option value={900}>
+              15 horas
+            </option>
+
+            <option value={1200}>
+              20+ horas
+            </option>
+          </select>
+
+          <small>
+            Esylern repartirá este tiempo según los días que tengas disponibles.
+          </small>
+        </label>
       </div>
 
       <div className="form-actions">
@@ -1181,7 +1928,10 @@ function ExamForm({
           Cancelar
         </button>
 
-        <button type="submit" className="primary-button">
+        <button
+          type="submit"
+          className="primary-button"
+        >
           <Plus size={17} />
           Crear examen
         </button>
@@ -1201,17 +1951,27 @@ function CalendarPage({
   tasks: Task[];
   exams: Exam[];
 }) {
-  const [currentMonth, setCurrentMonth] = useState(
-    new Date(2026, 8, 1),
-  );
+  const [currentMonth, setCurrentMonth] =
+    useState(
+      new Date(2026, 8, 1),
+    );
 
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth();
+  const year =
+    currentMonth.getFullYear();
 
-  const firstDay = new Date(year, month, 1).getDay();
+  const month =
+    currentMonth.getMonth();
+
+  const firstDay = new Date(
+    year,
+    month,
+    1,
+  ).getDay();
 
   const mondayOffset =
-    firstDay === 0 ? 6 : firstDay - 1;
+    firstDay === 0
+      ? 6
+      : firstDay - 1;
 
   const daysInMonth = new Date(
     year,
@@ -1220,14 +1980,26 @@ function CalendarPage({
   ).getDate();
 
   const totalCells =
-    Math.ceil((mondayOffset + daysInMonth) / 7) * 7;
+    Math.ceil(
+      (mondayOffset +
+        daysInMonth) /
+        7,
+    ) * 7;
 
   const cells = Array.from(
-    { length: totalCells },
+    {
+      length: totalCells,
+    },
     (_, index) => {
-      const day = index - mondayOffset + 1;
+      const day =
+        index -
+        mondayOffset +
+        1;
 
-      if (day < 1 || day > daysInMonth) {
+      if (
+        day < 1 ||
+        day > daysInMonth
+      ) {
         return null;
       }
 
@@ -1236,20 +2008,33 @@ function CalendarPage({
   );
 
   const previousMonth = () => {
-    setCurrentMonth(new Date(year, month - 1, 1));
+    setCurrentMonth(
+      new Date(
+        year,
+        month - 1,
+        1,
+      ),
+    );
   };
 
   const nextMonth = () => {
-    setCurrentMonth(new Date(year, month + 1, 1));
+    setCurrentMonth(
+      new Date(
+        year,
+        month + 1,
+        1,
+      ),
+    );
   };
 
-  const monthName = currentMonth.toLocaleDateString(
-    "es-ES",
-    {
-      month: "long",
-      year: "numeric",
-    },
-  );
+  const monthName =
+    currentMonth.toLocaleDateString(
+      "es-ES",
+      {
+        month: "long",
+        year: "numeric",
+      },
+    );
 
   return (
     <>
@@ -1263,21 +2048,31 @@ function CalendarPage({
         <div className="calendar-navigation">
           <button
             className="icon-button"
-            onClick={previousMonth}
+            onClick={
+              previousMonth
+            }
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft
+              size={18}
+            />
           </button>
 
           <strong>
-            {monthName.charAt(0).toUpperCase() +
+            {monthName
+              .charAt(0)
+              .toUpperCase() +
               monthName.slice(1)}
           </strong>
 
           <button
             className="icon-button"
-            onClick={nextMonth}
+            onClick={
+              nextMonth
+            }
           >
-            <ChevronRight size={18} />
+            <ChevronRight
+              size={18}
+            />
           </button>
         </div>
       </div>
@@ -1293,73 +2088,119 @@ function CalendarPage({
             "Sáb",
             "Dom",
           ].map((day) => (
-            <div className="calendar-day-name" key={day}>
+            <div
+              className="calendar-day-name"
+              key={day}
+            >
               {day}
             </div>
           ))}
         </div>
 
         <div className="calendar-grid">
-          {cells.map((day, index) => {
-            if (!day) {
+          {cells.map(
+            (day, index) => {
+              if (!day) {
+                return (
+                  <div
+                    className="calendar-cell empty"
+                    key={index}
+                  />
+                );
+              }
+
+              const dateString =
+                `${year}-${String(
+                  month + 1,
+                ).padStart(
+                  2,
+                  "0",
+                )}-${String(
+                  day,
+                ).padStart(
+                  2,
+                  "0",
+                )}`;
+
+              const dayTasks =
+                tasks.filter(
+                  (task) =>
+                    task.date ===
+                    dateString,
+                );
+
+              const dayExams =
+                exams.filter(
+                  (exam) =>
+                    exam.date ===
+                    dateString,
+                );
+
+              const todayString =
+                formatDateInput(
+                  new Date(),
+                );
+
               return (
                 <div
-                  className="calendar-cell empty"
+                  className={`calendar-cell ${
+                    dateString ===
+                    todayString
+                      ? "today"
+                      : ""
+                  }`}
                   key={index}
-                />
+                >
+                  <span className="calendar-number">
+                    {day}
+                  </span>
+
+                  {dayTasks
+                    .slice(0, 2)
+                    .map(
+                      (task) => (
+                        <div
+                          className={`calendar-event subject-${getSubjectColor(
+                            task.subject,
+                          )} ${
+                            task.done
+                              ? "done"
+                              : ""
+                          }`}
+                          key={
+                            task.id
+                          }
+                        >
+                          {
+                            task.title
+                          }
+                        </div>
+                      ),
+                    )}
+
+                  {dayExams
+                    .slice(0, 1)
+                    .map(
+                      (exam) => (
+                        <div
+                          className={`calendar-event exam subject-${getSubjectColor(
+                            exam.subject,
+                          )}`}
+                          key={
+                            exam.id
+                          }
+                        >
+                          Examen:{" "}
+                          {
+                            exam.subject
+                          }
+                        </div>
+                      ),
+                    )}
+                </div>
               );
-            }
-
-            const dateString = `${year}-${String(
-              month + 1,
-            ).padStart(2, "0")}-${String(day).padStart(
-              2,
-              "0",
-            )}`;
-
-            const dayTasks = tasks.filter(
-              (task) => task.date === dateString,
-            );
-
-            const dayExams = exams.filter(
-              (exam) => exam.date === dateString,
-            );
-
-            const todayString = formatDateInput(new Date());
-
-            return (
-              <div
-                className={`calendar-cell ${
-                  dateString === todayString ? "today" : ""
-                }`}
-                key={index}
-              >
-                <span className="calendar-number">
-                  {day}
-                </span>
-
-                {dayTasks.slice(0, 2).map((task) => (
-                  <div
-                    className={`calendar-event subject-${getSubjectColor(task.subject)} ${
-                      task.done ? "done" : ""
-                    }`}
-                    key={task.id}
-                  >
-                    {task.title}
-                  </div>
-                ))}
-
-                {dayExams.slice(0, 1).map((exam) => (
-                  <div
-                    className={`calendar-event exam subject-${getSubjectColor(exam.subject)}`}
-                    key={exam.id}
-                  >
-                    Examen: {exam.subject}
-                  </div>
-                ))}
-              </div>
-            );
-          })}
+            },
+          )}
         </div>
       </div>
     </>
@@ -1383,53 +2224,111 @@ function StudyPlanPage({
   busySlots: BusySlot[];
   studyDailyMinutes: number;
   savedPlan: StudySession[];
-  onPlanGenerated: (plan: StudySession[]) => void;
+  onPlanGenerated: (
+    plan: StudySession[],
+  ) => void;
 }) {
-  const [plan, setPlan] = useState<StudySession[]>(savedPlan);
+  const [plan, setPlan] =
+    useState<StudySession[]>(
+      savedPlan,
+    );
 
-  const [warning, setWarning] = useState("");
-  const nextExam = getNextExam(exams);
+  const [warning, setWarning] =
+    useState("");
 
-  const getDateKey = (date: Date) =>
-    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+  const nextExam =
+    getNextExam(exams);
+
+  const getDateKey = (
+    date: Date,
+  ) =>
+    `${date.getFullYear()}-${String(
+      date.getMonth() + 1,
+    ).padStart(
+      2,
+      "0",
+    )}-${String(
       date.getDate(),
     ).padStart(2, "0")}`;
 
-  const getDayNumber = (date: Date) => (date.getDay() + 6) % 7;
+  const getDayNumber = (
+    date: Date,
+  ) =>
+    (date.getDay() + 6) % 7;
 
-  const getAvailableMinutes = (date: Date) => {
-    const day = getDayNumber(date);
-    const dateKey = getDateKey(date);
+  const getAvailableMinutes = (
+    date: Date,
+  ) => {
+    const day =
+      getDayNumber(date);
 
-    const occupied = busySlots.filter((slot) =>
-      slot.repeatWeekly
-        ? slot.day === day
-        : slot.day === day && slot.date === dateKey,
-    );
+    const dateKey =
+      getDateKey(date);
 
-    const occupiedMinutes = occupied.reduce((total, slot) => {
-      const [startHour, startMinute] = slot.startTime.split(":").map(Number);
-      const [endHour, endMinute] = slot.endTime.split(":").map(Number);
-
-      return (
-        total +
-        Math.max(
-          0,
-          endHour * 60 + endMinute - (startHour * 60 + startMinute),
-        )
+    const occupied =
+      busySlots.filter(
+        (slot) =>
+          slot.repeatWeekly
+            ? slot.day === day
+            : slot.day === day &&
+              slot.date ===
+                dateKey,
       );
-    }, 0);
 
-    // El límite diario de estudio se aplica después en el plan.
-    // Aquí devolvemos simplemente el tiempo libre real del día.
-    return Math.max(0, Math.min(16 * 60, 16 * 60 - occupiedMinutes));
+    const occupiedMinutes =
+      occupied.reduce(
+        (total, slot) => {
+          const [
+            startHour,
+            startMinute,
+          ] = slot.startTime
+            .split(":")
+            .map(Number);
+
+          const [
+            endHour,
+            endMinute,
+          ] = slot.endTime
+            .split(":")
+            .map(Number);
+
+          return (
+            total +
+            Math.max(
+              0,
+              endHour * 60 +
+                endMinute -
+                (startHour *
+                  60 +
+                  startMinute),
+            )
+          );
+        },
+        0,
+      );
+
+    return Math.max(
+      0,
+      Math.min(
+        16 * 60,
+        16 * 60 -
+          occupiedMinutes,
+      ),
+    );
   };
 
   const generatePlan = () => {
     setWarning("");
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today =
+      new Date();
+
+    today.setHours(
+      0,
+      0,
+      0,
+      0,
+    );
 
     type PlanItem = {
       id: string;
@@ -1438,243 +2337,539 @@ function StudyPlanPage({
       deadline: string;
       minutes: number;
       remaining: number;
-      type: "Examen" | "Tarea";
+      type:
+        | "Examen"
+        | "Tarea";
       priority: number;
     };
 
-    const items: PlanItem[] = [];
+    const items: PlanItem[] =
+      [];
 
-    exams.forEach((exam) => {
-      const deadline = new Date(`${exam.date}T00:00:00`);
-      deadline.setHours(0, 0, 0, 0);
+    exams.forEach(
+      (exam) => {
+        const deadline =
+          new Date(
+            `${exam.date}T00:00:00`,
+          );
 
-      if (deadline > today && exam.studyMinutes > 0) {
-        items.push({
-          id: `exam-${exam.id}`,
-          title: `Preparar examen: ${exam.topic}`,
-          subject: exam.subject,
-          deadline: exam.date,
-          minutes: exam.studyMinutes,
-          remaining: exam.studyMinutes,
-          type: "Examen",
-          priority: 100,
-        });
-      }
-    });
+        deadline.setHours(
+          0,
+          0,
+          0,
+          0,
+        );
 
-    tasks
-      .filter((task) => !task.done)
-      .forEach((task) => {
-        const deadline = new Date(`${task.date}T00:00:00`);
-        deadline.setHours(0, 0, 0, 0);
-
-        if (deadline > today && task.estimatedMinutes > 0) {
+        if (
+          deadline >
+            today &&
+          exam.studyMinutes >
+            0
+        ) {
           items.push({
-            id: `task-${task.id}`,
-            title: task.title,
-            subject: task.subject,
-            deadline: task.date,
-            minutes: task.estimatedMinutes,
-            remaining: task.estimatedMinutes,
-            type: "Tarea",
-            priority: priorityValue(task.priority),
+            id: `exam-${exam.id}`,
+            title: `Preparar examen: ${exam.topic}`,
+            subject:
+              exam.subject,
+            deadline:
+              exam.date,
+            minutes:
+              exam.studyMinutes,
+            remaining:
+              exam.studyMinutes,
+            type: "Examen",
+            priority: 100,
           });
         }
-      });
+      },
+    );
+
+    tasks
+      .filter(
+        (task) =>
+          !task.done,
+      )
+      .forEach(
+        (task) => {
+          const deadline =
+            new Date(
+              `${task.date}T00:00:00`,
+            );
+
+          deadline.setHours(
+            0,
+            0,
+            0,
+            0,
+          );
+
+          if (
+            deadline >
+              today &&
+            task.estimatedMinutes >
+              0
+          ) {
+            items.push({
+              id: `task-${task.id}`,
+              title:
+                task.title,
+              subject:
+                task.subject,
+              deadline:
+                task.date,
+              minutes:
+                task.estimatedMinutes,
+              remaining:
+                task.estimatedMinutes,
+              type: "Tarea",
+              priority:
+                priorityValue(
+                  task.priority,
+                ),
+            });
+          }
+        },
+      );
 
     if (items.length === 0) {
       setPlan([]);
+
       onPlanGenerated([]);
+
       setWarning(
         "No hay tareas o exámenes futuros para planificar. El día de la entrega o del examen nunca se utiliza para prepararlo.",
       );
+
       return;
     }
 
-    // La capacidad de cada día es GLOBAL: tareas + exámenes comparten el mismo límite.
-    // Importante: la planificación se construye hacia ATRÁS desde cada fecha límite.
-    // Así, un examen del viernes con 2h y un límite de 30 min/día ocupará:
-    // lunes -> martes -> miércoles -> jueves, sin usar el viernes.
-    const dailyCapacity = new Map<string, number>();
+    const dailyCapacity =
+      new Map<
+        string,
+        number
+      >();
 
-    const toMinutes = (time: string) => {
-      const [h, m] = time.split(":").map(Number);
+    const toMinutes = (
+      time: string,
+    ) => {
+      const [
+        h,
+        m,
+      ] = time
+        .split(":")
+        .map(Number);
+
       return h * 60 + m;
     };
 
-    const toTime = (minutes: number) =>
-      `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+    const toTime = (
+      minutes: number,
+    ) =>
+      `${String(
+        Math.floor(
+          minutes / 60,
+        ),
+      ).padStart(
+        2,
+        "0",
+      )}:${String(
+        minutes % 60,
+      ).padStart(2, "0")}`;
 
-    const getFreeWindows = (date: Date) => {
-      const day = getDayNumber(date);
-      const dateKey = getDateKey(date);
-      const occupied = busySlots
-        .filter((slot) =>
-          slot.repeatWeekly
-            ? slot.day === day
-            : slot.day === day && slot.date === dateKey,
-        )
-        .map((slot) => ({
-          start: toMinutes(slot.startTime),
-          end: toMinutes(slot.endTime),
-        }))
-        .sort((a, b) => a.start - b.start);
+    const getFreeWindows = (
+      date: Date,
+    ) => {
+      const day =
+        getDayNumber(date);
 
-      const windows: { start: number; end: number }[] = [];
-      let cursor = 8 * 60;
+      const dateKey =
+        getDateKey(date);
+
+      const occupied =
+        busySlots
+          .filter(
+            (slot) =>
+              slot.repeatWeekly
+                ? slot.day ===
+                  day
+                : slot.day ===
+                    day &&
+                  slot.date ===
+                    dateKey,
+          )
+          .map(
+            (slot) => ({
+              start:
+                toMinutes(
+                  slot.startTime,
+                ),
+              end:
+                toMinutes(
+                  slot.endTime,
+                ),
+            }),
+          )
+          .sort(
+            (a, b) =>
+              a.start -
+              b.start,
+          );
+
+      const windows: {
+        start: number;
+        end: number;
+      }[] = [];
+
+      let cursor =
+        8 * 60;
 
       for (const slot of occupied) {
-        if (slot.end <= cursor) continue;
+        if (
+          slot.end <=
+          cursor
+        ) {
+          continue;
+        }
 
-        if (slot.start > cursor) {
+        if (
+          slot.start >
+          cursor
+        ) {
           windows.push({
             start: cursor,
-            end: Math.min(slot.start, 22 * 60),
+            end: Math.min(
+              slot.start,
+              22 * 60,
+            ),
           });
         }
 
-        cursor = Math.max(cursor, slot.end);
-        if (cursor >= 22 * 60) break;
+        cursor =
+          Math.max(
+            cursor,
+            slot.end,
+          );
+
+        if (
+          cursor >=
+          22 * 60
+        ) {
+          break;
+        }
       }
 
-      if (cursor < 22 * 60) {
-        windows.push({ start: cursor, end: 22 * 60 });
+      if (
+        cursor <
+        22 * 60
+      ) {
+        windows.push({
+          start: cursor,
+          end: 22 * 60,
+        });
       }
 
-      return windows.filter((window) => window.end - window.start >= 30);
+      return windows.filter(
+        (window) =>
+          window.end -
+            window.start >=
+          30,
+      );
     };
 
-    // Preparamos la capacidad de todos los días que pueden ser necesarios.
-    // No nos limitamos a 14 días: si hay un examen dentro de un mes,
-    // el planificador también debe poder utilizar esas semanas anteriores.
-    const latestDeadline = items.reduce((latest, item) => {
-      const deadline = new Date(`${item.deadline}T00:00:00`);
-      deadline.setHours(0, 0, 0, 0);
-      return deadline > latest ? deadline : latest;
-    }, new Date(today));
+    const latestDeadline =
+      items.reduce(
+        (
+          latest,
+          item,
+        ) => {
+          const deadline =
+            new Date(
+              `${item.deadline}T00:00:00`,
+            );
 
-    const daysToPlan = Math.max(
-      1,
-      Math.ceil((latestDeadline.getTime() - today.getTime()) / 86400000),
-    );
+          deadline.setHours(
+            0,
+            0,
+            0,
+            0,
+          );
 
-    for (let dayIndex = 0; dayIndex <= daysToPlan; dayIndex++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + dayIndex);
-      const dateKey = getDateKey(date);
-      const freeMinutes = getAvailableMinutes(date);
+          return deadline >
+            latest
+            ? deadline
+            : latest;
+        },
+        new Date(today),
+      );
+
+    const daysToPlan =
+      Math.max(
+        1,
+        Math.ceil(
+          (latestDeadline.getTime() -
+            today.getTime()) /
+            86400000,
+        ),
+      );
+
+    for (
+      let dayIndex = 0;
+      dayIndex <=
+      daysToPlan;
+      dayIndex++
+    ) {
+      const date =
+        new Date(today);
+
+      date.setDate(
+        today.getDate() +
+          dayIndex,
+      );
+
+      const dateKey =
+        getDateKey(date);
+
+      const freeMinutes =
+        getAvailableMinutes(
+          date,
+        );
 
       dailyCapacity.set(
         dateKey,
-        Math.min(studyDailyMinutes, freeMinutes),
+        Math.min(
+          studyDailyMinutes,
+          freeMinutes,
+        ),
       );
     }
 
-    const newPlan: StudySession[] = [];
+    const newPlan: StudySession[] =
+      [];
 
-    // Los objetivos con fecha más cercana tienen prioridad.
-    // Si coinciden, los exámenes tienen prioridad sobre las tareas y después
-    // usamos la prioridad de la tarea.
-    const itemsByDeadline = [...items].sort((a, b) => {
-      if (a.deadline !== b.deadline) {
-        return a.deadline.localeCompare(b.deadline);
-      }
-      if (a.type !== b.type) {
-        return a.type === "Examen" ? -1 : 1;
-      }
-      return b.priority - a.priority;
-    });
+    const itemsByDeadline =
+      [...items].sort(
+        (a, b) => {
+          if (
+            a.deadline !==
+            b.deadline
+          ) {
+            return a.deadline.localeCompare(
+              b.deadline,
+            );
+          }
+
+          if (
+            a.type !==
+            b.type
+          ) {
+            return a.type ===
+              "Examen"
+              ? -1
+              : 1;
+          }
+
+          return (
+            b.priority -
+            a.priority
+          );
+        },
+      );
 
     for (const item of itemsByDeadline) {
-      const deadline = new Date(`${item.deadline}T00:00:00`);
-      deadline.setHours(0, 0, 0, 0);
+      const deadline =
+        new Date(
+          `${item.deadline}T00:00:00`,
+        );
 
-      // Empezamos por el día inmediatamente anterior a la fecha límite y
-      // vamos hacia atrás. Nunca utilizamos el propio día del examen/entrega.
-      const lastStudyDay = new Date(deadline);
-      lastStudyDay.setDate(lastStudyDay.getDate() - 1);
+      deadline.setHours(
+        0,
+        0,
+        0,
+        0,
+      );
+
+      const lastStudyDay =
+        new Date(
+          deadline,
+        );
+
+      lastStudyDay.setDate(
+        lastStudyDay.getDate() -
+          1,
+      );
 
       for (
-        let date = new Date(lastStudyDay);
-        date >= today && item.remaining > 0;
-        date.setDate(date.getDate() - 1)
+        let date =
+          new Date(
+            lastStudyDay,
+          );
+        date >= today &&
+        item.remaining > 0;
+        date.setDate(
+          date.getDate() -
+            1,
+        )
       ) {
-        const dateKey = getDateKey(date);
-        let availableToday = dailyCapacity.get(dateKey) ?? 0;
+        const dateKey =
+          getDateKey(date);
 
-        if (availableToday <= 0) continue;
+        let availableToday =
+          dailyCapacity.get(
+            dateKey,
+          ) ?? 0;
 
-        const windows = getFreeWindows(date);
-        if (windows.length === 0) continue;
+        if (
+          availableToday <=
+          0
+        ) {
+          continue;
+        }
 
-        // Colocamos la sesión en el primer hueco libre del día. El día ya
-        // está limitado por la capacidad global, así que tareas y exámenes
-        // nunca pueden superar el máximo diario configurado.
+        const windows =
+          getFreeWindows(
+            date,
+          );
+
+        if (
+          windows.length ===
+          0
+        ) {
+          continue;
+        }
+
         for (const window of windows) {
-          if (availableToday <= 0 || item.remaining <= 0) break;
+          if (
+            availableToday <=
+              0 ||
+            item.remaining <=
+              0
+          ) {
+            break;
+          }
 
-          let cursor = window.start;
+          let cursor =
+            window.start;
 
           while (
-            cursor + 30 <= window.end &&
-            availableToday > 0 &&
-            item.remaining > 0
+            cursor + 30 <=
+              window.end &&
+            availableToday >
+              0 &&
+            item.remaining >
+              0
           ) {
-            const sessionMinutes = Math.min(
-              item.remaining,
-              availableToday,
-              window.end - cursor,
-              90,
-            );
+            const sessionMinutes =
+              Math.min(
+                item.remaining,
+                availableToday,
+                window.end -
+                  cursor,
+                90,
+              );
 
-            // Trabajamos en bloques de 30 minutos para que encaje con
-            // el sistema de disponibilidad de Esylern.
             const finalMinutes =
-              sessionMinutes >= 30
-                ? Math.floor(sessionMinutes / 30) * 30
+              sessionMinutes >=
+              30
+                ? Math.floor(
+                    sessionMinutes /
+                      30,
+                  ) * 30
                 : 0;
 
-            if (finalMinutes < 30) break;
+            if (
+              finalMinutes <
+              30
+            ) {
+              break;
+            }
 
             newPlan.push({
               date: dateKey,
-              title: item.title,
-              subject: item.subject,
-              minutes: finalMinutes,
-              type: item.type,
-              startTime: toTime(cursor),
-              endTime: toTime(cursor + finalMinutes),
+              title:
+                item.title,
+              subject:
+                item.subject,
+              minutes:
+                finalMinutes,
+              type:
+                item.type,
+              startTime:
+                toTime(
+                  cursor,
+                ),
+              endTime:
+                toTime(
+                  cursor +
+                    finalMinutes,
+                ),
             });
 
-            item.remaining -= finalMinutes;
-            availableToday -= finalMinutes;
-            cursor += finalMinutes;
+            item.remaining -=
+              finalMinutes;
+
+            availableToday -=
+              finalMinutes;
+
+            cursor +=
+              finalMinutes;
           }
         }
 
-        dailyCapacity.set(dateKey, availableToday);
+        dailyCapacity.set(
+          dateKey,
+          availableToday,
+        );
       }
     }
 
-    // Ordenamos el resultado cronológicamente para mostrarlo correctamente
-    // en el plan y en el dashboard, aunque internamente hayamos planificado
-    // hacia atrás.
-    newPlan.sort((a, b) => {
-      if (a.date !== b.date) return a.date.localeCompare(b.date);
-      return toMinutes(a.startTime) - toMinutes(b.startTime);
-    });
+    newPlan.sort(
+      (a, b) => {
+        if (
+          a.date !==
+          b.date
+        ) {
+          return a.date.localeCompare(
+            b.date,
+          );
+        }
 
-    const impossibleItems = items.filter((item) => item.remaining > 0);
+        return (
+          toMinutes(
+            a.startTime,
+          ) -
+          toMinutes(
+            b.startTime,
+          )
+        );
+      },
+    );
 
-    if (impossibleItems.length > 0) {
-      const names = impossibleItems
-        .slice(0, 2)
-        .map((item) => item.title)
-        .join(" y ");
+    const impossibleItems =
+      items.filter(
+        (item) =>
+          item.remaining >
+          0,
+      );
+
+    if (
+      impossibleItems.length >
+      0
+    ) {
+      const names =
+        impossibleItems
+          .slice(0, 2)
+          .map(
+            (item) =>
+              item.title,
+          )
+          .join(" y ");
 
       setWarning(
         `No cabe todo antes de la fecha límite de ${names}${
-          impossibleItems.length > 2 ? " y otros elementos" : ""
+          impossibleItems.length >
+          2
+            ? " y otros elementos"
+            : ""
         }. Esylern ha colocado todo lo que sí cabe sin usar el día de entrega o examen.`,
       );
     }
@@ -1683,25 +2878,63 @@ function StudyPlanPage({
     onPlanGenerated(newPlan);
   };
 
-  const groupedPlan = plan.reduce(
-    (groups, item) => {
-      if (!groups[item.date]) groups[item.date] = [];
-      groups[item.date].push(item);
-      return groups;
-    },
-    {} as Record<string, typeof plan>,
+  const groupedPlan =
+    plan.reduce(
+      (
+        groups,
+        item,
+      ) => {
+        if (
+          !groups[item.date]
+        ) {
+          groups[item.date] =
+            [];
+        }
+
+        groups[
+          item.date
+        ].push(item);
+
+        return groups;
+      },
+      {} as Record<
+        string,
+        typeof plan
+      >,
+    );
+
+  const formatDate = (
+    date: string,
+  ) =>
+    new Date(
+      `${date}T00:00:00`,
+    ).toLocaleDateString(
+      "es-ES",
+      {
+        weekday:
+          "long",
+        day: "numeric",
+        month:
+          "long",
+      },
+    );
+
+  const totalPlanned =
+    plan.reduce(
+      (sum, item) =>
+        sum + item.minutes,
+      0,
+    );
+
+  const currentDate =
+    new Date();
+
+  currentDate.setHours(
+    0,
+    0,
+    0,
+    0,
   );
-
-  const formatDate = (date: string) =>
-    new Date(`${date}T00:00:00`).toLocaleDateString("es-ES", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
-
-  const totalPlanned = plan.reduce((sum, item) => sum + item.minutes, 0);
-  const currentDate = new Date();
-  currentDate.setHours(0, 0, 0, 0);
 
   return (
     <>
@@ -1717,7 +2950,10 @@ function StudyPlanPage({
         </div>
 
         <div>
-          <strong>Tu planificación inteligente</strong>
+          <strong>
+            Tu planificación inteligente
+          </strong>
+
           <p>
             {nextExam
               ? `Tu próximo examen es ${nextExam.subject} y quedan ${getDaysRemaining(
@@ -1737,12 +2973,43 @@ function StudyPlanPage({
         </button>
       </section>
 
-      <div className="panel" style={{ marginTop: 16, marginBottom: 16 }}>
+      <div
+        className="panel"
+        style={{
+          marginTop: 16,
+          marginBottom: 16,
+        }}
+      >
         <div className="panel-header">
           <div>
-            <h3>Límite diario de estudio</h3>
+            <h3>
+              Límite diario de estudio
+            </h3>
+
             <p>
-              Esylern no usará más de <strong>{studyDailyMinutes >= 60 ? `${Math.floor(studyDailyMinutes / 60)}h${studyDailyMinutes % 60 ? ` ${studyDailyMinutes % 60}m` : ""}` : `${studyDailyMinutes} min`}</strong> al día en total. Ese tiempo se reparte entre <strong>tareas y exámenes</strong>.
+              Esylern no usará más de{" "}
+              <strong>
+                {studyDailyMinutes >=
+                60
+                  ? `${Math.floor(
+                      studyDailyMinutes /
+                        60,
+                    )}h${
+                      studyDailyMinutes %
+                        60
+                        ? ` ${
+                            studyDailyMinutes %
+                            60
+                          }m`
+                        : ""
+                    }`
+                  : `${studyDailyMinutes} min`}
+              </strong>{" "}
+              al día en total. Ese tiempo se reparte entre{" "}
+              <strong>
+                tareas y exámenes
+              </strong>
+              .
             </p>
           </div>
         </div>
@@ -1751,29 +3018,72 @@ function StudyPlanPage({
       {plan.length > 0 && (
         <div
           className="stats-grid"
-          style={{ marginTop: 16, marginBottom: 16 }}
+          style={{
+            marginTop: 16,
+            marginBottom: 16,
+          }}
         >
           <div className="stat-card">
-            <span className="stat-label">Sesiones</span>
-            <strong>{plan.length}</strong>
-            <span className="stat-helper">bloques de estudio</span>
+            <span className="stat-label">
+              Sesiones
+            </span>
+
+            <strong>
+              {plan.length}
+            </strong>
+
+            <span className="stat-helper">
+              bloques de estudio
+            </span>
           </div>
+
           <div className="stat-card">
-            <span className="stat-label">Tiempo planificado</span>
-            <strong>{Math.floor(totalPlanned / 60)}h {totalPlanned % 60}m</strong>
-            <span className="stat-helper">antes de las fechas límite</span>
+            <span className="stat-label">
+              Tiempo planificado
+            </span>
+
+            <strong>
+              {Math.floor(
+                totalPlanned /
+                  60,
+              )}
+              h{" "}
+              {totalPlanned %
+                60}
+              m
+            </strong>
+
+            <span className="stat-helper">
+              antes de las fechas límite
+            </span>
           </div>
+
           <div className="stat-card">
-            <span className="stat-label">Regla de Esylern</span>
-            <strong>−1 día</strong>
-            <span className="stat-helper">el examen/entrega queda libre</span>
+            <span className="stat-label">
+              Regla de Esylern
+            </span>
+
+            <strong>
+              −1 día
+            </strong>
+
+            <span className="stat-helper">
+              el examen/entrega queda libre
+            </span>
           </div>
         </div>
       )}
 
       {warning && (
-        <div className="panel" style={{ marginBottom: 16 }}>
-          <strong>{warning}</strong>
+        <div
+          className="panel"
+          style={{
+            marginBottom: 16,
+          }}
+        >
+          <strong>
+            {warning}
+          </strong>
         </div>
       )}
 
@@ -1781,7 +3091,10 @@ function StudyPlanPage({
         <section className="panel">
           <div className="panel-header">
             <div>
-              <h3>Tu plan</h3>
+              <h3>
+                Tu plan
+              </h3>
+
               <p>
                 Las actividades se reparten según cercanía de la fecha límite,
                 prioridad y tiempo disponible.
@@ -1790,69 +3103,125 @@ function StudyPlanPage({
           </div>
 
           <div className="study-plan-timeline">
-            {Object.entries(groupedPlan).map(([date, items]) => {
-              const todayKey = formatDateInput(new Date());
-              const isToday = date === todayKey;
+            {Object.entries(
+              groupedPlan,
+            ).map(
+              ([
+                date,
+                items,
+              ]) => {
+                const todayKey =
+                  formatDateInput(
+                    new Date(),
+                  );
 
-              return (
-                <section className="study-plan-day" key={date}>
-                  <div
-                    className={`study-plan-day-header ${isToday ? "is-today" : ""}`}
+                const isToday =
+                  date ===
+                  todayKey;
+
+                return (
+                  <section
+                    className="study-plan-day"
+                    key={date}
                   >
-                    {isToday && (
-                      <span className="study-plan-day-today">HOY</span>
-                    )}
+                    <div
+                      className={`study-plan-day-header ${
+                        isToday
+                          ? "is-today"
+                          : ""
+                      }`}
+                    >
+                      {isToday && (
+                        <span className="study-plan-day-today">
+                          HOY
+                        </span>
+                      )}
 
-                    <span className="study-plan-day-label">
-                      {formatDate(date)}
-                    </span>
-                  </div>
+                      <span className="study-plan-day-label">
+                        {formatDate(
+                          date,
+                        )}
+                      </span>
+                    </div>
 
-                  <div className="study-plan-sessions">
-                    {items.map((item, index) => (
-                      <div
-                        key={`${date}-${item.startTime}-${index}`}
-                        className={`study-plan-row study-session-${getSubjectColor(item.subject)}`}
-                      >
-                        <div className="study-plan-time">
-                          <strong>{item.startTime}</strong>
-                          <span>{item.endTime}</span>
-                        </div>
+                    <div className="study-plan-sessions">
+                      {items.map(
+                        (
+                          item,
+                          index,
+                        ) => (
+                          <div
+                            key={`${date}-${item.startTime}-${index}`}
+                            className={`study-plan-row study-session-${getSubjectColor(
+                              item.subject,
+                            )}`}
+                          >
+                            <div className="study-plan-time">
+                              <strong>
+                                {
+                                  item.startTime
+                                }
+                              </strong>
 
-                        <div
-                          className={`study-plan-card ${
-                            item.type === "Examen"
-                              ? "study-plan-card-exam"
-                              : "study-plan-card-task"
-                          } subject-${getSubjectColor(item.subject)}`}
-                        >
-                          <div className="study-plan-card-main">
-                            <div className="study-plan-type">
-                              <span className="study-plan-type-icon">
-                                {item.type === "Examen" ? "🎓" : "✓"}
+                              <span>
+                                {
+                                  item.endTime
+                                }
                               </span>
-                              <span>{item.type.toUpperCase()}</span>
                             </div>
 
-                            <div className="study-plan-subject">
-                              {item.subject}
-                            </div>
+                            <div
+                              className={`study-plan-card ${
+                                item.type ===
+                                "Examen"
+                                  ? "study-plan-card-exam"
+                                  : "study-plan-card-task"
+                              } subject-${getSubjectColor(
+                                item.subject,
+                              )}`}
+                            >
+                              <div className="study-plan-card-main">
+                                <div className="study-plan-type">
+                                  <span className="study-plan-type-icon">
+                                    {item.type ===
+                                    "Examen"
+                                      ? "🎓"
+                                      : "✓"}
+                                  </span>
 
-                            <div className="study-plan-title">
-                              {item.title}
+                                  <span>
+                                    {item.type.toUpperCase()}
+                                  </span>
+                                </div>
+
+                                <div className="study-plan-subject">
+                                  {
+                                    item.subject
+                                  }
+                                </div>
+
+                                <div className="study-plan-title">
+                                  {
+                                    item.title
+                                  }
+                                </div>
+                              </div>
+
+                              <div className="study-plan-duration">
+                                {
+                                  item.minutes
+                                }{" "}
+                                min
+                              </div>
                             </div>
                           </div>
-
-                          <div className="study-plan-duration">
-                            {item.minutes} min
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              );
-            })}
+                        ),
+                      )}
+                    </div>
+                  </section>
+                );
+              },
+            )}
           </div>
         </section>
       ) : (
@@ -1860,19 +3229,32 @@ function StudyPlanPage({
           <div className="panel">
             <div className="panel-header">
               <div>
-                <h3>Prioridades actuales</h3>
+                <h3>
+                  Prioridades actuales
+                </h3>
+
                 <p>
                   Lo que Esylern tendrá en cuenta al crear tu planificación.
                 </p>
               </div>
             </div>
 
-            {tasks.filter((task) => !task.done).length === 0 && exams.length === 0 ? (
+            {tasks.filter(
+              (task) =>
+                !task.done,
+            ).length ===
+              0 &&
+            exams.length ===
+              0 ? (
               <div className="empty-state">
                 <div className="empty-icon">
                   <Sparkles size={22} />
                 </div>
-                <h3>Aún no hay nada que planificar</h3>
+
+                <h3>
+                  Aún no hay nada que planificar
+                </h3>
+
                 <p>
                   Añade tareas o exámenes y Esylern podrá organizar tus días.
                 </p>
@@ -1880,38 +3262,91 @@ function StudyPlanPage({
             ) : (
               <div className="priority-list">
                 {exams
-                  .filter((exam) => new Date(`${exam.date}T00:00:00`) > currentDate)
-                  .slice(0, 3)
-                  .map((exam) => (
-                    <div className="priority-item" key={`exam-preview-${exam.id}`}>
-                      <span className="priority-number">📚</span>
-                      <div>
-                        <strong>{exam.subject}</strong>
-                        <p>
-                          {exam.topic} · {getDaysRemaining(exam.date)} días
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-
-                {tasks
-                  .filter((task) => !task.done)
-                  .sort(
-                    (a, b) =>
-                      new Date(a.date).getTime() - new Date(b.date).getTime(),
+                  .filter(
+                    (exam) =>
+                      new Date(
+                        `${exam.date}T00:00:00`,
+                      ) >
+                      currentDate,
                   )
                   .slice(0, 3)
-                  .map((task) => (
-                    <div className="priority-item" key={`task-preview-${task.id}`}>
-                      <span className="priority-number">📝</span>
-                      <div>
-                        <strong>{task.title}</strong>
-                        <p>
-                          {task.subject} · entrega {formatDate(task.date)}
-                        </p>
+                  .map(
+                    (exam) => (
+                      <div
+                        className="priority-item"
+                        key={`exam-preview-${exam.id}`}
+                      >
+                        <span className="priority-number">
+                          📚
+                        </span>
+
+                        <div>
+                          <strong>
+                            {
+                              exam.subject
+                            }
+                          </strong>
+
+                          <p>
+                            {
+                              exam.topic
+                            }{" "}
+                            ·{" "}
+                            {getDaysRemaining(
+                              exam.date,
+                            )}{" "}
+                            días
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ),
+                  )}
+
+                {tasks
+                  .filter(
+                    (task) =>
+                      !task.done,
+                  )
+                  .sort(
+                    (a, b) =>
+                      new Date(
+                        a.date,
+                      ).getTime() -
+                      new Date(
+                        b.date,
+                      ).getTime(),
+                  )
+                  .slice(0, 3)
+                  .map(
+                    (task) => (
+                      <div
+                        className="priority-item"
+                        key={`task-preview-${task.id}`}
+                      >
+                        <span className="priority-number">
+                          📝
+                        </span>
+
+                        <div>
+                          <strong>
+                            {
+                              task.title
+                            }
+                          </strong>
+
+                          <p>
+                            {
+                              task.subject
+                            }{" "}
+                            · entrega{" "}
+                            {formatDate(
+                              task.date,
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    ),
+                  )}
               </div>
             )}
           </div>
@@ -1920,13 +3355,22 @@ function StudyPlanPage({
             <div className="ai-panel-icon">
               <Sparkles size={22} />
             </div>
-            <h3>¿Cómo funciona?</h3>
+
+            <h3>
+              ¿Cómo funciona?
+            </h3>
+
             <p>
               Esylern busca los huecos disponibles antes de cada examen o
               entrega y reparte el trabajo empezando por lo más urgente.
             </p>
+
             <p>
-              Cuando tengas lista tu información, pulsa <strong>Generar plan</strong>.
+              Cuando tengas lista tu información, pulsa{" "}
+              <strong>
+                Generar plan
+              </strong>
+              .
             </p>
           </div>
         </div>
@@ -1952,120 +3396,168 @@ function AssistantPage({
   busySlots: BusySlot[];
   studyDailyMinutes: number;
 }) {
-  const [message, setMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] =
+    useState("");
 
-  const ASSISTANT_MESSAGES_KEY = "esylern_assistant_messages";
+  const [isLoading, setIsLoading] =
+    useState(false);
+
+  const ASSISTANT_MESSAGES_KEY =
+    "esylern_assistant_messages";
 
   const defaultAssistantMessage = {
     role: "ai" as const,
     text: "¡Hola! Soy Esylern AI. Ya tengo acceso a tus tareas, exámenes y plan de estudio. ¿En qué te ayudo?",
   };
 
-  const [showDeleteConfirmation, setShowDeleteConfirmation] =
-    useState(false);
+  const [
+    showDeleteConfirmation,
+    setShowDeleteConfirmation,
+  ] = useState(false);
 
-  const [messages, setMessages] = useState<
-    { role: "user" | "ai"; text: string }[]
-  >(() => {
-    try {
-      const saved = localStorage.getItem(
-        ASSISTANT_MESSAGES_KEY,
-      );
+  const [messages, setMessages] =
+    useState<
+      {
+        role:
+          | "user"
+          | "ai";
+        text: string;
+      }[]
+    >(() => {
+      try {
+        const saved =
+          localStorage.getItem(
+            ASSISTANT_MESSAGES_KEY,
+          );
 
-      if (saved) {
-        const parsed = JSON.parse(saved);
+        if (saved) {
+          const parsed =
+            JSON.parse(
+              saved,
+            );
 
-        if (
-          Array.isArray(parsed) &&
-          parsed.length > 0
-        ) {
-          return parsed;
+          if (
+            Array.isArray(
+              parsed,
+            ) &&
+            parsed.length > 0
+          ) {
+            return parsed;
+          }
         }
+      } catch (error) {
+        console.error(
+          "No se pudo cargar la conversación:",
+          error,
+        );
       }
-    } catch (error) {
-      console.error(
-        "No se pudo cargar la conversación:",
-        error,
-      );
-    }
 
-    return [defaultAssistantMessage];
-  });
+      return [
+        defaultAssistantMessage,
+      ];
+    });
 
   useEffect(() => {
     localStorage.setItem(
       ASSISTANT_MESSAGES_KEY,
-      JSON.stringify(messages),
+      JSON.stringify(
+        messages,
+      ),
     );
   }, [messages]);
 
-  const sendMessage = async () => {
-    if (!message.trim() || isLoading) return;
-
-    const userMessage = message.trim();
-
-    setMessage("");
-
-    setMessages((current) => [
-      ...current,
-      {
-        role: "user",
-        text: userMessage,
-      },
-    ]);
-
-    setIsLoading(true);
-
-    try {
-      const response = await fetch("/api/assistant", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          tasks,
-          exams,
-          studyPlan,
-          busySlots,
-          studyDailyMinutes,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data?.error ||
-            "No se pudo conectar con Esylern AI.",
-        );
+  const sendMessage =
+    async () => {
+      if (
+        !message.trim() ||
+        isLoading
+      ) {
+        return;
       }
 
-      setMessages((current) => [
-        ...current,
-        {
-          role: "ai",
-          text:
-            data?.response ||
-            "No he recibido una respuesta válida.",
-        },
-      ]);
-    } catch (error) {
-      console.error(error);
+      const userMessage =
+        message.trim();
 
-      setMessages((current) => [
-        ...current,
-        {
-          role: "ai",
-          text:
-            "Ha ocurrido un error al conectar con Esylern AI. Comprueba que la configuración de la IA esté correctamente configurada.",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      setMessage("");
+
+      setMessages(
+        (current) => [
+          ...current,
+          {
+            role: "user",
+            text: userMessage,
+          },
+        ],
+      );
+
+      setIsLoading(true);
+
+      try {
+        const response =
+          await fetch(
+            "/api/assistant",
+            {
+              method:
+                "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body: JSON.stringify(
+                {
+                  message:
+                    userMessage,
+                  tasks,
+                  exams,
+                  studyPlan,
+                  busySlots,
+                  studyDailyMinutes,
+                },
+              ),
+            },
+          );
+
+        const data =
+          await response.json();
+
+        if (
+          !response.ok
+        ) {
+          throw new Error(
+            data?.error ||
+              "No se pudo conectar con Esylern AI.",
+          );
+        }
+
+        setMessages(
+          (current) => [
+            ...current,
+            {
+              role: "ai",
+              text:
+                data?.response ||
+                "No he recibido una respuesta válida.",
+            },
+          ],
+        );
+      } catch (error) {
+        console.error(
+          error,
+        );
+
+        setMessages(
+          (current) => [
+            ...current,
+            {
+              role: "ai",
+              text: "Ha ocurrido un error al conectar con Esylern AI. Comprueba que la configuración de la IA esté correctamente configurada.",
+            },
+          ],
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
   return (
     <>
@@ -2079,17 +3571,24 @@ function AssistantPage({
         <div className="chat-header">
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
+              display:
+                "flex",
+              alignItems:
+                "center",
               gap: "11px",
             }}
           >
             <div className="ai-avatar">
-              <Sparkles size={18} />
+              <Sparkles
+                size={18}
+              />
             </div>
 
             <div>
-              <strong>Esylern AI</strong>
+              <strong>
+                Esylern AI
+              </strong>
+
               <span>
                 {isLoading
                   ? "Pensando..."
@@ -2102,7 +3601,9 @@ function AssistantPage({
             type="button"
             className="chat-clear-button"
             onClick={() =>
-              setShowDeleteConfirmation(true)
+              setShowDeleteConfirmation(
+                true,
+              )
             }
             aria-label="Borrar conversación"
             title="Borrar conversación"
@@ -2112,29 +3613,51 @@ function AssistantPage({
         </div>
 
         <div className="messages">
-          {messages.map((item, index) => (
-            <div
-              key={index}
-              className={`message ${
-                item.role === "user"
-                  ? "user-message"
-                  : "ai-message"
-              }`}
-            >
-              {item.text
-                .split("\n")
-                .map((line, lineIndex) => (
-                  <React.Fragment key={lineIndex}>
-                    {line}
+          {messages.map(
+            (
+              item,
+              index,
+            ) => (
+              <div
+                key={index}
+                className={`message ${
+                  item.role ===
+                  "user"
+                    ? "user-message"
+                    : "ai-message"
+                }`}
+              >
+                {item.text
+                  .split(
+                    "\n",
+                  )
+                  .map(
+                    (
+                      line,
+                      lineIndex,
+                    ) => (
+                      <React.Fragment
+                        key={
+                          lineIndex
+                        }
+                      >
+                        {
+                          line
+                        }
 
-                    {lineIndex <
-                      item.text.split("\n").length - 1 && (
-                      <br />
-                    )}
-                  </React.Fragment>
-                ))}
-            </div>
-          ))}
+                        {lineIndex <
+                          item.text.split(
+                            "\n",
+                          ).length -
+                            1 && (
+                          <br />
+                        )}
+                      </React.Fragment>
+                    ),
+                  )}
+              </div>
+            ),
+          )}
 
           {isLoading && (
             <div className="message ai-message">
@@ -2145,23 +3668,41 @@ function AssistantPage({
 
         <div className="chat-input">
           <input
-            value={message}
-            onChange={(event) =>
-              setMessage(event.target.value)
+            value={
+              message
             }
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
+            onChange={(
+              event,
+            ) =>
+              setMessage(
+                event.target
+                  .value,
+              )
+            }
+            onKeyDown={(
+              event,
+            ) => {
+              if (
+                event.key ===
+                "Enter"
+              ) {
                 sendMessage();
               }
             }}
             placeholder="Pregúntame algo sobre tu estudio..."
-            disabled={isLoading}
+            disabled={
+              isLoading
+            }
           />
 
           <button
             type="button"
-            onClick={sendMessage}
-            disabled={isLoading}
+            onClick={
+              sendMessage
+            }
+            disabled={
+              isLoading
+            }
             aria-label="Enviar mensaje"
           >
             <Send size={18} />
@@ -2176,7 +3717,9 @@ function AssistantPage({
               <Trash2 size={20} />
             </div>
 
-            <h3>¿Borrar conversación?</h3>
+            <h3>
+              ¿Borrar conversación?
+            </h3>
 
             <p>
               Esto eliminará la memoria de esta
@@ -2191,7 +3734,9 @@ function AssistantPage({
                 type="button"
                 className="delete-cancel-button"
                 onClick={() =>
-                  setShowDeleteConfirmation(false)
+                  setShowDeleteConfirmation(
+                    false,
+                  )
                 }
               >
                 Cancelar
@@ -2201,11 +3746,17 @@ function AssistantPage({
                 type="button"
                 className="delete-confirm-button"
                 onClick={() => {
-                  setMessages([defaultAssistantMessage]);
+                  setMessages([
+                    defaultAssistantMessage,
+                  ]);
+
                   localStorage.removeItem(
                     ASSISTANT_MESSAGES_KEY,
                   );
-                  setShowDeleteConfirmation(false);
+
+                  setShowDeleteConfirmation(
+                    false,
+                  );
                 }}
               >
                 Borrar conversación
@@ -2225,9 +3776,53 @@ function AssistantPage({
 function SettingsPage({
   studyDailyMinutes,
   onStudyDailyMinutesChange,
+  educationLevel,
+  onEducationLevelChange,
+  course,
+  onCourseChange,
+  weekdayHours,
+  onWeekdayHoursChange,
+  weekendHours,
+  onWeekendHoursChange,
+  preferredSessionMinutes,
+  onPreferredSessionMinutesChange,
+  preferredStudyMoment,
+  onPreferredStudyMomentChange,
 }: {
   studyDailyMinutes: number;
-  onStudyDailyMinutesChange: (minutes: number) => void;
+  onStudyDailyMinutesChange: (
+    minutes: number,
+  ) => void;
+
+  educationLevel: string;
+  onEducationLevelChange: (
+    value: string,
+  ) => void;
+
+  course: string;
+  onCourseChange: (
+    value: string,
+  ) => void;
+
+  weekdayHours: number;
+  onWeekdayHoursChange: (
+    value: number,
+  ) => void;
+
+  weekendHours: number;
+  onWeekendHoursChange: (
+    value: number,
+  ) => void;
+
+  preferredSessionMinutes: number;
+  onPreferredSessionMinutesChange: (
+    value: number,
+  ) => void;
+
+  preferredStudyMoment: string;
+  onPreferredStudyMomentChange: (
+    value: string,
+  ) => void;
 }) {
   return (
     <>
@@ -2243,8 +3838,13 @@ function SettingsPage({
             <BookOpen size={19} />
 
             <div>
-              <h3>Datos de estudio</h3>
-              <p>Información que utiliza Esylern.</p>
+              <h3>
+                Datos de estudio
+              </h3>
+
+              <p>
+                Información que utiliza Esylern.
+              </p>
             </div>
           </div>
 
@@ -2252,38 +3852,93 @@ function SettingsPage({
             Tiempo máximo de estudio al día
 
             <select
-              value={studyDailyMinutes}
+              value={
+                studyDailyMinutes
+              }
               onChange={(event) =>
-                onStudyDailyMinutesChange(Number(event.target.value))
+                onStudyDailyMinutesChange(
+                  Number(
+                    event.target
+                      .value,
+                  ),
+                )
               }
             >
-              <option value={30}>30 minutos</option>
-              <option value={45}>45 minutos</option>
-              <option value={60}>1 hora</option>
-              <option value={90}>1 h 30 min</option>
-              <option value={120}>2 horas</option>
-              <option value={150}>2 h 30 min</option>
-              <option value={180}>3 horas</option>
-              <option value={240}>4 horas</option>
-              <option value={300}>5 horas</option>
-              <option value={360}>6 horas</option>
-              <option value={9999}>Sin límite</option>
+              <option value={30}>
+                30 minutos
+              </option>
+
+              <option value={45}>
+                45 minutos
+              </option>
+
+              <option value={60}>
+                1 hora
+              </option>
+
+              <option value={90}>
+                1 h 30 min
+              </option>
+
+              <option value={120}>
+                2 horas
+              </option>
+
+              <option value={150}>
+                2 h 30 min
+              </option>
+
+              <option value={180}>
+                3 horas
+              </option>
+
+              <option value={240}>
+                4 horas
+              </option>
+
+              <option value={300}>
+                5 horas
+              </option>
+
+              <option value={360}>
+                6 horas
+              </option>
+
+              <option value={9999}>
+                Sin límite
+              </option>
             </select>
 
-            <small>Este límite incluye todo: tareas + preparación de exámenes.</small>
+            <small>
+              Este límite incluye todo: tareas + preparación de exámenes.
+            </small>
           </label>
 
           <label>
             Nivel educativo
 
-            <select defaultValue="bachillerato">
-              <option value="eso">ESO</option>
+            <select
+              value={
+                educationLevel
+              }
+              onChange={(event) =>
+                onEducationLevelChange(
+                  event.target
+                    .value,
+                )
+              }
+            >
+              <option value="eso">
+                ESO
+              </option>
 
               <option value="bachillerato">
                 Bachillerato
               </option>
 
-              <option value="fp">FP</option>
+              <option value="fp">
+                FP
+              </option>
 
               <option value="universidad">
                 Universidad
@@ -2294,10 +3949,22 @@ function SettingsPage({
           <label>
             Curso
 
-            <select defaultValue="2bach">
-              <option value="1eso">1º ESO</option>
+            <select
+              value={course}
+              onChange={(event) =>
+                onCourseChange(
+                  event.target
+                    .value,
+                )
+              }
+            >
+              <option value="1eso">
+                1º ESO
+              </option>
 
-              <option value="4eso">4º ESO</option>
+              <option value="4eso">
+                4º ESO
+              </option>
 
               <option value="1bach">
                 1º Bachillerato
@@ -2315,31 +3982,85 @@ function SettingsPage({
             <Clock3 size={19} />
 
             <div>
-              <h3>Tiempo disponible</h3>
-              <p>Cuánto tiempo puedes estudiar.</p>
+              <h3>
+                Tiempo disponible
+              </h3>
+
+              <p>
+                Cuánto tiempo puedes estudiar.
+              </p>
             </div>
           </div>
 
           <label>
             Horas entre semana
 
-            <select defaultValue="2">
-              <option value="1">1 hora</option>
-              <option value="2">2 horas</option>
-              <option value="3">3 horas</option>
-              <option value="4">4 horas</option>
+            <select
+              value={
+                weekdayHours
+              }
+              onChange={(event) =>
+                onWeekdayHoursChange(
+                  Number(
+                    event.target
+                      .value,
+                  ),
+                )
+              }
+            >
+              <option value={1}>
+                1 hora
+              </option>
+
+              <option value={2}>
+                2 horas
+              </option>
+
+              <option value={3}>
+                3 horas
+              </option>
+
+              <option value={4}>
+                4 horas
+              </option>
             </select>
           </label>
 
           <label>
             Horas durante el fin de semana
 
-            <select defaultValue="3">
-              <option value="1">1 hora</option>
-              <option value="2">2 horas</option>
-              <option value="3">3 horas</option>
-              <option value="4">4 horas</option>
-              <option value="5">5+ horas</option>
+            <select
+              value={
+                weekendHours
+              }
+              onChange={(event) =>
+                onWeekendHoursChange(
+                  Number(
+                    event.target
+                      .value,
+                  ),
+                )
+              }
+            >
+              <option value={1}>
+                1 hora
+              </option>
+
+              <option value={2}>
+                2 horas
+              </option>
+
+              <option value={3}>
+                3 horas
+              </option>
+
+              <option value={4}>
+                4 horas
+              </option>
+
+              <option value={5}>
+                5+ horas
+              </option>
             </select>
           </label>
         </div>
@@ -2349,28 +4070,71 @@ function SettingsPage({
             <Brain size={19} />
 
             <div>
-              <h3>Preferencias de estudio</h3>
-              <p>Ayuda a la IA a conocerte mejor.</p>
+              <h3>
+                Preferencias de estudio
+              </h3>
+
+              <p>
+                Ayuda a la IA a conocerte mejor.
+              </p>
             </div>
           </div>
 
           <label>
             Duración preferida
 
-            <select defaultValue="50">
-              <option value="25">25 minutos</option>
-              <option value="50">50 minutos</option>
-              <option value="90">90 minutos</option>
+            <select
+              value={
+                preferredSessionMinutes
+              }
+              onChange={(event) =>
+                onPreferredSessionMinutesChange(
+                  Number(
+                    event.target
+                      .value,
+                  ),
+                )
+              }
+            >
+              <option value={25}>
+                25 minutos
+              </option>
+
+              <option value={50}>
+                50 minutos
+              </option>
+
+              <option value={90}>
+                90 minutos
+              </option>
             </select>
           </label>
 
           <label>
             Momento preferido
 
-            <select defaultValue="tarde">
-              <option value="manana">Mañana</option>
-              <option value="tarde">Tarde</option>
-              <option value="noche">Noche</option>
+            <select
+              value={
+                preferredStudyMoment
+              }
+              onChange={(event) =>
+                onPreferredStudyMomentChange(
+                  event.target
+                    .value,
+                )
+              }
+            >
+              <option value="manana">
+                Mañana
+              </option>
+
+              <option value="tarde">
+                Tarde
+              </option>
+
+              <option value="noche">
+                Noche
+              </option>
             </select>
           </label>
         </div>
@@ -2378,147 +4142,380 @@ function SettingsPage({
     </>
   );
 }
+
+/* =========================
+   DISPONIBILIDAD
+========================= */
+
 function AvailabilityPage({
   busySlots,
   setBusySlots,
 }: {
   busySlots: BusySlot[];
-  setBusySlots: React.Dispatch<React.SetStateAction<BusySlot[]>>;
+  setBusySlots: React.Dispatch<
+    React.SetStateAction<
+      BusySlot[]
+    >
+  >;
 }) {
-  const [mode, setMode] = useState<"weekly" | "this-week">("weekly");
-  const [dragStart, setDragStart] = useState<{
+  const [mode, setMode] =
+    useState<
+      "weekly" | "this-week"
+    >("weekly");
+
+  const [
+    dragStart,
+    setDragStart,
+  ] = useState<{
     day: number;
     time: string;
   } | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+
+  const [
+    isDragging,
+    setIsDragging,
+  ] = useState(false);
 
   const days = [
-    { label: "Lunes", day: 0 },
-    { label: "Martes", day: 1 },
-    { label: "Miércoles", day: 2 },
-    { label: "Jueves", day: 3 },
-    { label: "Viernes", day: 4 },
-    { label: "Sábado", day: 5 },
-    { label: "Domingo", day: 6 },
+    {
+      label: "Lunes",
+      day: 0,
+    },
+    {
+      label: "Martes",
+      day: 1,
+    },
+    {
+      label: "Miércoles",
+      day: 2,
+    },
+    {
+      label: "Jueves",
+      day: 3,
+    },
+    {
+      label: "Viernes",
+      day: 4,
+    },
+    {
+      label: "Sábado",
+      day: 5,
+    },
+    {
+      label: "Domingo",
+      day: 6,
+    },
   ];
 
-  const times = Array.from({ length: 32 }, (_, index) => {
-    const totalMinutes = 7 * 60 + index * 30;
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
+  const times =
+    Array.from(
+      {
+        length: 32,
+      },
+      (_, index) => {
+        const totalMinutes =
+          7 * 60 +
+          index * 30;
 
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-  });
+        const hours =
+          Math.floor(
+            totalMinutes /
+              60,
+          );
 
-  const mondayOfCurrentWeek = getMondayOfCurrentWeek();
+        const minutes =
+          totalMinutes %
+          60;
 
-  const isBusy = (day: number, time: string) => {
-    const timeToMinutes = (value: string) => {
-      const [hours, minutes] = value.split(":").map(Number);
-      return hours * 60 + minutes;
-    };
-
-    const currentMinutes = timeToMinutes(time);
-
-    return busySlots.some((slot) => {
-      if (slot.day !== day) return false;
-
-      if (!slot.repeatWeekly && slot.date !== mondayOfCurrentWeek) {
-        return false;
-      }
-
-      const startMinutes = timeToMinutes(slot.startTime);
-      const endMinutes = timeToMinutes(slot.endTime);
-
-      return currentMinutes >= startMinutes && currentMinutes < endMinutes;
-    });
-  };
-
-  const addBusySlot = (day: number, time: string) => {
-    const nextTime = addThirtyMinutes(time);
-
-    setBusySlots((current) => {
-      const alreadyExists = current.some(
-        (slot) =>
-          slot.day === day &&
-          slot.startTime === time &&
-          slot.endTime === nextTime &&
-          slot.repeatWeekly === (mode === "weekly") &&
-          (mode === "weekly" || slot.date === mondayOfCurrentWeek),
-      );
-
-      if (alreadyExists) return current;
-
-      return [
-        ...current,
-        {
-          id: Date.now() + Math.random(),
-          day,
-          startTime: time,
-          endTime: nextTime,
-          repeatWeekly: mode === "weekly",
-          date: mode === "this-week" ? mondayOfCurrentWeek : undefined,
-        },
-      ];
-    });
-  };
-
-  const toggleSlot = (day: number, time: string) => {
-    const nextTime = addThirtyMinutes(time);
-
-    const existing = busySlots.find(
-      (slot) =>
-        slot.day === day &&
-        slot.startTime === time &&
-        slot.endTime === nextTime &&
-        slot.repeatWeekly === (mode === "weekly") &&
-        (mode === "weekly" || slot.date === mondayOfCurrentWeek),
+        return `${String(
+          hours,
+        ).padStart(
+          2,
+          "0",
+        )}:${String(
+          minutes,
+        ).padStart(
+          2,
+          "0")}`;
+      },
     );
 
-    if (existing) {
-      setBusySlots((current) =>
-        current.filter((slot) => slot.id !== existing.id),
+  const mondayOfCurrentWeek =
+    getMondayOfCurrentWeek();
+
+  const isBusy = (
+    day: number,
+    time: string,
+  ) => {
+    const timeToMinutes = (
+      value: string,
+    ) => {
+      const [
+        hours,
+        minutes,
+      ] = value
+        .split(":")
+        .map(Number);
+
+      return (
+        hours * 60 +
+        minutes
       );
+    };
+
+    const currentMinutes =
+      timeToMinutes(
+        time,
+      );
+
+    return busySlots.some(
+      (slot) => {
+        if (
+          slot.day !==
+          day
+        ) {
+          return false;
+        }
+
+        if (
+          !slot.repeatWeekly &&
+          slot.date !==
+            mondayOfCurrentWeek
+        ) {
+          return false;
+        }
+
+        const startMinutes =
+          timeToMinutes(
+            slot.startTime,
+          );
+
+        const endMinutes =
+          timeToMinutes(
+            slot.endTime,
+          );
+
+        return (
+          currentMinutes >=
+            startMinutes &&
+          currentMinutes <
+            endMinutes
+        );
+      },
+    );
+  };
+
+  const addBusySlot = (
+    day: number,
+    time: string,
+  ) => {
+    const nextTime =
+      addThirtyMinutes(
+        time,
+      );
+
+    setBusySlots(
+      (current) => {
+        const alreadyExists =
+          current.some(
+            (slot) =>
+              slot.day ===
+                day &&
+              slot.startTime ===
+                time &&
+              slot.endTime ===
+                nextTime &&
+              slot.repeatWeekly ===
+                (mode ===
+                  "weekly") &&
+              (mode ===
+                "weekly" ||
+                slot.date ===
+                  mondayOfCurrentWeek),
+          );
+
+        if (
+          alreadyExists
+        ) {
+          return current;
+        }
+
+        return [
+          ...current,
+          {
+            id:
+              Date.now() +
+              Math.random(),
+            day,
+            startTime:
+              time,
+            endTime:
+              nextTime,
+            repeatWeekly:
+              mode ===
+              "weekly",
+            date:
+              mode ===
+              "this-week"
+                ? mondayOfCurrentWeek
+                : undefined,
+          },
+        ];
+      },
+    );
+  };
+
+  const toggleSlot = (
+    day: number,
+    time: string,
+  ) => {
+    const nextTime =
+      addThirtyMinutes(
+        time,
+      );
+
+    const existing =
+      busySlots.find(
+        (slot) =>
+          slot.day ===
+            day &&
+          slot.startTime ===
+            time &&
+          slot.endTime ===
+            nextTime &&
+          slot.repeatWeekly ===
+            (mode ===
+              "weekly") &&
+          (mode ===
+            "weekly" ||
+            slot.date ===
+              mondayOfCurrentWeek),
+      );
+
+    if (existing) {
+      setBusySlots(
+        (current) =>
+          current.filter(
+            (slot) =>
+              slot.id !==
+              existing.id,
+          ),
+      );
+
       return;
     }
 
-    addBusySlot(day, time);
+    addBusySlot(
+      day,
+      time,
+    );
   };
 
-  const startDragging = (day: number, time: string) => {
-    setDragStart({ day, time });
-    setIsDragging(true);
-    toggleSlot(day, time);
+  const startDragging = (
+    day: number,
+    time: string,
+  ) => {
+    setDragStart({
+      day,
+      time,
+    });
+
+    setIsDragging(
+      true,
+    );
+
+    toggleSlot(
+      day,
+      time,
+    );
   };
 
-  const dragOverSlot = (day: number, time: string) => {
-    if (!isDragging || !dragStart) return;
-    if (day !== dragStart.day) return;
+  const dragOverSlot = (
+    day: number,
+    time: string,
+  ) => {
+    if (
+      !isDragging ||
+      !dragStart
+    ) {
+      return;
+    }
 
-    const startIndex = times.indexOf(dragStart.time);
-    const currentIndex = times.indexOf(time);
+    if (
+      day !==
+      dragStart.day
+    ) {
+      return;
+    }
 
-    if (startIndex === -1 || currentIndex === -1) return;
+    const startIndex =
+      times.indexOf(
+        dragStart.time,
+      );
 
-    const firstIndex = Math.min(startIndex, currentIndex);
-    const lastIndex = Math.max(startIndex, currentIndex);
+    const currentIndex =
+      times.indexOf(
+        time,
+      );
 
-    for (let index = firstIndex; index <= lastIndex; index++) {
-      addBusySlot(day, times[index]);
+    if (
+      startIndex ===
+        -1 ||
+      currentIndex ===
+        -1
+    ) {
+      return;
+    }
+
+    const firstIndex =
+      Math.min(
+        startIndex,
+        currentIndex,
+      );
+
+    const lastIndex =
+      Math.max(
+        startIndex,
+        currentIndex,
+      );
+
+    for (
+      let index =
+        firstIndex;
+      index <=
+        lastIndex;
+      index++
+    ) {
+      addBusySlot(
+        day,
+        times[index],
+      );
     }
   };
 
-  const stopDragging = () => {
-    setIsDragging(false);
-    setDragStart(null);
-  };
+  const stopDragging =
+    () => {
+      setIsDragging(
+        false,
+      );
+
+      setDragStart(
+        null,
+      );
+    };
 
   return (
     <section>
       <div className="topbar">
         <div>
-          <div className="eyebrow">ORGANIZACIÓN</div>
-          <h1>Tiempo disponible</h1>
+          <div className="eyebrow">
+            ORGANIZACIÓN
+          </div>
+
+          <h1>
+            Tiempo disponible
+          </h1>
+
           <p className="subtitle">
             Marca las horas en las que normalmente estás ocupado.
             El resto del tiempo estará disponible para estudiar.
@@ -2529,7 +4526,10 @@ function AvailabilityPage({
       <div className="panel">
         <div className="panel-header">
           <div>
-            <h2>¿Cuándo estás ocupado?</h2>
+            <h2>
+              ¿Cuándo estás ocupado?
+            </h2>
+
             <p>
               Marca tus clases, entrenamientos, actividades o cualquier otro
               momento en el que no puedas estudiar.
@@ -2541,9 +4541,16 @@ function AvailabilityPage({
           <button
             type="button"
             className={
-              mode === "weekly" ? "primary-button" : "secondary-button"
+              mode ===
+              "weekly"
+                ? "primary-button"
+                : "secondary-button"
             }
-            onClick={() => setMode("weekly")}
+            onClick={() =>
+              setMode(
+                "weekly",
+              )
+            }
           >
             🔁 Repetir todas las semanas
           </button>
@@ -2551,9 +4558,16 @@ function AvailabilityPage({
           <button
             type="button"
             className={
-              mode === "this-week" ? "primary-button" : "secondary-button"
+              mode ===
+              "this-week"
+                ? "primary-button"
+                : "secondary-button"
             }
-            onClick={() => setMode("this-week")}
+            onClick={() =>
+              setMode(
+                "this-week",
+              )
+            }
           >
             📅 Solo esta semana
           </button>
@@ -2573,38 +4587,80 @@ function AvailabilityPage({
 
         <div
           className="availability-calendar"
-          onMouseLeave={stopDragging}
-          onMouseUp={stopDragging}
+          onMouseLeave={
+            stopDragging
+          }
+          onMouseUp={
+            stopDragging
+          }
         >
           <div className="availability-corner" />
 
-          {days.map((day) => (
-            <div key={day.day} className="availability-day-header">
-              {day.label}
-            </div>
-          ))}
+          {days.map(
+            (day) => (
+              <div
+                key={
+                  day.day
+                }
+                className="availability-day-header"
+              >
+                {
+                  day.label
+                }
+              </div>
+            ),
+          )}
 
-          {times.map((time) => (
-            <div key={time} className="availability-row">
-              <div className="availability-time">{time}</div>
+          {times.map(
+            (time) => (
+              <div
+                key={time}
+                className="availability-row"
+              >
+                <div className="availability-time">
+                  {time}
+                </div>
 
-              {days.map((day) => {
-                const busy = isBusy(day.day, time);
+                {days.map(
+                  (day) => {
+                    const busy =
+                      isBusy(
+                        day.day,
+                        time,
+                      );
 
-                return (
-                  <button
-                    key={`${day.day}-${time}`}
-                    type="button"
-                    className={`availability-cell ${busy ? "busy" : ""}`}
-                    onMouseDown={() => startDragging(day.day, time)}
-                    onMouseEnter={() => dragOverSlot(day.day, time)}
-                    onMouseUp={stopDragging}
-                    aria-label={`${day.label} ${time}`}
-                  />
-                );
-              })}
-            </div>
-          ))}
+                    return (
+                      <button
+                        key={`${day.day}-${time}`}
+                        type="button"
+                        className={`availability-cell ${
+                          busy
+                            ? "busy"
+                            : ""
+                        }`}
+                        onMouseDown={() =>
+                          startDragging(
+                            day.day,
+                            time,
+                          )
+                        }
+                        onMouseEnter={() =>
+                          dragOverSlot(
+                            day.day,
+                            time,
+                          )
+                        }
+                        onMouseUp={
+                          stopDragging
+                        }
+                        aria-label={`${day.label} ${time}`}
+                      />
+                    );
+                  },
+                )}
+              </div>
+            ),
+          )}
         </div>
 
         <p className="availability-help">
@@ -2616,25 +4672,78 @@ function AvailabilityPage({
   );
 }
 
-function addThirtyMinutes(time: string) {
-  const [hours, minutes] = time.split(":").map(Number);
-  const totalMinutes = hours * 60 + minutes + 30;
-  const nextHours = Math.floor(totalMinutes / 60);
-  const nextMinutes = totalMinutes % 60;
+function addThirtyMinutes(
+  time: string,
+) {
+  const [
+    hours,
+    minutes,
+  ] = time
+    .split(":")
+    .map(Number);
 
-  return `${String(nextHours).padStart(2, "0")}:${String(nextMinutes).padStart(2, "0")}`;
+  const totalMinutes =
+    hours * 60 +
+    minutes +
+    30;
+
+  const nextHours =
+    Math.floor(
+      totalMinutes /
+        60,
+    );
+
+  const nextMinutes =
+    totalMinutes %
+    60;
+
+  return `${String(
+    nextHours,
+  ).padStart(
+    2,
+    "0",
+  )}:${String(
+    nextMinutes,
+  ).padStart(
+    2,
+    "0")}`;
 }
 
 function getMondayOfCurrentWeek() {
-  const date = new Date();
-  const day = date.getDay();
-  const difference = day === 0 ? -6 : 1 - day;
+  const date =
+    new Date();
 
-  date.setDate(date.getDate() + difference);
+  const day =
+    date.getDay();
 
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const dayOfMonth = String(date.getDate()).padStart(2, "0");
+  const difference =
+    day === 0
+      ? -6
+      : 1 - day;
+
+  date.setDate(
+    date.getDate() +
+      difference,
+  );
+
+  const year =
+    date.getFullYear();
+
+  const month =
+    String(
+      date.getMonth() + 1,
+    ).padStart(
+      2,
+      "0",
+    );
+
+  const dayOfMonth =
+    String(
+      date.getDate(),
+    ).padStart(
+      2,
+      "0",
+    );
 
   return `${year}-${month}-${dayOfMonth}`;
 }
@@ -2657,11 +4766,15 @@ function PageHeader({
   return (
     <header className="topbar">
       <div>
-        <p className="eyebrow">{eyebrow}</p>
+        <p className="eyebrow">
+          {eyebrow}
+        </p>
 
         <h1>{title}</h1>
 
-        <p className="subtitle">{subtitle}</p>
+        <p className="subtitle">
+          {subtitle}
+        </p>
       </div>
 
       {action}
@@ -2684,7 +4797,9 @@ function EmptyBox({
 }) {
   return (
     <div className="empty-page">
-      <div className="empty-icon">{icon}</div>
+      <div className="empty-icon">
+        {icon}
+      </div>
 
       <h3>{title}</h3>
 
@@ -2726,10 +4841,15 @@ function Feature({
 }) {
   return (
     <div className="feature-item">
-      <div className="feature-icon">{icon}</div>
+      <div className="feature-icon">
+        {icon}
+      </div>
 
       <div>
-        <strong>{title}</strong>
+        <strong>
+          {title}
+        </strong>
+
         <p>{text}</p>
       </div>
     </div>
@@ -2737,94 +4857,321 @@ function Feature({
 }
 
 /* =========================
+   PROGRESO
+========================= */
+
+function ProgressPage({
+  tasks,
+  completedTasks,
+}: {
+  tasks: Task[];
+  completedTasks: Task[];
+}) {
+  const progress =
+    tasks.length === 0
+      ? 0
+      : Math.round(
+          (completedTasks.length /
+            tasks.length) *
+            100,
+        );
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="SEGUIMIENTO"
+        title="Progreso"
+        subtitle="Consulta cómo estás avanzando."
+      />
+
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon">
+            <CheckSquare size={19} />
+          </div>
+
+          <div>
+            <span>
+              Tareas completadas
+            </span>
+
+            <strong>
+              {
+                completedTasks.length
+              }
+            </strong>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon">
+            <Target size={19} />
+          </div>
+
+          <div>
+            <span>
+              Progreso total
+            </span>
+
+            <strong>
+              {progress}%
+            </strong>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon">
+            <TrendingUp size={19} />
+          </div>
+
+          <div>
+            <span>
+              Tareas totales
+            </span>
+
+            <strong>
+              {tasks.length}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      <section
+        className="panel"
+        style={{
+          marginTop: 16,
+        }}
+      >
+        <div className="panel-header">
+          <div>
+            <h3>
+              Tu progreso
+            </h3>
+
+            <p>
+              Cada tarea completada cuenta.
+            </p>
+          </div>
+        </div>
+
+        <div
+          style={{
+            padding:
+              "12px 0",
+          }}
+        >
+          <div
+            style={{
+              height: 12,
+              borderRadius: 999,
+              background:
+                "#edf0f5",
+              overflow:
+                "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: `${progress}%`,
+                height:
+                  "100%",
+                background:
+                  "#172033",
+                borderRadius:
+                  999,
+                transition:
+                  "width 0.25s ease",
+              }}
+            />
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* =========================
    UTILIDADES
 ========================= */
-function formatMinutes(minutes: number) {
+
+function formatMinutes(
+  minutes: number,
+) {
   if (minutes < 60) {
     return `${minutes} min`;
   }
 
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
+  const hours =
+    Math.floor(
+      minutes / 60,
+    );
 
-  if (remainingMinutes === 0) {
+  const remainingMinutes =
+    minutes % 60;
+
+  if (
+    remainingMinutes ===
+    0
+  ) {
     return `${hours} h`;
   }
 
   return `${hours} h ${remainingMinutes} min`;
 }
-function formatDateInput(date: Date) {
-  const year = date.getFullYear();
 
-  const month = String(date.getMonth() + 1).padStart(
-    2,
-    "0",
-  );
+function formatDateInput(
+  date: Date,
+) {
+  const year =
+    date.getFullYear();
 
-  const day = String(date.getDate()).padStart(2, "0");
+  const month =
+    String(
+      date.getMonth() + 1,
+    ).padStart(
+      2,
+      "0",
+    );
+
+  const day =
+    String(
+      date.getDate(),
+    ).padStart(
+      2,
+      "0",
+    );
 
   return `${year}-${month}-${day}`;
 }
 
-function formatLongDate(date: Date) {
-  return date.toLocaleDateString("es-ES", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-}
-
-function formatShortDate(dateString: string) {
-  const date = new Date(`${dateString}T12:00:00`);
-
-  return date.toLocaleDateString("es-ES", {
-    day: "numeric",
-    month: "short",
-  });
-}
-
-function getDaysRemaining(dateString: string) {
-  const today = new Date();
-
-  today.setHours(0, 0, 0, 0);
-
-  const target = new Date(`${dateString}T00:00:00`);
-
-  target.setHours(0, 0, 0, 0);
-
-  const difference =
-    target.getTime() - today.getTime();
-
-  return Math.max(
-    0,
-    Math.ceil(difference / (1000 * 60 * 60 * 24)),
+function formatLongDate(
+  date: Date,
+) {
+  return date.toLocaleDateString(
+    "es-ES",
+    {
+      weekday:
+        "long",
+      day: "numeric",
+      month:
+        "long",
+    },
   );
 }
 
-function getNextExam(exams: Exam[]) {
-  const today = new Date();
-
-  today.setHours(0, 0, 0, 0);
-
-  const futureExams = exams
-    .filter(
-      (exam) =>
-        new Date(`${exam.date}T00:00:00`).getTime() >=
-        today.getTime(),
-    )
-    .sort(
-      (a, b) =>
-        new Date(a.date).getTime() -
-        new Date(b.date).getTime(),
+function formatShortDate(
+  dateString: string,
+) {
+  const date =
+    new Date(
+      `${dateString}T12:00:00`,
     );
 
-  return futureExams[0] ?? null;
+  return date.toLocaleDateString(
+    "es-ES",
+    {
+      day: "numeric",
+      month:
+        "short",
+    },
+  );
 }
 
-function priorityValue(priority: Task["priority"]) {
-  if (priority === "Alta") return 3;
+function getDaysRemaining(
+  dateString: string,
+) {
+  const today =
+    new Date();
 
-  if (priority === "Media") return 2;
+  today.setHours(
+    0,
+    0,
+    0,
+    0,
+  );
+
+  const target =
+    new Date(
+      `${dateString}T00:00:00`,
+    );
+
+  target.setHours(
+    0,
+    0,
+    0,
+    0,
+  );
+
+  const difference =
+    target.getTime() -
+    today.getTime();
+
+  return Math.max(
+    0,
+    Math.ceil(
+      difference /
+        (1000 *
+          60 *
+          60 *
+          24),
+    ),
+  );
+}
+
+function getNextExam(
+  exams: Exam[],
+) {
+  const today =
+    new Date();
+
+  today.setHours(
+    0,
+    0,
+    0,
+    0,
+  );
+
+  const futureExams =
+    exams
+      .filter(
+        (exam) =>
+          new Date(
+            `${exam.date}T00:00:00`,
+          ).getTime() >=
+          today.getTime(),
+      )
+      .sort(
+        (a, b) =>
+          new Date(
+            a.date,
+          ).getTime() -
+          new Date(
+            b.date,
+          ).getTime(),
+      );
+
+  return (
+    futureExams[0] ??
+    null
+  );
+}
+
+function priorityValue(
+  priority: Task["priority"],
+) {
+  if (
+    priority ===
+    "Alta"
+  ) {
+    return 3;
+  }
+
+  if (
+    priority ===
+    "Media"
+  ) {
+    return 2;
+  }
 
   return 1;
 }
