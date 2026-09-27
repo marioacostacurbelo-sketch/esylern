@@ -1798,11 +1798,9 @@ function StudyPlanPage({
     </span>
   )}
 
-  <div>
-    <span className="study-plan-day-label">
-      {formatDate(date)}
-    </span>
-  </div>
+  <span className="study-plan-day-label">
+    {formatDate(date)}
+  </span>
 </div>
 
                   <div className="study-plan-sessions">
