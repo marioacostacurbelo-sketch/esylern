@@ -814,15 +814,16 @@ function App() {
           />
         )}
 
-        {currentPage === "Asistente IA" && (
-          <AssistantPage
-            tasks={tasks}
-            exams={exams}
-            studyPlan={studyPlan}
-            busySlots={busySlots}
-            studyDailyMinutes={studyDailyMinutes}
-          />
-        )}
+       {currentPage === "Asistente IA" && (
+  <AssistantPage
+    tasks={tasks}
+    exams={exams}
+    studyPlan={studyPlan}
+    busySlots={busySlots}
+    studyDailyMinutes={studyDailyMinutes}
+    onAction={executeAssistantAction}
+  />
+)}
 
         {currentPage === "Progreso" && (
           <ProgressPage
