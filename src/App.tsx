@@ -1826,7 +1826,7 @@ function StudyPlanPage({
     {item.minutes} min
   </div>
 </div>}}
-                      >
+                      
                         <strong>{item.startTime} – {item.endTime}</strong>
                         <span>
                           {item.type === "Examen" ? "📚" : "📝"} <strong>{item.subject}</strong> · {item.title}
