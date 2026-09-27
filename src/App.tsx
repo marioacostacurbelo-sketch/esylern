@@ -79,84 +79,20 @@ type StudySettings = {
   preferredStudyMoment: "manana" | "tarde" | "noche";
 };
 
-type AssistantAction =
-  | {
-      type: "create_task";
-      task: Omit<Task, "id">;
-    }
-  | {
-      type: "update_task";
-      id: number;
-      changes: Partial<Omit<Task, "id">>;
-    }
-  | {
-      type: "set_task_done";
-      id: number;
-      done: boolean;
-    }
-  | {
-      type: "delete_task";
-      id: number;
-    }
-  | {
-      type: "create_exam";
-      exam: Omit<Exam, "id">;
-    }
-  | {
-      type: "update_exam";
-      id: number;
-      changes: Partial<Omit<Exam, "id">>;
-    }
-  | {
-      type: "delete_exam";
-      id: number;
-    }
-  | {
-      type: "create_busy_slot";
-      slot: Omit<BusySlot, "id">;
-    }
-  | {
-      type: "delete_busy_slot";
-      id: number;
-    }
-  | {
-      type: "set_daily_study_minutes";
-      minutes: number;
-    }
-  | {
-      type: "set_education_level";
-      value: StudySettings["educationLevel"];
-    }
-  | {
-      type: "set_course";
-      value: StudySettings["course"];
-    }
-  | {
-      type: "set_weekday_hours";
-      value: number;
-    }
-  | {
-      type: "set_weekend_hours";
-      value: number;
-    }
-  | {
-      type: "set_preferred_session_minutes";
-      value: StudySettings["preferredSessionMinutes"];
-    }
-  | {
-      type: "set_preferred_study_moment";
-      value: StudySettings["preferredStudyMoment"];
-    }
-  | {
-      type: "navigate";
-      page: Page;
-    }
-  | {
-      type: "regenerate_study_plan";
-    };
+
 /* =========================
    ACCIONES DE ESYLERN AI
 ========================= */
+
+
+type StudySettings = {
+  educationLevel: "eso" | "bachillerato" | "fp" | "universidad";
+  course: "1eso" | "4eso" | "1bach" | "2bach";
+  weekdayHours: number;
+  weekendHours: number;
+  preferredSessionMinutes: 25 | 50 | 90;
+  preferredStudyMoment: "manana" | "tarde" | "noche";
+};
 
 type AssistantAction =
   | {
@@ -216,90 +152,6 @@ type AssistantAction =
   | {
       type: "navigate";
       page: Page;
-   };
-type StudySettings = {
-  educationLevel: "eso" | "bachillerato" | "fp" | "universidad";
-  course: "1eso" | "4eso" | "1bach" | "2bach";
-  weekdayHours: number;
-  weekendHours: number;
-  preferredSessionMinutes: 25 | 50 | 90;
-  preferredStudyMoment: "manana" | "tarde" | "noche";
-};
-
-type AssistantAction =
-  | {
-      type: "create_task";
-      task: Omit<Task, "id">;
-    }
-  | {
-      type: "update_task";
-      id: number;
-      changes: Partial<Omit<Task, "id">>;
-    }
-  | {
-      type: "set_task_done";
-      id: number;
-      done: boolean;
-    }
-  | {
-      type: "delete_task";
-      id: number;
-    }
-  | {
-      type: "create_exam";
-      exam: Omit<Exam, "id">;
-    }
-  | {
-      type: "update_exam";
-      id: number;
-      changes: Partial<Omit<Exam, "id">>;
-    }
-  | {
-      type: "delete_exam";
-      id: number;
-    }
-  | {
-      type: "create_busy_slot";
-      slot: Omit<BusySlot, "id">;
-    }
-  | {
-      type: "delete_busy_slot";
-      id: number;
-    }
-  | {
-      type: "set_daily_study_minutes";
-      minutes: number;
-    }
-  | {
-      type: "set_education_level";
-      value: StudySettings["educationLevel"];
-    }
-  | {
-      type: "set_course";
-      value: StudySettings["course"];
-    }
-  | {
-      type: "set_weekday_hours";
-      value: number;
-    }
-  | {
-      type: "set_weekend_hours";
-      value: number;
-    }
-  | {
-      type: "set_preferred_session_minutes";
-      value: StudySettings["preferredSessionMinutes"];
-    }
-  | {
-      type: "set_preferred_study_moment";
-      value: StudySettings["preferredStudyMoment"];
-    }
-  | {
-      type: "navigate";
-      page: Page;
-    }
-  | {
-      type: "regenerate_study_plan";
     };
 
 function getSubjectColor(subject: string): string {
