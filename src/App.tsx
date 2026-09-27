@@ -383,7 +383,15 @@ useEffect(() => {
           />
         )}
 
-        {currentPage === "Asistente IA" && <AssistantPage />}
+        {currentPage === "Asistente IA" && (
+  <AssistantPage
+    tasks={tasks}
+    exams={exams}
+    studyPlan={studyPlan}
+    busySlots={busySlots}
+    studyDailyMinutes={studyDailyMinutes}
+  />
+)}
 
         {currentPage === "Progreso" && (
           <ProgressPage
