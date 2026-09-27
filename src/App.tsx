@@ -2392,6 +2392,11 @@ function StudyPlanPage({
   };
 
   const generatePlan = () => {
+    console.log("📚 GENERANDO PLAN", {
+  exams,
+  tasks,
+  generationRequest,
+});
     setWarning("");
 
     const today =
