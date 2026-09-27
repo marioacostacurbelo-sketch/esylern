@@ -1789,19 +1789,17 @@ function StudyPlanPage({
 
               return (
                 <section className="study-plan-day" key={date}>
-                  <div className={`study-plan-day-header ${isToday ? "is-today" : ""}`}>
-                    <span className="study-plan-day-dot" />
-                    <div className={`study-plan-day-header ${isToday ? "is-today" : ""}`}>
-  {isToday && (
-    <span className="study-plan-day-today">
-      HOY
-    </span>
-  )}
+                  <div
+                    className={`study-plan-day-header ${isToday ? "is-today" : ""}`}
+                  >
+                    {isToday && (
+                      <span className="study-plan-day-today">HOY</span>
+                    )}
 
-  <span className="study-plan-day-label">
-    {formatDate(date)}
-  </span>
-</div>
+                    <span className="study-plan-day-label">
+                      {formatDate(date)}
+                    </span>
+                  </div>
 
                   <div className="study-plan-sessions">
                     {items.map((item, index) => (
@@ -1814,9 +1812,13 @@ function StudyPlanPage({
                           <span>{item.endTime}</span>
                         </div>
 
-                       <div
-  className={`study-plan-card study-plan-card-${item.type === "Examen" ? "exam" : "task"} subject-${getSubjectColor(item.subject)}`}
->
+                        <div
+                          className={`study-plan-card ${
+                            item.type === "Examen"
+                              ? "study-plan-card-exam"
+                              : "study-plan-card-task"
+                          } subject-${getSubjectColor(item.subject)}`}
+                        >
                           <div className="study-plan-card-main">
                             <div className="study-plan-type">
                               <span className="study-plan-type-icon">
