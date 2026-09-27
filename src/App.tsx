@@ -645,6 +645,11 @@ function App() {
           case "educationLevel":
             setEducationLevel(String(action.value));
             return;
+            case "generate_study_plan":
+  setStudyPlanGenerationRequest((current) => current + 1);
+  navigate("Plan de estudio");
+  return;
+
 
           case "course":
             setCourse(String(action.value));
