@@ -817,13 +817,14 @@ function App() {
 
         {currentPage === "Plan de estudio" && (
           <StudyPlanPage
-            tasks={pendingTasks}
-            exams={exams}
-            busySlots={busySlots}
-            studyDailyMinutes={studyDailyMinutes}
-            savedPlan={studyPlan}
-            onPlanGenerated={setStudyPlan}
-          />
+  tasks={pendingTasks}
+  exams={exams}
+  busySlots={busySlots}
+  studyDailyMinutes={studyDailyMinutes}
+  savedPlan={studyPlan}
+  onPlanGenerated={setStudyPlan}
+  generationRequest={studyPlanGenerationRequest}
+/>
         )}
 
        {currentPage === "Asistente IA" && (
