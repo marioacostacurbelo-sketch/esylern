@@ -2278,25 +2278,74 @@ select {
 .study-plan-card {
   position: relative;
   min-width: 0;
-  padding: 16px 18px 16px 21px;
-  border: 1px solid var(--border);
+  padding: 16px 19px 16px 22px;
+
+  /* Borde fino del color de la asignatura */
+  border: 1px solid var(--subject-color);
+
+  /* Línea gruesa izquierda */
+  border-left: 5px solid var(--subject-color);
+
   border-radius: 14px;
-  background: var(--surface);
+  background: var(--subject-soft);
   overflow: hidden;
+
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease;
 }
 
-/* Color de asignatura */
+.study-plan-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 20px rgba(23, 32, 51, 0.07);
+}
+
+/* Quitamos la antigua línea para que no haya doble línea */
 .study-plan-card::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 5px;
-  background: var(--subject-color, #718096);
+  display: none;
+}
+/* =========================
+   COLORES DE ASIGNATURAS
+========================= */
+
+.study-plan-card.subject-blue {
+  --subject-color: #5f7fa8;
+  --subject-soft: #f3f6fa;
+}
+
+.study-plan-card.subject-purple {
+  --subject-color: #85729c;
+  --subject-soft: #f6f2f8;
+}
+
+.study-plan-card.subject-terracotta {
+  --subject-color: #b18470;
+  --subject-soft: #faf4f1;
+}
+
+.study-plan-card.subject-sage {
+  --subject-color: #71927f;
+  --subject-soft: #f1f6f3;
+}
+
+.study-plan-card.subject-brick {
+  --subject-color: #a86f6f;
+  --subject-soft: #faf2f2;
+}
+
+.study-plan-card.subject-mustard {
+  --subject-color: #a18b55;
+  --subject-soft: #faf7ed;
+}
+
+.study-plan-card.subject-rose {
+  --subject-color: #a4778d;
+  --subject-soft: #f9f3f6;
+}
+
+.study-plan-card.subject-teal {
+  --subject-color: #648d91;
+  --subject-soft: #f0f6f6;
 }
 
 .study-plan-card:hover {
