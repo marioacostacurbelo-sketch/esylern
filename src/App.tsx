@@ -660,24 +660,6 @@ const updateExam = (
   );
 };
 
-const addBusySlot = (
-  slot: Omit<BusySlot, "id">,
-) => {
-  setBusySlots((current) => [
-    ...current,
-    {
-      ...slot,
-      id: Date.now() + Math.random(),
-    },
-  ]);
-};
-
-const deleteBusySlot = (id: number) => {
-  setBusySlots((current) =>
-    current.filter((slot) => slot.id !== id),
-  );
-};
-
   /*
    * =========================
    * ACCIONES DE LA IA
