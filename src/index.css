@@ -2214,3 +2214,252 @@ select {
     bottom: 8px;
   }
 }
+/* =========================
+   PLAN DE ESTUDIO · NUEVO DISEÑO
+========================= */
+
+.study-plan-day {
+  margin-bottom: 32px;
+}
+
+.study-plan-day-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.study-plan-day-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #172033;
+  text-transform: capitalize;
+}
+
+.study-plan-day-today {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #6f5bd3;
+  background: #f1edff;
+  padding: 5px 8px;
+  border-radius: 6px;
+}
+
+/* Contenedor de las sesiones */
+.study-plan-sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Cada sesión */
+.study-plan-session {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: stretch;
+}
+
+/* Hora */
+.study-plan-time {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding-top: 17px;
+  color: #697386;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Tarjeta */
+.study-plan-card {
+  position: relative;
+  min-width: 0;
+  padding: 16px 18px 16px 21px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  overflow: hidden;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+/* Color de asignatura */
+.study-plan-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: var(--subject-color, #718096);
+}
+
+.study-plan-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(23, 32, 51, 0.06);
+}
+
+/* Cabecera de la tarjeta */
+.study-plan-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+/* Examen / Tarea */
+.study-plan-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.study-plan-type.exam {
+  color: #6b5a9e;
+}
+
+.study-plan-type.task {
+  color: #65736b;
+}
+
+/* Asignatura */
+.study-plan-subject {
+  color: var(--subject-color, #172033);
+  font-size: 14px;
+  font-weight: 750;
+  margin-bottom: 3px;
+}
+
+/* Título */
+.study-plan-title {
+  color: #30394a;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* Duración */
+.study-plan-duration {
+  display: flex;
+  align-items: center;
+  padding-top: 16px;
+  color: #697386;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+/* Fondo suave según asignatura */
+.study-plan-card.subject-blue {
+  --subject-color: var(--subject-blue);
+  background:
+    linear-gradient(
+      90deg,
+      var(--subject-blue-soft) 0%,
+      #ffffff 42%
+    );
+}
+
+.study-plan-card.subject-purple {
+  --subject-color: var(--subject-purple);
+  background:
+    linear-gradient(
+      90deg,
+      var(--subject-purple-soft) 0%,
+      #ffffff 42%
+    );
+}
+
+.study-plan-card.subject-terracotta {
+  --subject-color: var(--subject-terracotta);
+  background:
+    linear-gradient(
+      90deg,
+      var(--subject-terracotta-soft) 0%,
+      #ffffff 42%
+    );
+}
+
+.study-plan-card.subject-sage {
+  --subject-color: var(--subject-sage);
+  background:
+    linear-gradient(
+      90deg,
+      var(--subject-sage-soft) 0%,
+      #ffffff 42%
+    );
+}
+
+.study-plan-card.subject-brick {
+  --subject-color: var(--subject-brick);
+  background:
+    linear-gradient(
+      90deg,
+      var(--subject-brick-soft) 0%,
+      #ffffff 42%
+    );
+}
+
+.study-plan-card.subject-mustard {
+  --subject-color: var(--subject-mustard);
+  background:
+    linear-gradient(
+      90deg,
+      var(--subject-mustard-soft) 0%,
+      #ffffff 42%
+    );
+}
+
+.study-plan-card.subject-rose {
+  --subject-color: var(--subject-rose);
+  background:
+    linear-gradient(
+      90deg,
+      var(--subject-rose-soft) 0%,
+      #ffffff 42%
+    );
+}
+
+.study-plan-card.subject-teal {
+  --subject-color: var(--subject-teal);
+  background:
+    linear-gradient(
+      90deg,
+      var(--subject-teal-soft) 0%,
+      #ffffff 42%
+    );
+}
+
+/* Móvil */
+@media (max-width: 700px) {
+  .study-plan-session {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .study-plan-time {
+    justify-content: flex-start;
+    padding-top: 0;
+    font-size: 12px;
+  }
+
+  .study-plan-card {
+    padding: 15px 16px 15px 19px;
+  }
+
+  .study-plan-duration {
+    display: none;
+  }
+
+  .study-plan-day {
+    margin-bottom: 26px;
+  }
+}
