@@ -621,6 +621,63 @@ function App() {
     );
   };
 
+  const updateTask = (
+  id: number,
+  changes: Partial<Omit<Task, "id">>,
+) => {
+  setTasks((current) =>
+    current.map((task) =>
+      task.id === id
+        ? { ...task, ...changes }
+        : task,
+    ),
+  );
+};
+
+const setTaskDone = (
+  id: number,
+  done: boolean,
+) => {
+  setTasks((current) =>
+    current.map((task) =>
+      task.id === id
+        ? { ...task, done }
+        : task,
+    ),
+  );
+};
+
+const updateExam = (
+  id: number,
+  changes: Partial<Omit<Exam, "id">>,
+) => {
+  setExams((current) =>
+    current.map((exam) =>
+      exam.id === id
+        ? { ...exam, ...changes }
+        : exam,
+    ),
+  );
+};
+
+const addBusySlot = (
+  slot: Omit<BusySlot, "id">,
+) => {
+  setBusySlots((current) => [
+    ...current,
+    {
+      ...slot,
+      id: Date.now() + Math.random(),
+    },
+  ]);
+};
+
+const deleteBusySlot = (id: number) => {
+  setBusySlots((current) =>
+    current.filter((slot) => slot.id !== id),
+  );
+};
+
   /*
    * =========================
    * ACCIONES DE LA IA
