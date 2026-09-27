@@ -2302,10 +2302,14 @@ function StudyPlanPage({
   ) => void;
   generationRequest: number;
 }) {
-  const [plan, setPlan] =
-    useState<StudySession[]>(
-      savedPlan,
-    );
+  console.log("🧩 STUDY PLAN RENDER", {
+    generationRequest,
+    exams,
+  });
+
+  const [plan, setPlan] = useState<StudySession[]>(
+    savedPlan,
+  );
 
   const [warning, setWarning] =
     useState("");
