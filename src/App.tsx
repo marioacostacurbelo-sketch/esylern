@@ -2081,16 +2081,7 @@ const [messages, setMessages] = useState<
         <button
   type="button"
   className="chat-clear-button"
-  onClick={() => {
-    const confirmed = window.confirm(
-      "¿Quieres borrar toda la conversación?",
-    );
-
-    if (!confirmed) return;
-
-    setMessages([defaultAssistantMessage]);
-    localStorage.removeItem(ASSISTANT_MESSAGES_KEY);
-  }}
+  onClick={() => setShowDeleteConfirmation(true)}
   aria-label="Borrar conversación"
   title="Borrar conversación"
 >
