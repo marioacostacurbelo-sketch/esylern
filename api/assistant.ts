@@ -379,11 +379,15 @@ ${JSON.stringify(context, null, 2)}
     }
 
     const answer =
-      typeof assistantMessage?.content === "string"
-        ? assistantMessage.content
-        : actions.length > 0
-          ? "He realizado los cambios en tu planificación."
-          : "No he podido generar una respuesta.";
+  actions.length > 0
+    ? typeof assistantMessage?.content === "string" &&
+      assistantMessage.content.trim()
+      ? assistantMessage.content
+      : "He realizado los cambios en tu planificación."
+    : typeof assistantMessage?.content === "string" &&
+        assistantMessage.content.trim()
+      ? assistantMessage.content
+      : "No he podido generar una respuesta.";
 
     return res.status(200).json({
       response: answer,
