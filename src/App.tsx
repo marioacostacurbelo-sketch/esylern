@@ -1957,37 +1957,48 @@ function AssistantPage({
 
   const ASSISTANT_MESSAGES_KEY = "esylern_assistant_messages";
 
-const defaultAssistantMessage = {
-  role: "ai" as const,
-  text: "¡Hola! Soy Esylern AI. Ya tengo acceso a tus tareas, exámenes y plan de estudio. ¿En qué te ayudo?",
-};
-const [showDeleteConfirmation, setShowDeleteConfirmation] =
-  useState(false);
-const [messages, setMessages] = useState<
-  { role: "user" | "ai"; text: string }[]
->(() => {
-  try {
-    const saved = localStorage.getItem(ASSISTANT_MESSAGES_KEY);
+  const defaultAssistantMessage = {
+    role: "ai" as const,
+    text: "¡Hola! Soy Esylern AI. Ya tengo acceso a tus tareas, exámenes y plan de estudio. ¿En qué te ayudo?",
+  };
 
-    if (saved) {
-      const parsed = JSON.parse(saved);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] =
+    useState(false);
 
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+  const [messages, setMessages] = useState<
+    { role: "user" | "ai"; text: string }[]
+  >(() => {
+    try {
+      const saved = localStorage.getItem(
+        ASSISTANT_MESSAGES_KEY,
+      );
+
+      if (saved) {
+        const parsed = JSON.parse(saved);
+
+        if (
+          Array.isArray(parsed) &&
+          parsed.length > 0
+        ) {
+          return parsed;
+        }
       }
+    } catch (error) {
+      console.error(
+        "No se pudo cargar la conversación:",
+        error,
+      );
     }
-  } catch (error) {
-    console.error("No se pudo cargar la conversación:", error);
-  }
 
-  return [defaultAssistantMessage];
-});
+    return [defaultAssistantMessage];
+  });
+
   useEffect(() => {
-  localStorage.setItem(
-    ASSISTANT_MESSAGES_KEY,
-    JSON.stringify(messages),
-  );
-}, [messages]);
+    localStorage.setItem(
+      ASSISTANT_MESSAGES_KEY,
+      JSON.stringify(messages),
+    );
+  }, [messages]);
 
   const sendMessage = async () => {
     if (!message.trim() || isLoading) return;
@@ -2026,7 +2037,8 @@ const [messages, setMessages] = useState<
 
       if (!response.ok) {
         throw new Error(
-          data?.error || "No se pudo conectar con Esylern AI.",
+          data?.error ||
+            "No se pudo conectar con Esylern AI.",
         );
       }
 
@@ -2057,12 +2069,6 @@ const [messages, setMessages] = useState<
 
   return (
     <>
-          Borrar conversación
-        </button>
-      </div>
-    </div>
-  </div>
-)}>
       <PageHeader
         eyebrow="INTELIGENCIA ARTIFICIAL"
         title="Asistente IA"
@@ -2071,28 +2077,39 @@ const [messages, setMessages] = useState<
 
       <div className="chat-card">
         <div className="chat-header">
-          <div className="ai-avatar">
-            <Sparkles size={18} />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "11px",
+            }}
+          >
+            <div className="ai-avatar">
+              <Sparkles size={18} />
+            </div>
+
+            <div>
+              <strong>Esylern AI</strong>
+              <span>
+                {isLoading
+                  ? "Pensando..."
+                  : "Conectado a tu planificación"}
+              </span>
+            </div>
           </div>
 
-          <div>
-            <strong>Esylern AI</strong>
-            <span>
-              {isLoading
-                ? "Pensando..."
-                : "Conectado a tu planificación"}
-            </span>
-          </div>
+          <button
+            type="button"
+            className="chat-clear-button"
+            onClick={() =>
+              setShowDeleteConfirmation(true)
+            }
+            aria-label="Borrar conversación"
+            title="Borrar conversación"
+          >
+            <Trash2 size={17} />
+          </button>
         </div>
-        <button
-  type="button"
-  className="chat-clear-button"
-  onClick={() => setShowDeleteConfirmation(true)}
-  aria-label="Borrar conversación"
-  title="Borrar conversación"
->
-  <Trash2 size={17} />
-</button>
 
         <div className="messages">
           {messages.map((item, index) => (
@@ -2104,14 +2121,18 @@ const [messages, setMessages] = useState<
                   : "ai-message"
               }`}
             >
-              {item.text.split("\n").map((line, lineIndex) => (
-                <React.Fragment key={lineIndex}>
-                  {line}
+              {item.text
+                .split("\n")
+                .map((line, lineIndex) => (
+                  <React.Fragment key={lineIndex}>
+                    {line}
 
-                  {lineIndex <
-                    item.text.split("\n").length - 1 && <br />}
-                </React.Fragment>
-              ))}
+                    {lineIndex <
+                      item.text.split("\n").length - 1 && (
+                      <br />
+                    )}
+                  </React.Fragment>
+                ))}
             </div>
           ))}
 
@@ -2147,49 +2168,52 @@ const [messages, setMessages] = useState<
           </button>
         </div>
       </div>
-          {showDeleteConfirmation && (
-  <div className="delete-confirmation-overlay">
-    <div className="delete-confirmation-modal">
-      <div className="delete-confirmation-icon">
-        <Trash2 size={20} />
-      </div>
 
-      <h3>¿Borrar conversación?</h3>
+      {showDeleteConfirmation && (
+        <div className="delete-confirmation-overlay">
+          <div className="delete-confirmation-modal">
+            <div className="delete-confirmation-icon">
+              <Trash2 size={20} />
+            </div>
 
-      <p>
-        Esto eliminará la memoria de esta conversación con
-        Esylern AI.
-        <br />
-        Tus tareas, exámenes y plan de estudio no se
-        borrarán.
-      </p>
+            <h3>¿Borrar conversación?</h3>
 
-      <div className="delete-confirmation-actions">
-        <button
-          type="button"
-          className="delete-cancel-button"
-          onClick={() => setShowDeleteConfirmation(false)}
-        >
-          Cancelar
-        </button>
+            <p>
+              Esto eliminará la memoria de esta
+              conversación con Esylern AI.
+              <br />
+              Tus tareas, exámenes y plan de estudio no se
+              borrarán.
+            </p>
 
-        <button
-          type="button"
-          className="delete-confirm-button"
-          onClick={() => {
-            setMessages([defaultAssistantMessage]);
-            localStorage.removeItem(
-              ASSISTANT_MESSAGES_KEY,
-            );
-            setShowDeleteConfirmation(false);
-          }}
-        >
-          Borrar conversación
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+            <div className="delete-confirmation-actions">
+              <button
+                type="button"
+                className="delete-cancel-button"
+                onClick={() =>
+                  setShowDeleteConfirmation(false)
+                }
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className="delete-confirm-button"
+                onClick={() => {
+                  setMessages([defaultAssistantMessage]);
+                  localStorage.removeItem(
+                    ASSISTANT_MESSAGES_KEY,
+                  );
+                  setShowDeleteConfirmation(false);
+                }}
+              >
+                Borrar conversación
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
