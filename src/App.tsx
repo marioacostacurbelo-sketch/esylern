@@ -143,6 +143,9 @@ type AssistantAction =
         | "preferredStudyMoment";
       value: string | number;
     }
+    | {
+      type: "generate_study_plan";
+    }
   | {
       type: "navigate";
       page: Page;
