@@ -3534,13 +3534,14 @@ function AssistantPage({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message: userMessage,
-          tasks,
-          exams,
-          studyPlan,
-          busySlots,
-          studyDailyMinutes,
-        }),
+  message: userMessage,
+  messages,
+  tasks,
+  exams,
+  studyPlan,
+  busySlots,
+  studyDailyMinutes,
+}),
       });
 
       console.log(
