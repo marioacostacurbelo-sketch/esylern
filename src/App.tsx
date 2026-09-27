@@ -1961,7 +1961,8 @@ const defaultAssistantMessage = {
   role: "ai" as const,
   text: "¡Hola! Soy Esylern AI. Ya tengo acceso a tus tareas, exámenes y plan de estudio. ¿En qué te ayudo?",
 };
-
+const [showDeleteConfirmation, setShowDeleteConfirmation] =
+  useState(false);
 const [messages, setMessages] = useState<
   { role: "user" | "ai"; text: string }[]
 >(() => {
