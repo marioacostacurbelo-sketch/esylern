@@ -264,6 +264,8 @@ function App() {
 
     return Number.isFinite(value) && value > 0 ? value : 3;
   });
+  const [studyPlanGenerationRequest, setStudyPlanGenerationRequest] =
+  useState(0);
 
   const [preferredSessionMinutes, setPreferredSessionMinutes] =
     useState<number>(() => {
