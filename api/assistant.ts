@@ -218,7 +218,11 @@ export default async function handler(req: any, res: any) {
           ? studyDailyMinutes
           : 120,
     };
-    const today = new Date();
+    const today = new Date(
+  new Date().toLocaleString("en-US", {
+    timeZone: "Atlantic/Canary",
+  }),
+);
 
 const todayString = today.toLocaleDateString(
   "es-ES",
