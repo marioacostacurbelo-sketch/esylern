@@ -40,17 +40,9 @@ const tools = [
                   ],
                 },
 
-                id: {
-                  type: "number",
-                },
-
-                done: {
-                  type: "boolean",
-                },
-
-                minutes: {
-                  type: "number",
-                },
+                id: { type: "number" },
+                done: { type: "boolean" },
+                minutes: { type: "number" },
 
                 page: {
                   type: "string",
@@ -84,25 +76,15 @@ const tools = [
                 task: {
                   type: "object",
                   properties: {
-                    title: {
-                      type: "string",
-                    },
-                    subject: {
-                      type: "string",
-                    },
-                    date: {
-                      type: "string",
-                    },
+                    title: { type: "string" },
+                    subject: { type: "string" },
+                    date: { type: "string" },
                     priority: {
                       type: "string",
                       enum: ["Baja", "Media", "Alta"],
                     },
-                    estimatedMinutes: {
-                      type: "number",
-                    },
-                    done: {
-                      type: "boolean",
-                    },
+                    estimatedMinutes: { type: "number" },
+                    done: { type: "boolean" },
                   },
                   required: [
                     "title",
@@ -121,18 +103,10 @@ const tools = [
                 exam: {
                   type: "object",
                   properties: {
-                    subject: {
-                      type: "string",
-                    },
-                    topic: {
-                      type: "string",
-                    },
-                    date: {
-                      type: "string",
-                    },
-                    studyMinutes: {
-                      type: "number",
-                    },
+                    subject: { type: "string" },
+                    topic: { type: "string" },
+                    date: { type: "string" },
+                    studyMinutes: { type: "number" },
                   },
                   required: [
                     "subject",
@@ -145,21 +119,11 @@ const tools = [
                 slot: {
                   type: "object",
                   properties: {
-                    day: {
-                      type: "number",
-                    },
-                    startTime: {
-                      type: "string",
-                    },
-                    endTime: {
-                      type: "string",
-                    },
-                    repeatWeekly: {
-                      type: "boolean",
-                    },
-                    date: {
-                      type: "string",
-                    },
+                    day: { type: "number" },
+                    startTime: { type: "string" },
+                    endTime: { type: "string" },
+                    repeatWeekly: { type: "boolean" },
+                    date: { type: "string" },
                   },
                   required: [
                     "day",
@@ -181,7 +145,82 @@ const tools = [
   },
 ];
 
-export default async function handler(req: any, res: any) {
+function formatDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function getNextWeekday(
+  today: Date,
+  targetDay: number,
+): string {
+  const currentDay = today.getDay();
+
+  let difference =
+    (targetDay - currentDay + 7) % 7;
+
+  // Si es hoy, interpretamos "el miércoles" como
+  // el próximo miércoles, no como hoy.
+  if (difference === 0) {
+    difference = 7;
+  }
+
+  const result = new Date(today);
+  result.setDate(
+    today.getDate() + difference,
+  );
+
+  return formatDate(result);
+}
+
+function getDateReference(today: Date): string {
+  const weekdayNames = [
+    "domingo",
+    "lunes",
+    "martes",
+    "miércoles",
+    "jueves",
+    "viernes",
+    "sábado",
+  ];
+
+  const lines = [
+    `Hoy: ${formatDate(today)} (${weekdayNames[today.getDay()]})`,
+    "",
+    "PRÓXIMOS DÍAS:",
+  ];
+
+  for (let i = 1; i <= 7; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+
+    lines.push(
+      `${weekdayNames[date.getDay()]} → ${formatDate(date)}`,
+    );
+  }
+
+  lines.push(
+    "",
+    "REFERENCIA EXACTA DE LOS PRÓXIMOS DÍAS DE LA SEMANA:",
+    `lunes → ${getNextWeekday(today, 1)}`,
+    `martes → ${getNextWeekday(today, 2)}`,
+    `miércoles → ${getNextWeekday(today, 3)}`,
+    `jueves → ${getNextWeekday(today, 4)}`,
+    `viernes → ${getNextWeekday(today, 5)}`,
+    `sábado → ${getNextWeekday(today, 6)}`,
+    `domingo → ${getNextWeekday(today, 0)}`,
+  );
+
+  return lines.join("\n");
+}
+
+export default async function handler(
+  req: any,
+  res: any,
+) {
   if (req.method !== "POST") {
     return res.status(405).json({
       error: "Método no permitido",
@@ -199,21 +238,32 @@ export default async function handler(req: any, res: any) {
       studyDailyMinutes,
     } = req.body;
 
-    if (!message || typeof message !== "string") {
+    if (
+      !message ||
+      typeof message !== "string"
+    ) {
       return res.status(400).json({
         error: "Falta el mensaje.",
       });
     }
 
     const context = {
-      tasks: Array.isArray(tasks) ? tasks : [],
-      exams: Array.isArray(exams) ? exams : [],
+      tasks: Array.isArray(tasks)
+        ? tasks
+        : [],
+
+      exams: Array.isArray(exams)
+        ? exams
+        : [],
+
       studyPlan: Array.isArray(studyPlan)
         ? studyPlan
         : [],
+
       busySlots: Array.isArray(busySlots)
         ? busySlots
         : [],
+
       studyDailyMinutes:
         typeof studyDailyMinutes === "number"
           ? studyDailyMinutes
@@ -226,52 +276,59 @@ export default async function handler(req: any, res: any) {
       }),
     );
 
-    const todayString = today.toLocaleDateString(
-      "es-ES",
-      {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      },
-    );
+    const dateReference =
+      getDateReference(today);
 
     const systemMessage = `
 Eres Esylern AI, el asistente inteligente de una aplicación de planificación académica.
 
-FECHA ACTUAL:
+========================
+FECHA Y CALENDARIO
+========================
 
-Hoy es ${todayString}.
+${dateReference}
 
-Debes interpretar correctamente expresiones relativas como:
+Estas fechas son calculadas por el sistema y son la referencia oficial.
 
-- hoy
-- mañana
-- pasado mañana
-- el lunes
-- el martes
-- el miércoles
-- el jueves
-- el viernes
-- el sábado
-- el domingo
-- la semana que viene
-- dentro de X días
+Cuando el estudiante diga:
 
-Convierte siempre las fechas de tareas y exámenes al formato YYYY-MM-DD.
+- "mañana"
+- "pasado mañana"
+- "el lunes"
+- "el martes"
+- "el miércoles"
+- "el jueves"
+- "el viernes"
+- "el sábado"
+- "el domingo"
 
-Nunca preguntes qué fecha significa "mañana" o "el viernes" si puedes calcularla usando la fecha actual.
+debes utilizar las fechas calculadas anteriormente.
 
-IMPORTANTE SOBRE LA CONVERSACIÓN:
+NUNCA inventes una fecha para un día de la semana.
+
+NUNCA utilices una fecha pasada cuando el estudiante se refiera a un día de la semana sin especificar una fecha pasada.
+
+Por ejemplo, si hoy es domingo 27/09/2026:
+
+"el miércoles" = 2026-09-30
+"el viernes" = 2026-10-02
+
+Si mañana es una nueva fecha, el sistema volverá a calcular automáticamente todos los días.
+
+Las fechas de tareas y exámenes deben guardarse SIEMPRE como YYYY-MM-DD.
+
+========================
+MEMORIA CONVERSACIONAL
+========================
 
 Tienes acceso al historial reciente de la conversación.
 
-Debes utilizar ese historial para entender respuestas cortas del estudiante.
+Utiliza ese historial para entender respuestas cortas.
 
-Por ejemplo:
+Ejemplo:
 
 Estudiante:
-"Créame un examen de Historia para el viernes."
+"Crea un examen de Historia para el viernes."
 
 Esylern:
 "¿Cuántos minutos necesitas para estudiarlo?"
@@ -279,39 +336,41 @@ Esylern:
 Estudiante:
 "120"
 
-En este caso, "120" significa 120 minutos de estudio para ESE EXAMEN.
+"120" significa 120 minutos para ESE EXAMEN.
 
-NO significa cambiar el límite diario de estudio.
+NO significa cambiar el límite diario.
 
-Solo debes utilizar set_daily_study_minutes si el estudiante pide explícitamente cambiar su límite diario.
+Solo utiliza set_daily_study_minutes cuando el estudiante pida explícitamente cambiar su límite diario.
 
-Otro ejemplo:
+Si preguntas:
 
-Esylern:
-"¿Qué tema tendrá el examen?"
+"¿Cuántos minutos necesitas?"
 
-Estudiante:
-"La Guerra Civil."
+y responde:
 
-Debes entender que "La Guerra Civil" es la respuesta sobre el examen que se estaba creando.
+"120"
 
-Si estás esperando un dato para completar una acción, interpreta la siguiente respuesta del estudiante como respuesta a esa pregunta siempre que tenga sentido.
+debes utilizar esos 120 minutos en la acción que estaba pendiente.
 
-REGLAS GENERALES:
+========================
+REGLAS GENERALES
+========================
 
 - Responde siempre en español salvo que el estudiante utilice claramente otro idioma.
 - Utiliza los datos reales de Esylern.
 - Nunca inventes IDs.
 - Nunca inventes tareas, exámenes o periodos ocupados.
-- Si modificas un elemento existente, utiliza su ID real.
+- Si modificas algo existente, utiliza su ID real.
 - Puedes ejecutar varias acciones en una sola petición.
-- Si falta un dato realmente necesario, pregunta por ese dato.
+- Si falta un dato realmente necesario, pregunta por él.
 - No elimines datos salvo que el estudiante lo pida claramente.
 - No cambies datos que el estudiante no haya pedido cambiar.
-- Si el estudiante proporciona un dato que responde a una pregunta anterior, úsalo para completar la acción pendiente.
+- Si una respuesta del estudiante corresponde a una pregunta anterior, úsala para completar esa acción.
 - Cuando el estudiante quiera realizar cambios utiliza execute_esylern_actions.
 
-ACCIONES DISPONIBLES:
+========================
+ACCIONES
+========================
 
 create_task:
 Crear una tarea.
@@ -342,17 +401,23 @@ Eliminar un periodo ocupado.
 
 set_daily_study_minutes:
 Cambiar el límite diario de estudio.
-UTILÍZALA SOLO cuando el estudiante quiera cambiar explícitamente su límite diario.
+UTILÍZALA SOLO si el estudiante quiere cambiar explícitamente ese límite.
 
 set_setting:
-Modificar una configuración concreta.
+Modificar una configuración.
 
 navigate:
 Navegar a una sección de Esylern.
 
-CONTEXTO ACTUAL DE ESYLERN:
+========================
+CONTEXTO ACTUAL
+========================
 
-${JSON.stringify(context, null, 2)}
+${JSON.stringify(
+  context,
+  null,
+  2,
+)}
 `;
 
     const history = Array.isArray(messages)
@@ -370,6 +435,7 @@ ${JSON.stringify(context, null, 2)}
               item.role === "user"
                 ? ("user" as const)
                 : ("assistant" as const),
+
             content: item.text,
           }))
       : [];
@@ -379,7 +445,9 @@ ${JSON.stringify(context, null, 2)}
         role: "system",
         content: systemMessage,
       },
+
       ...history,
+
       {
         role: "user",
         content: message,
@@ -422,8 +490,12 @@ ${JSON.stringify(context, null, 2)}
           toolCall.function.arguments,
         );
 
-        if (Array.isArray(parsed?.actions)) {
-          actions.push(...parsed.actions);
+        if (
+          Array.isArray(parsed?.actions)
+        ) {
+          actions.push(
+            ...parsed.actions,
+          );
         }
       } catch (error) {
         console.error(
@@ -434,7 +506,8 @@ ${JSON.stringify(context, null, 2)}
     }
 
     const answer =
-      typeof assistantMessage?.content === "string" &&
+      typeof assistantMessage?.content ===
+        "string" &&
       assistantMessage.content.trim()
         ? assistantMessage.content
         : actions.length > 0
