@@ -1940,7 +1940,19 @@ function StudyPlanPage({
    ASISTENTE IA
 ========================= */
 
-function AssistantPage() {
+function AssistantPage({
+  tasks,
+  exams,
+  studyPlan,
+  busySlots,
+  studyDailyMinutes,
+}: {
+  tasks: Task[];
+  exams: Exam[];
+  studyPlan: StudySession[];
+  busySlots: BusySlot[];
+  studyDailyMinutes: number;
+}) {
   const [message, setMessage] = useState("");
 
   const [messages, setMessages] = useState<
@@ -1948,14 +1960,234 @@ function AssistantPage() {
   >([
     {
       role: "ai",
-      text: "¡Hola! Soy el asistente de Esylern. Puedo ayudarte a organizar tu estudio, priorizar tareas y preparar tus exámenes.",
+      text: "¡Hola! Soy el asistente de Esylern. Ya puedo consultar tus tareas, exámenes y plan de estudio para ayudarte a organizarte.",
     },
   ]);
+
+  const getAssistantResponse = (question: string) => {
+    const normalized = question.toLowerCase();
+
+    const pendingTasks = tasks.filter((task) => !task.done);
+
+    const futureExams = [...exams]
+      .filter(
+        (exam) =>
+          new Date(`${exam.date}T00:00:00`).getTime() >=
+          new Date(formatDateInput(new Date()) + "T00:00:00").getTime(),
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.date).getTime() -
+          new Date(b.date).getTime(),
+      );
+
+    const nextExam = futureExams[0] ?? null;
+
+    /*
+     * =========================
+     * TAREAS
+     * =========================
+     */
+
+    if (
+      normalized.includes("pendiente") ||
+      normalized.includes("tarea") ||
+      normalized.includes("tareas") ||
+      normalized.includes("qué tengo")
+    ) {
+      if (pendingTasks.length === 0) {
+        return "Ahora mismo no tienes tareas pendientes registradas en Esylern. 🎉";
+      }
+
+      const taskList = pendingTasks
+        .slice(0, 6)
+        .map(
+          (task) =>
+            `• ${task.title} — ${task.subject} · entrega ${formatShortDate(
+              task.date,
+            )} · ${formatMinutes(task.estimatedMinutes)}`,
+        )
+        .join("\n");
+
+      return `Tienes ${pendingTasks.length} ${
+        pendingTasks.length === 1
+          ? "tarea pendiente"
+          : "tareas pendientes"
+      }:\n\n${taskList}${
+        pendingTasks.length > 6
+          ? "\n\nTe muestro las 6 primeras."
+          : ""
+      }`;
+    }
+
+    /*
+     * =========================
+     * EXÁMENES
+     * =========================
+     */
+
+    if (
+      normalized.includes("examen") ||
+      normalized.includes("exámenes") ||
+      normalized.includes("examenes")
+    ) {
+      if (!nextExam) {
+        return "No tienes ningún examen próximo registrado. Cuando añadas uno, podré ayudarte a prepararlo.";
+      }
+
+      const days = getDaysRemaining(nextExam.date);
+
+      return `Tu próximo examen es de ${nextExam.subject}, sobre "${nextExam.topic}".\n\n📅 Fecha: ${formatShortDate(
+        nextExam.date,
+      )}\n⏳ Quedan ${days} ${
+        days === 1 ? "día" : "días"
+      }\n📚 Tiempo previsto: ${formatMinutes(
+        nextExam.studyMinutes,
+      )}`;
+    }
+
+    /*
+     * =========================
+     * PLAN
+     * =========================
+     */
+
+    if (
+      normalized.includes("plan") ||
+      normalized.includes("estudiar") ||
+      normalized.includes("estudio") ||
+      normalized.includes("qué debería")
+    ) {
+      if (studyPlan.length === 0) {
+        if (pendingTasks.length === 0 && !nextExam) {
+          return "Todavía no tienes tareas ni exámenes que planificar. Añádelos y después genera tu plan de estudio.";
+        }
+
+        return "Tienes cosas que estudiar, pero todavía no has generado tu plan. Ve a «Plan de estudio» y pulsa «Generar plan».";
+      }
+
+      const todayKey = formatDateInput(new Date());
+
+      const todaySessions = studyPlan
+        .filter((session) => session.date === todayKey)
+        .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+      if (todaySessions.length === 0) {
+        const nextSession = [...studyPlan]
+          .filter((session) => session.date >= todayKey)
+          .sort((a, b) => {
+            if (a.date !== b.date) {
+              return a.date.localeCompare(b.date);
+            }
+
+            return a.startTime.localeCompare(b.startTime);
+          })[0];
+
+        if (!nextSession) {
+          return "Tu plan existe, pero no tienes ninguna sesión futura registrada.";
+        }
+
+        return `Hoy no tienes ninguna sesión planificada.\n\nTu próxima sesión es:\n\n🕐 ${nextSession.startTime} – ${nextSession.endTime}\n📚 ${nextSession.subject}\n📝 ${nextSession.title}\n⏱️ ${nextSession.minutes} minutos`;
+      }
+
+      const totalToday = todaySessions.reduce(
+        (total, session) => total + session.minutes,
+        0,
+      );
+
+      const sessionList = todaySessions
+        .map(
+          (session) =>
+            `• ${session.startTime} – ${session.endTime} · ${session.subject} · ${session.minutes} min`,
+        )
+        .join("\n");
+
+      return `Hoy tienes ${todaySessions.length} ${
+        todaySessions.length === 1
+          ? "sesión"
+          : "sesiones"
+      } planificadas (${totalToday} minutos):\n\n${sessionList}`;
+    }
+
+    /*
+     * =========================
+     * TIEMPO DISPONIBLE
+     * =========================
+     */
+
+    if (
+      normalized.includes("tiempo") ||
+      normalized.includes("disponible") ||
+      normalized.includes("horas")
+    ) {
+      const busyCount = busySlots.length;
+
+      return `Tu límite diario de estudio está configurado en ${formatMinutes(
+        studyDailyMinutes,
+      )}.\n\nEsylern tiene registradas ${busyCount} ${
+        busyCount === 1
+          ? "franja de tiempo ocupada"
+          : "franjas de tiempo ocupadas"
+      }.\n\nEse límite se aplica conjuntamente a tareas y preparación de exámenes.`;
+    }
+
+    /*
+     * =========================
+     * RESUMEN GENERAL
+     * =========================
+     */
+
+    if (
+      normalized.includes("resumen") ||
+      normalized.includes("semana") ||
+      normalized.includes("cómo voy") ||
+      normalized.includes("como voy")
+    ) {
+      const totalStudyMinutes = studyPlan.reduce(
+        (total, session) => total + session.minutes,
+        0,
+      );
+
+      return `Este es tu resumen actual:\n\n📋 ${
+        pendingTasks.length
+      } tareas pendientes\n📚 ${
+        futureExams.length
+      } exámenes próximos\n⏱️ ${
+        totalStudyMinutes
+      } minutos planificados\n🎯 ${
+        studyDailyMinutes >= 9999
+          ? "Sin límite diario"
+          : `${formatMinutes(studyDailyMinutes)} de estudio máximo al día`
+      }\n\n${
+        nextExam
+          ? `Tu prioridad más cercana es ${nextExam.subject}: "${nextExam.topic}".`
+          : "Ahora mismo no tienes ningún examen próximo."
+      }`;
+    }
+
+    /*
+     * =========================
+     * RESPUESTA GENERAL
+     * =========================
+     */
+
+    return `Puedo ayudarte con tu organización en Esylern. Por ejemplo:
+
+• "¿Qué tengo pendiente?"
+• "¿Cuándo es mi próximo examen?"
+• "¿Qué debería estudiar hoy?"
+• "¿Cómo tengo el plan?"
+• "¿Cuánto tiempo tengo para estudiar?"
+• "Hazme un resumen de mi semana"
+
+Todavía no tengo conectada una IA externa para responder preguntas académicas complejas, pero ya puedo consultar tus datos de Esylern.`;
+  };
 
   const sendMessage = () => {
     if (!message.trim()) return;
 
     const userMessage = message.trim();
+    const response = getAssistantResponse(userMessage);
 
     setMessages((current) => [
       ...current,
@@ -1965,7 +2197,7 @@ function AssistantPage() {
       },
       {
         role: "ai",
-        text: "Perfecto. Esta es la interfaz del asistente. Más adelante conectaremos una IA real que tendrá acceso a tu calendario, tareas y exámenes.",
+        text: response,
       },
     ]);
 
@@ -1988,7 +2220,9 @@ function AssistantPage() {
 
           <div>
             <strong>Esylern AI</strong>
-            <span>Tu asistente de estudio</span>
+            <span>
+              Conectado a tu planificación
+            </span>
           </div>
         </div>
 
@@ -2002,7 +2236,16 @@ function AssistantPage() {
                   : "ai-message"
               }`}
             >
-              {item.text}
+              {item.text.split("\n").map((line, lineIndex) => (
+                <React.Fragment key={lineIndex}>
+                  {line}
+
+                  {lineIndex <
+                    item.text.split("\n").length - 1 && (
+                    <br />
+                  )}
+                </React.Fragment>
+              ))}
             </div>
           ))}
         </div>
@@ -2010,7 +2253,9 @@ function AssistantPage() {
         <div className="chat-input">
           <input
             value={message}
-            onChange={(event) => setMessage(event.target.value)}
+            onChange={(event) =>
+              setMessage(event.target.value)
+            }
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 sendMessage();
@@ -2019,7 +2264,11 @@ function AssistantPage() {
             placeholder="Pregúntame algo sobre tu estudio..."
           />
 
-          <button onClick={sendMessage}>
+          <button
+            type="button"
+            onClick={sendMessage}
+            aria-label="Enviar mensaje"
+          >
             <Send size={18} />
           </button>
         </div>
@@ -2027,7 +2276,6 @@ function AssistantPage() {
     </>
   );
 }
-
 /* =========================
    PROGRESO
 ========================= */
