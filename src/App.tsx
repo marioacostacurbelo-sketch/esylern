@@ -1791,13 +1791,19 @@ function StudyPlanPage({
                 <section className="study-plan-day" key={date}>
                   <div className={`study-plan-day-header ${isToday ? "is-today" : ""}`}>
                     <span className="study-plan-day-dot" />
-                    <div>
-                      <span className="study-plan-day-label">
-                        {isToday ? "HOY · " : ""}
-                        {formatDate(date)}
-                      </span>
-                    </div>
-                  </div>
+                    <div className={`study-plan-day-header ${isToday ? "is-today" : ""}`}>
+  {isToday && (
+    <span className="study-plan-day-today">
+      HOY
+    </span>
+  )}
+
+  <div>
+    <span className="study-plan-day-label">
+      {formatDate(date)}
+    </span>
+  </div>
+</div>
 
                   <div className="study-plan-sessions">
                     {items.map((item, index) => (
