@@ -191,6 +191,7 @@ export default async function handler(req: any, res: any) {
   try {
     const {
       message,
+      messages,
       tasks,
       exams,
       studyPlan,
@@ -218,74 +219,97 @@ export default async function handler(req: any, res: any) {
           ? studyDailyMinutes
           : 120,
     };
+
     const today = new Date(
-  new Date().toLocaleString("en-US", {
-    timeZone: "Atlantic/Canary",
-  }),
-);
+      new Date().toLocaleString("en-US", {
+        timeZone: "Atlantic/Canary",
+      }),
+    );
 
-const todayString = today.toLocaleDateString(
-  "es-ES",
-  {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  },
-);
+    const todayString = today.toLocaleDateString(
+      "es-ES",
+      {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      },
+    );
 
-const tomorrow = new Date(today);
-tomorrow.setDate(today.getDate() + 1);
-
-const tomorrowString =
-  tomorrow.toISOString().split("T")[0];
-
-    const response =
-      await openai.chat.completions.create({
-        model: "openrouter/free",
-
-        messages: [
-          {
-            role: "system",
-            content: `
+    const systemMessage = `
 Eres Esylern AI, el asistente inteligente de una aplicación de planificación académica.
+
 FECHA ACTUAL:
 
 Hoy es ${todayString}.
 
-Cuando el estudiante utilice expresiones como "mañana",
-"pasado mañana", "el viernes", "la semana que viene",
-etc., debes convertirlas a una fecha concreta usando
-la fecha actual.
+Debes interpretar correctamente expresiones relativas como:
 
-Por ejemplo, si hoy es lunes 28 de septiembre de 2026,
-"mañana" significa 2026-09-29.
+- hoy
+- mañana
+- pasado mañana
+- el lunes
+- el martes
+- el miércoles
+- el jueves
+- el viernes
+- el sábado
+- el domingo
+- la semana que viene
+- dentro de X días
 
-Las fechas de tareas y exámenes deben guardarse siempre
-en formato YYYY-MM-DD.
+Convierte siempre las fechas de tareas y exámenes al formato YYYY-MM-DD.
 
-Nunca preguntes qué día significa "mañana" si puedes
-calcularlo usando la fecha actual.
+Nunca preguntes qué fecha significa "mañana" o "el viernes" si puedes calcularla usando la fecha actual.
 
-Ayudas al estudiante a organizar tareas, exámenes, estudio y disponibilidad.
+IMPORTANTE SOBRE LA CONVERSACIÓN:
 
-Responde siempre en español salvo que el estudiante utilice claramente otro idioma.
+Tienes acceso al historial reciente de la conversación.
 
-Utiliza los datos reales proporcionados en el contexto.
+Debes utilizar ese historial para entender respuestas cortas del estudiante.
 
-Nunca inventes IDs.
+Por ejemplo:
 
-Nunca inventes tareas, exámenes o periodos ocupados.
+Estudiante:
+"Créame un examen de Historia para el viernes."
 
-Si el estudiante quiere modificar algo existente, utiliza su ID real.
+Esylern:
+"¿Cuántos minutos necesitas para estudiarlo?"
 
-Si pide varias cosas, puedes ejecutar varias acciones.
+Estudiante:
+"120"
 
-Si falta un dato realmente necesario, pregunta antes de ejecutar una acción.
+En este caso, "120" significa 120 minutos de estudio para ESE EXAMEN.
 
-No elimines datos salvo que el estudiante lo pida claramente.
+NO significa cambiar el límite diario de estudio.
 
-Cuando el estudiante quiera realizar cambios utiliza la herramienta execute_esylern_actions.
+Solo debes utilizar set_daily_study_minutes si el estudiante pide explícitamente cambiar su límite diario.
+
+Otro ejemplo:
+
+Esylern:
+"¿Qué tema tendrá el examen?"
+
+Estudiante:
+"La Guerra Civil."
+
+Debes entender que "La Guerra Civil" es la respuesta sobre el examen que se estaba creando.
+
+Si estás esperando un dato para completar una acción, interpreta la siguiente respuesta del estudiante como respuesta a esa pregunta siempre que tenga sentido.
+
+REGLAS GENERALES:
+
+- Responde siempre en español salvo que el estudiante utilice claramente otro idioma.
+- Utiliza los datos reales de Esylern.
+- Nunca inventes IDs.
+- Nunca inventes tareas, exámenes o periodos ocupados.
+- Si modificas un elemento existente, utiliza su ID real.
+- Puedes ejecutar varias acciones en una sola petición.
+- Si falta un dato realmente necesario, pregunta por ese dato.
+- No elimines datos salvo que el estudiante lo pida claramente.
+- No cambies datos que el estudiante no haya pedido cambiar.
+- Si el estudiante proporciona un dato que responde a una pregunta anterior, úsalo para completar la acción pendiente.
+- Cuando el estudiante quiera realizar cambios utiliza execute_esylern_actions.
 
 ACCIONES DISPONIBLES:
 
@@ -305,7 +329,7 @@ create_exam:
 Crear un examen.
 
 update_exam:
-Modificar un examen.
+Modificar un examen existente.
 
 delete_exam:
 Eliminar un examen.
@@ -318,24 +342,55 @@ Eliminar un periodo ocupado.
 
 set_daily_study_minutes:
 Cambiar el límite diario de estudio.
+UTILÍZALA SOLO cuando el estudiante quiera cambiar explícitamente su límite diario.
 
 set_setting:
-Modificar una configuración.
+Modificar una configuración concreta.
 
 navigate:
 Navegar a una sección de Esylern.
 
-CONTEXTO ACTUAL:
+CONTEXTO ACTUAL DE ESYLERN:
 
 ${JSON.stringify(context, null, 2)}
-            `,
-          },
+`;
 
-          {
-            role: "user",
-            content: message,
-          },
-        ],
+    const history = Array.isArray(messages)
+      ? messages
+          .filter(
+            (item: any) =>
+              item &&
+              (item.role === "user" ||
+                item.role === "ai") &&
+              typeof item.text === "string",
+          )
+          .slice(-12)
+          .map((item: any) => ({
+            role:
+              item.role === "user"
+                ? ("user" as const)
+                : ("assistant" as const),
+            content: item.text,
+          }))
+      : [];
+
+    const conversationMessages: any[] = [
+      {
+        role: "system",
+        content: systemMessage,
+      },
+      ...history,
+      {
+        role: "user",
+        content: message,
+      },
+    ];
+
+    const response =
+      await openai.chat.completions.create({
+        model: "openrouter/free",
+
+        messages: conversationMessages,
 
         tools,
 
@@ -379,15 +434,12 @@ ${JSON.stringify(context, null, 2)}
     }
 
     const answer =
-  actions.length > 0
-    ? typeof assistantMessage?.content === "string" &&
+      typeof assistantMessage?.content === "string" &&
       assistantMessage.content.trim()
-      ? assistantMessage.content
-      : "He realizado los cambios en tu planificación."
-    : typeof assistantMessage?.content === "string" &&
-        assistantMessage.content.trim()
-      ? assistantMessage.content
-      : "No he podido generar una respuesta.";
+        ? assistantMessage.content
+        : actions.length > 0
+          ? "He realizado los cambios en tu planificación."
+          : "No he podido generar una respuesta.";
 
     return res.status(200).json({
       response: answer,
