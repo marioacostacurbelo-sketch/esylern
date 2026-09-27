@@ -404,6 +404,29 @@ function App() {
 
     return [];
   });
+  const [studySettings, setStudySettings] =
+  useState<StudySettings>(() => {
+    const saved = localStorage.getItem(
+      "esylern_study_settings",
+    );
+
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // Usamos los valores por defecto.
+      }
+    }
+
+    return {
+      educationLevel: "bachillerato",
+      course: "2bach",
+      weekdayHours: 2,
+      weekendHours: 3,
+      preferredSessionMinutes: 50,
+      preferredStudyMoment: "tarde",
+    };
+  });
 
   /*
    * =========================
