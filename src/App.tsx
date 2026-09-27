@@ -133,7 +133,8 @@ type AssistantAction =
   | {
       type: "navigate";
       page: Page;
-    type StudySettings = {
+   };
+type StudySettings = {
   educationLevel: "eso" | "bachillerato" | "fp" | "universidad";
   course: "1eso" | "4eso" | "1bach" | "2bach";
   weekdayHours: number;
@@ -216,7 +217,7 @@ type AssistantAction =
     }
   | {
       type: "regenerate_study_plan";
-    }};
+    };
 
 function getSubjectColor(subject: string): string {
   const value = subject.trim().toLowerCase();
