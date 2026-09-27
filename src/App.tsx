@@ -2951,7 +2951,11 @@ function StudyPlanPage({
     setPlan(newPlan);
     onPlanGenerated(newPlan);
   };
-
+useEffect(() => {
+  if (generationRequest > 0) {
+    generatePlan();
+  }
+}, [generationRequest]);
   const groupedPlan =
     plan.reduce(
       (
