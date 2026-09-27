@@ -574,10 +574,12 @@ function App() {
    * La dejamos preparada para la siguiente fase.
    */
 
-  const executeAssistantAction = (
-    action: AssistantAction,
-  ) => {
-    switch (action.type) {
+ const executeAssistantAction = (
+  action: AssistantAction,
+) => {
+  console.log("🧠 ACCIÓN RECIBIDA:", action);
+
+  switch (action.type) {
       case "create_task":
         addTask(action.task);
         return;
