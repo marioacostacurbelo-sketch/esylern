@@ -1955,14 +1955,38 @@ function AssistantPage({
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const [messages, setMessages] = useState<
-    { role: "user" | "ai"; text: string }[]
-  >([
-    {
-      role: "ai",
-      text: "¡Hola! Soy Esylern AI. Ya tengo acceso a tus tareas, exámenes y plan de estudio. ¿En qué te ayudo?",
-    },
-  ]);
+  const ASSISTANT_MESSAGES_KEY = "esylern_assistant_messages";
+
+const defaultAssistantMessage = {
+  role: "ai" as const,
+  text: "¡Hola! Soy Esylern AI. Ya tengo acceso a tus tareas, exámenes y plan de estudio. ¿En qué te ayudo?",
+};
+
+const [messages, setMessages] = useState<
+  { role: "user" | "ai"; text: string }[]
+>(() => {
+  try {
+    const saved = localStorage.getItem(ASSISTANT_MESSAGES_KEY);
+
+    if (saved) {
+      const parsed = JSON.parse(saved);
+
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (error) {
+    console.error("No se pudo cargar la conversación:", error);
+  }
+
+  return [defaultAssistantMessage];
+});
+  useEffect(() => {
+  localStorage.setItem(
+    ASSISTANT_MESSAGES_KEY,
+    JSON.stringify(messages),
+  );
+}, [messages]);
 
   const sendMessage = async () => {
     if (!message.trim() || isLoading) return;
