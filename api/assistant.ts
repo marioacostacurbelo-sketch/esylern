@@ -404,6 +404,21 @@ set_daily_study_minutes:
 Cambiar el límite diario de estudio.
 UTILÍZALA SOLO si el estudiante quiere cambiar explícitamente ese límite.
 
+generate_study_plan:
+Generar o reorganizar el plan de estudio utilizando el algoritmo de planificación de Esylern.
+
+UTILÍZALA cuando el estudiante pida organizar, planificar, repartir o reorganizar su estudio.
+
+No inventes horarios ni sesiones de estudio manualmente.
+La aplicación calculará automáticamente los horarios respetando:
+- fechas límite
+- exámenes
+- tareas
+- tiempo disponible
+- límite diario de estudio
+- prioridad
+- regla de no estudiar el día del examen o entrega.
+
 set_setting:
 Modificar una configuración.
 
