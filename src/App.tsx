@@ -703,8 +703,98 @@ function App() {
       current.filter((exam) => exam.id !== id),
     );
   };
+  const executeAssistantAction = (
+  action: AssistantAction,
+) => {
+  switch (action.type) {
+    case "create_task":
+      addTask(action.task);
+      break;
 
- 
+    case "update_task":
+      setTasks((current) =>
+        current.map((task) =>
+          task.id === action.id
+            ? { ...task, ...action.changes }
+            : task,
+        ),
+      );
+      break;
+
+    case "set_task_done":
+      setTasks((current) =>
+        current.map((task) =>
+          task.id === action.id
+            ? { ...task, done: action.done }
+            : task,
+        ),
+      );
+      break;
+
+    case "delete_task":
+      deleteTask(action.id);
+      break;
+
+    case "create_exam":
+      addExam(action.exam);
+      break;
+
+    case "update_exam":
+      setExams((current) =>
+        current.map((exam) =>
+          exam.id === action.id
+            ? { ...exam, ...action.changes }
+            : exam,
+        ),
+      );
+      break;
+
+    case "delete_exam":
+      deleteExam(action.id);
+      break;
+
+    case "create_busy_slot":
+      setBusySlots((current) => [
+        ...current,
+        {
+          ...action.slot,
+          id: Date.now() + Math.random(),
+        },
+      ]);
+      break;
+
+    case "delete_busy_slot":
+      setBusySlots((current) =>
+        current.filter(
+          (slot) => slot.id !== action.id,
+        ),
+      );
+      break;
+
+    case "set_daily_study_minutes":
+      setStudyDailyMinutes(action.minutes);
+      break;
+
+    case "navigate":
+      setCurrentPage(action.page);
+      break;
+
+    case "regenerate_study_plan":
+      setCurrentPage("Plan de estudio");
+      break;
+
+    case "set_education_level":
+    case "set_course":
+    case "set_weekday_hours":
+    case "set_weekend_hours":
+    case "set_preferred_session_minutes":
+    case "set_preferred_study_moment":
+      // Lo conectaremos cuando hagamos persistentes
+      // las preferencias de configuración.
+      break;
+  }
+};
+
 
   /*
    * =========================
