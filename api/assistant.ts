@@ -1,7 +1,7 @@
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
 });
 
 export default async function handler(req: any, res: any) {
@@ -38,9 +38,11 @@ export default async function handler(req: any, res: any) {
           : 120,
     };
 
-    const response = await openai.responses.create({
-      model: "gpt-5",
-      instructions: `
+    const response = await ai.models.generateContent({
+      model: "gemini-3.7-flash",
+      contents: message,
+      config: {
+        systemInstruction: `
 Eres Esylern AI, el asistente de estudio de una aplicación para estudiantes.
 
 Tu trabajo es ayudar al estudiante a organizarse, estudiar mejor,
@@ -61,20 +63,22 @@ REGLAS:
 
 CONTEXTO ACTUAL DE ESYLERN:
 ${JSON.stringify(context, null, 2)}
-      `,
-      input: message,
+        `,
+      },
     });
 
     return res.status(200).json({
-      response: response.output_text,
+      response:
+        response.text ||
+        "No he podido generar una respuesta.",
     });
   } catch (error: any) {
-    console.error("OpenAI error:", error);
+    console.error("Gemini error:", error);
 
     return res.status(500).json({
       error:
         error?.message ||
-        "No se pudo conectar con el asistente de IA.",
+        "No se pudo conectar con Esylern AI.",
     });
   }
 }
