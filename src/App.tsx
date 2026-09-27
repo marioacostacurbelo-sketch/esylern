@@ -2114,49 +2114,6 @@ const [messages, setMessages] = useState<
               ))}
             </div>
           ))}
-{showDeleteConfirmation && (
-  <div className="delete-confirmation-overlay">
-    <div className="delete-confirmation-modal">
-      <div className="delete-confirmation-icon">
-        <Trash2 size={20} />
-      </div>
-
-      <h3>¿Borrar conversación?</h3>
-
-      <p>
-        Esto eliminará la memoria de esta conversación con
-        Esylern AI.
-        <br />
-        Tus tareas, exámenes y plan de estudio no se
-        borrarán.
-      </p>
-
-      <div className="delete-confirmation-actions">
-        <button
-          type="button"
-          className="delete-cancel-button"
-          onClick={() => setShowDeleteConfirmation(false)}
-        >
-          Cancelar
-        </button>
-
-        <button
-          type="button"
-          className="delete-confirm-button"
-          onClick={() => {
-            setMessages([defaultAssistantMessage]);
-            localStorage.removeItem(
-              ASSISTANT_MESSAGES_KEY,
-            );
-            setShowDeleteConfirmation(false);
-          }}
-        >
-          Borrar conversación
-        </button>
-      </div>
-    </div>
-  </div>
-)}
 
           {isLoading && (
             <div className="message ai-message">
