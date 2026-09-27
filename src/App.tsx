@@ -79,12 +79,6 @@ type StudySettings = {
   preferredStudyMoment: "manana" | "tarde" | "noche";
 };
 
-
-/* =========================
-   ACCIONES DE ESYLERN AI
-========================= */
-
-
 type StudySettings = {
   educationLevel: "eso" | "bachillerato" | "fp" | "universidad";
   course: "1eso" | "4eso" | "1bach" | "2bach";
@@ -153,6 +147,20 @@ type AssistantAction =
       type: "navigate";
       page: Page;
     };
+/* =========================
+   ACCIONES DE ESYLERN AI
+========================= */
+
+
+type StudySettings = {
+  educationLevel: "eso" | "bachillerato" | "fp" | "universidad";
+  course: "1eso" | "4eso" | "1bach" | "2bach";
+  weekdayHours: number;
+  weekendHours: number;
+  preferredSessionMinutes: 25 | 50 | 90;
+  preferredStudyMoment: "manana" | "tarde" | "noche";
+};
+
 
 function getSubjectColor(subject: string): string {
   const value = subject.trim().toLowerCase();
