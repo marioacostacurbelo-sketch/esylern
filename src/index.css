@@ -2218,33 +2218,82 @@ select {
    PLAN DE ESTUDIO · NUEVO DISEÑO
 ========================= */
 
+/* =========================
+   DÍAS DEL PLAN
+========================= */
+
 .study-plan-day {
-  margin-bottom: 32px;
+  position: relative;
+  margin-bottom: 34px;
+  padding-bottom: 34px;
 }
+
+.study-plan-day:not(:last-child) {
+  border-bottom: 2px solid #e6e9ee;
+}
+
+/* CABECERA DEL DÍA */
 
 .study-plan-day-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 11px;
+  background: #f7f8fa;
+  border: 1px solid #e8ebef;
 }
 
-.study-plan-day-title {
+.study-plan-day-title,
+.study-plan-day-label {
   margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: #172033;
+  color: #20283a;
+  font-size: 16px;
+  font-weight: 750;
   text-transform: capitalize;
 }
 
+/* HOY */
+
+.study-plan-day-header.is-today {
+  background: #f0ecff;
+  border: 1px solid #ddd5fa;
+}
+
+.study-plan-day-header.is-today .study-plan-day-label {
+  color: #56459d;
+  font-weight: 800;
+}
+
+/* ETIQUETA HOY */
+
 .study-plan-day-today {
-  font-size: 11px;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: #6f5bd3;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 850;
   letter-spacing: 0.08em;
-  color: #6f5bd3;
-  background: #f1edff;
-  padding: 5px 8px;
-  border-radius: 6px;
+}
+
+/* PUNTO DEL DÍA */
+
+.study-plan-day-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: #aeb5c0;
+}
+
+.study-plan-day-header.is-today .study-plan-day-dot {
+  background: #6f5bd3;
+  box-shadow: 0 0 0 4px #e3ddff;
 }
 
 /* Contenedor de las sesiones */
