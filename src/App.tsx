@@ -2290,6 +2290,7 @@ function StudyPlanPage({
   studyDailyMinutes,
   savedPlan,
   onPlanGenerated,
+  generationRequest,
 }: {
   tasks: Task[];
   exams: Exam[];
@@ -2299,6 +2300,7 @@ function StudyPlanPage({
   onPlanGenerated: (
     plan: StudySession[],
   ) => void;
+  generationRequest: number;
 }) {
   const [plan, setPlan] =
     useState<StudySession[]>(
