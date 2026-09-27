@@ -218,6 +218,23 @@ export default async function handler(req: any, res: any) {
           ? studyDailyMinutes
           : 120,
     };
+    const today = new Date();
+
+const todayString = today.toLocaleDateString(
+  "es-ES",
+  {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  },
+);
+
+const tomorrow = new Date(today);
+tomorrow.setDate(today.getDate() + 1);
+
+const tomorrowString =
+  tomorrow.toISOString().split("T")[0];
 
     const response =
       await openai.chat.completions.create({
