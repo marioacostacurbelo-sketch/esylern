@@ -582,136 +582,143 @@ function App() {
  const executeAssistantAction = (
   action: AssistantAction,
 ) => {
- console.log(
-  "🧠 ACCIÓN RECIBIDA:",
-  JSON.stringify(action, null, 2),
-);
+  console.log(
+    "🧠 ACCIÓN RECIBIDA:",
+    JSON.stringify(action, null, 2),
+  );
 
   switch (action.type) {
-      case "create_task":
-        addTask(action.task);
-        return;
+    case "create_task":
+      addTask(action.task);
+      return;
 
-      case "update_task":
-        updateTask(action.id, action.changes);
-        return;
+    case "update_task":
+      updateTask(action.id, action.changes);
+      return;
 
-      case "set_task_done":
-        setTaskDone(action.id, action.done);
-        return;
+    case "set_task_done":
+      setTaskDone(action.id, action.done);
+      return;
 
-      case "delete_task":
-        deleteTask(action.id);
-        return;
+    case "delete_task":
+      deleteTask(action.id);
+      return;
 
-      case "create_exam":
-        addExam(action.exam);
-        return;
+    case "create_exam":
+      addExam(action.exam);
+      return;
 
-      case "update_exam":
-        updateExam(action.id, action.changes);
-        return;
+    case "update_exam":
+      updateExam(action.id, action.changes);
+      return;
 
-      case "delete_exam":
-        deleteExam(action.id);
-        return;
+    case "delete_exam":
+      deleteExam(action.id);
+      return;
 
-      case "create_busy_slot":
-        setBusySlots((current) => [
-          ...current,
-          {
-            ...action.slot,
-            id: Date.now() + Math.random(),
-          },
-        ]);
-        return;
+    case "create_busy_slot":
+      setBusySlots((current) => [
+        ...current,
+        {
+          ...action.slot,
+          id: Date.now() + Math.random(),
+        },
+      ]);
+      return;
 
-      case "delete_busy_slot":
-        setBusySlots((current) =>
-          current.filter(
-            (slot) => slot.id !== action.id,
-          ),
-        );
-        return;
+    case "delete_busy_slot":
+      setBusySlots((current) =>
+        current.filter(
+          (slot) => slot.id !== action.id,
+        ),
+      );
+      return;
 
-      case "set_daily_study_minutes":
-        if (
-          Number.isFinite(action.minutes) &&
-          action.minutes > 0
-        ) {
-          setStudyDailyMinutes(action.minutes);
-        }
-        return;
+    case "set_daily_study_minutes":
+      if (
+        Number.isFinite(action.minutes) &&
+        action.minutes > 0
+      ) {
+        setStudyDailyMinutes(action.minutes);
+      }
+      return;
 
-      case "set_setting":
-        switch (action.setting) {
-          case "educationLevel":
-            setEducationLevel(String(action.value));
-            return;
-            case "generate_study_plan":
-  console.log("📅 SOLICITUD DE GENERAR PLAN RECIBIDA");
+    case "set_setting":
+      switch (action.setting) {
+        case "educationLevel":
+          setEducationLevel(String(action.value));
+          return;
 
-  setStudyPlanGenerationRequest((current) => {
-    const next = current + 1;
+        case "course":
+          setCourse(String(action.value));
+          return;
 
-    console.log("📈 GENERATION REQUEST:", {
-      current,
-      next,
-    });
+        case "weekdayHours": {
+          const value = Number(action.value);
 
-    return next;
-  });
-
-  navigate("Plan de estudio");
-  return;
-
-
-          case "course":
-            setCourse(String(action.value));
-            return;
-
-          case "weekdayHours": {
-            const value = Number(action.value);
-
-            if (Number.isFinite(value) && value > 0) {
-              setWeekdayHours(value);
-            }
-
-            return;
+          if (Number.isFinite(value) && value > 0) {
+            setWeekdayHours(value);
           }
 
-          case "weekendHours": {
-            const value = Number(action.value);
-
-            if (Number.isFinite(value) && value > 0) {
-              setWeekendHours(value);
-            }
-
-            return;
-          }
-
-          case "preferredSessionMinutes": {
-            const value = Number(action.value);
-
-            if (Number.isFinite(value) && value > 0) {
-              setPreferredSessionMinutes(value);
-            }
-
-            return;
-          }
-
-          case "preferredStudyMoment":
-            setPreferredStudyMoment(String(action.value));
-            return;
+          return;
         }
 
-        return;
+        case "weekendHours": {
+          const value = Number(action.value);
 
-      case "navigate":
-        navigate(action.page);
-        return;
-    }
-  };
+          if (Number.isFinite(value) && value > 0) {
+            setWeekendHours(value);
+          }
+
+          return;
+        }
+
+        case "preferredSessionMinutes": {
+          const value = Number(action.value);
+
+          if (Number.isFinite(value) && value > 0) {
+            setPreferredSessionMinutes(value);
+          }
+
+          return;
+        }
+
+        case "preferredStudyMoment":
+          setPreferredStudyMoment(String(action.value));
+          return;
+      }
+
+      return;
+
+    case "generate_study_plan":
+      console.log(
+        "📅 SOLICITUD DE GENERAR PLAN RECIBIDA",
+      );
+
+      setStudyPlanGenerationRequest(
+        (current) => {
+          const next = current + 1;
+
+          console.log(
+            "📈 GENERATION REQUEST:",
+            {
+              current,
+              next,
+            },
+          );
+
+          return next;
+        },
+      );
+
+      navigate("Plan de estudio");
+      return;
+
+    case "navigate":
+      navigate(action.page);
+      return;
+  }
+};
 
   const pendingTasks = tasks.filter(
     (task) => !task.done,
