@@ -1825,7 +1825,7 @@ function StudyPlanPage({
   <div className="study-session-duration">
     {item.minutes} min
   </div>
-</div>
+</div>}}
                       >
                         <strong>{item.startTime} – {item.endTime}</strong>
                         <span>
