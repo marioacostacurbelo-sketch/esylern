@@ -1802,17 +1802,30 @@ function StudyPlanPage({
                   >
                     {items.map((item, index) => (
                       <div
-                        key={`${date}-${item.startTime}-${index}`}
-                        className={`study-session subject-${getSubjectColor(item.subject)}`}
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "120px 1fr auto",
-                          alignItems: "center",
-                          gap: 14,
-                          padding: "10px 12px",
-                          borderRadius: 10,
-                          background: "#f7f8fa",
-                        }}
+  key={`${date}-${item.startTime}-${index}`}
+  className={`study-session subject-${getSubjectColor(item.subject)} ${
+    item.type === "Examen" ? "study-session-exam" : "study-session-task"
+  }`}
+>
+  <div className="study-session-time">
+    <strong>{item.startTime} – {item.endTime}</strong>
+  </div>
+
+  <div className="study-session-content">
+    <div className="study-session-type">
+      {item.type === "Examen" ? "Examen" : "Tarea"}
+    </div>
+
+    <div className="study-session-title">
+      <strong>{item.subject}</strong>
+      <span>· {item.title}</span>
+    </div>
+  </div>
+
+  <div className="study-session-duration">
+    {item.minutes} min
+  </div>
+</div>
                       >
                         <strong>{item.startTime} – {item.endTime}</strong>
                         <span>
