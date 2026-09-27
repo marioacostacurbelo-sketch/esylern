@@ -646,7 +646,19 @@ function App() {
             setEducationLevel(String(action.value));
             return;
             case "generate_study_plan":
-  setStudyPlanGenerationRequest((current) => current + 1);
+  console.log("📅 SOLICITUD DE GENERAR PLAN RECIBIDA");
+
+  setStudyPlanGenerationRequest((current) => {
+    const next = current + 1;
+
+    console.log("📈 GENERATION REQUEST:", {
+      current,
+      next,
+    });
+
+    return next;
+  });
+
   navigate("Plan de estudio");
   return;
 
