@@ -2114,40 +2114,7 @@ const [messages, setMessages] = useState<
               ))}
             </div>
           ))}
-
-          {isLoading && (
-            <div className="message ai-message">
-              Esylern AI está pensando...
-            </div>
-          )}
-        </div>
-
-        <div className="chat-input">
-          <input
-            value={message}
-            onChange={(event) =>
-              setMessage(event.target.value)
-            }
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                sendMessage();
-              }
-            }}
-            placeholder="Pregúntame algo sobre tu estudio..."
-            disabled={isLoading}
-          />
-
-          <button
-            type="button"
-            onClick={sendMessage}
-            disabled={isLoading}
-            aria-label="Enviar mensaje"
-          >
-            <Send size={18} />
-          </button>
-        </div>
-      </div>
-          {showDeleteConfirmation && (
+{showDeleteConfirmation && (
   <div className="delete-confirmation-overlay">
     <div className="delete-confirmation-modal">
       <div className="delete-confirmation-icon">
@@ -2190,6 +2157,39 @@ const [messages, setMessages] = useState<
     </div>
   </div>
 )}
+
+          {isLoading && (
+            <div className="message ai-message">
+              Esylern AI está pensando...
+            </div>
+          )}
+        </div>
+
+        <div className="chat-input">
+          <input
+            value={message}
+            onChange={(event) =>
+              setMessage(event.target.value)
+            }
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                sendMessage();
+              }
+            }}
+            placeholder="Pregúntame algo sobre tu estudio..."
+            disabled={isLoading}
+          />
+
+          <button
+            type="button"
+            onClick={sendMessage}
+            disabled={isLoading}
+            aria-label="Enviar mensaje"
+          >
+            <Send size={18} />
+          </button>
+        </div>
+      </div>
     </>
   );
 }
