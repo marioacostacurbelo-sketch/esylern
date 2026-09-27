@@ -582,7 +582,10 @@ function App() {
  const executeAssistantAction = (
   action: AssistantAction,
 ) => {
-  console.log("🧠 ACCIÓN RECIBIDA:", action);
+ console.log(
+  "🧠 ACCIÓN RECIBIDA:",
+  JSON.stringify(action, null, 2),
+);
 
   switch (action.type) {
       case "create_task":
