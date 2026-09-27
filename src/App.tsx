@@ -118,7 +118,6 @@ const menuItems: {
   {
   label: "Tiempo disponible",
   icon: Clock3,
-  page: "Tiempo disponible",
 },
 ];
 
