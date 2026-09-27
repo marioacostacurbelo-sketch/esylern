@@ -2957,7 +2957,12 @@ function StudyPlanPage({
     onPlanGenerated(newPlan);
   };
 useEffect(() => {
+  console.log("🔄 EFECTO PLAN EJECUTADO", {
+    generationRequest,
+  });
+
   if (generationRequest > 0) {
+    console.log("🚀 LLAMANDO A generatePlan()");
     generatePlan();
   }
 }, [generationRequest]);
