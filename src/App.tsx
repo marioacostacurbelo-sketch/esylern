@@ -511,6 +511,13 @@ function App() {
     );
   }, [preferredStudyMoment]);
 
+  useEffect(() => {
+  localStorage.setItem(
+    "esylern_study_settings",
+    JSON.stringify(studySettings),
+  );
+}, [studySettings]);
+
   /*
    * =========================
    * NAVEGACIÓN
