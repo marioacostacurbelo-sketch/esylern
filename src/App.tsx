@@ -3448,12 +3448,14 @@ function AssistantPage({
   studyPlan,
   busySlots,
   studyDailyMinutes,
+  onAction,
 }: {
   tasks: Task[];
   exams: Exam[];
   studyPlan: StudySession[];
   busySlots: BusySlot[];
   studyDailyMinutes: number;
+  onAction: (action: AssistantAction) => void;
 }) {
   const [message, setMessage] =
     useState("");
