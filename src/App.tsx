@@ -1801,83 +1801,36 @@ function StudyPlanPage({
                     }}
                   >
                     {items.map((item, index) => (
-                      <div
-  key={`${date}-${item.startTime}-${index}`}
-  className={`study-session subject-${getSubjectColor(item.subject)} ${
-    item.type === "Examen" ? "study-session-exam" : "study-session-task"
-  }`}
->
-  <div className="study-session-time">
-    <strong>{item.startTime} – {item.endTime}</strong>
-  </div>
-
-  <div className="study-session-content">
-    <div className="study-session-type">
-      {item.type === "Examen" ? "Examen" : "Tarea"}
+  <div
+    key={`${date}-${item.startTime}-${index}`}
+    className={`study-session subject-${getSubjectColor(item.subject)} ${
+      item.type === "Examen"
+        ? "study-session-exam"
+        : "study-session-task"
+    }`}
+  >
+    <div className="study-session-time">
+      <strong>
+        {item.startTime} – {item.endTime}
+      </strong>
     </div>
 
-    <div className="study-session-title">
-      <strong>{item.subject}</strong>
-      <span>· {item.title}</span>
+    <div className="study-session-content">
+      <div className="study-session-type">
+        {item.type === "Examen" ? "Examen" : "Tarea"}
+      </div>
+
+      <div className="study-session-title">
+        <strong>{item.subject}</strong>
+        <span> · {item.title}</span>
+      </div>
+    </div>
+
+    <div className="study-session-duration">
+      {item.minutes} min
     </div>
   </div>
-
-  <div className="study-session-duration">
-    {item.minutes} min
-  </div>
-</div>}}
-                      
-                        <strong>{item.startTime} – {item.endTime}</strong>
-                        <span>
-                          {item.type === "Examen" ? "📚" : "📝"} <strong>{item.subject}</strong> · {item.title}
-                        </span>
-                        <span style={{ opacity: 0.7 }}>{item.minutes} min</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : (
-        <div className="plan-layout">
-          <div className="panel">
-            <div className="panel-header">
-              <div>
-                <h3>Prioridades actuales</h3>
-                <p>
-                  Lo que Esylern tendrá en cuenta al crear tu planificación.
-                </p>
-              </div>
-            </div>
-
-            {tasks.filter((task) => !task.done).length === 0 && exams.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-icon">
-                  <Sparkles size={22} />
-                </div>
-                <h3>Aún no hay nada que planificar</h3>
-                <p>
-                  Añade tareas o exámenes y Esylern podrá organizar tus días.
-                </p>
-              </div>
-            ) : (
-              <div className="priority-list">
-                {exams
-                  .filter((exam) => new Date(`${exam.date}T00:00:00`) > currentDate)
-                  .slice(0, 3)
-                  .map((exam) => (
-                    <div className="priority-item" key={`exam-preview-${exam.id}`}>
-                      <span className="priority-number">📚</span>
-                      <div>
-                        <strong>{exam.subject}</strong>
-                        <p>
-                          {exam.topic} · {getDaysRemaining(exam.date)} días
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+))}
 
                 {tasks
                   .filter((task) => !task.done)
