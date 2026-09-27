@@ -1810,13 +1810,9 @@ function StudyPlanPage({
                           <span>{item.endTime}</span>
                         </div>
 
-                        <div
-                          className={`study-plan-card ${
-                            item.type === "Examen"
-                              ? "study-plan-card-exam"
-                              : "study-plan-card-task"
-                          }`}
-                        >
+                       <div
+  className={`study-plan-card study-plan-card-${item.type === "Examen" ? "exam" : "task"} subject-${getSubjectColor(item.subject)}`}
+>
                           <div className="study-plan-card-main">
                             <div className="study-plan-type">
                               <span className="study-plan-type-icon">
