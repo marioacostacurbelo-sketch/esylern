@@ -216,7 +216,7 @@ type AssistantAction =
     }
   | {
       type: "regenerate_study_plan";
-    };};
+    }};
 
 function getSubjectColor(subject: string): string {
   const value = subject.trim().toLowerCase();
