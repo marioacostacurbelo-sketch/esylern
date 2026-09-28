@@ -1378,6 +1378,11 @@ function TaskForm({
 
   const [description, setDescription] =
     useState("");
+  const [attachmentUrls, setAttachmentUrls] =
+  useState<string[]>([]);
+
+const [rubricAttachmentUrls, setRubricAttachmentUrls] =
+  useState<string[]>([]);
 
   const [date, setDate] =
     useState(
