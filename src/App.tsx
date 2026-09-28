@@ -1996,7 +1996,11 @@ if (selectedTask) {
                 <ListTodo size={22} />
               </div>
 
-              <span>TAREA</span>
+              <span>
+  {selectedTask.kind === "Trabajo"
+    ? "TRABAJO / PROYECTO"
+    : "TAREA"}
+</span>
             </div>
 
             <div className="detail-header-actions">
