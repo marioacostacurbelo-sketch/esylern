@@ -45,6 +45,8 @@ type Task = {
   done: boolean;
   kind?: "Tarea" | "Trabajo";
   description?: string;
+  attachmentUrls?: string[];
+  rubricAttachmentUrls?: string[];
 };
 
 type Exam = {
