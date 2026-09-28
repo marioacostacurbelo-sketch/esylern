@@ -1393,8 +1393,32 @@ function TasksPage({
     });
 
   const selectedTask = tasks.find(
-    (task) => task.id === selectedTaskId,
+  (task) => task.id === selectedTaskId,
+);
+
+if (showForm) {
+  return (
+    <>
+      <PageHeader
+        eyebrow="ORGANIZACIÓN"
+        title="Tareas"
+        subtitle="Todo lo que tienes que hacer, en un solo lugar."
+      />
+
+      <TaskForm
+        onAdd={(task) => {
+          onAddTask(task);
+          setShowForm(false);
+        }}
+        onCancel={() =>
+          setShowForm(false)
+        }
+      />
+    </>
   );
+}
+
+if (selectedTask) {
 
   if (selectedTask) {
     const subjectColor = getSubjectColor(
