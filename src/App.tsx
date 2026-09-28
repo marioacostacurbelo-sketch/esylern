@@ -1714,6 +1714,143 @@ const [rubricAttachmentUrls, setRubricAttachmentUrls] =
             </option>
           </select>
         </div>
+        <div className="form-field">
+  <label>
+    Enunciado
+  </label>
+
+  <label className="file-upload-box">
+    <input
+      type="file"
+      accept="image/*"
+      multiple
+      onChange={(event) =>
+        handleFiles(
+          event.target.files,
+          setAttachmentUrls,
+        )
+      }
+    />
+
+    <div className="file-upload-icon">
+      <Plus size={21} />
+    </div>
+
+    <div>
+      <strong>
+        Añadir fotos del enunciado
+      </strong>
+
+      <span>
+        Puedes subir una o varias fotos.
+      </span>
+    </div>
+  </label>
+
+  {attachmentUrls.length > 0 && (
+    <div className="file-preview-grid">
+      {attachmentUrls.map(
+        (url, index) => (
+          <div
+            className="file-preview"
+            key={`${url}-${index}`}
+          >
+            <img
+              src={url}
+              alt={`Enunciado ${index + 1}`}
+            />
+
+            <button
+              type="button"
+              onClick={() =>
+                setAttachmentUrls(
+                  (current) =>
+                    current.filter(
+                      (_, itemIndex) =>
+                        itemIndex !== index,
+                    ),
+                )
+              }
+              aria-label="Eliminar imagen"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        ),
+      )}
+    </div>
+  )}
+</div>
+
+{kind === "Trabajo" && (
+  <div className="form-field">
+    <label>
+      Rúbrica
+    </label>
+
+    <label className="file-upload-box">
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={(event) =>
+          handleFiles(
+            event.target.files,
+            setRubricAttachmentUrls,
+          )
+        }
+      />
+
+      <div className="file-upload-icon">
+        <Plus size={21} />
+      </div>
+
+      <div>
+        <strong>
+          Añadir fotos de la rúbrica
+        </strong>
+
+        <span>
+          Opcional. Puedes subir varias páginas.
+        </span>
+      </div>
+    </label>
+
+    {rubricAttachmentUrls.length > 0 && (
+      <div className="file-preview-grid">
+        {rubricAttachmentUrls.map(
+          (url, index) => (
+            <div
+              className="file-preview"
+              key={`${url}-${index}`}
+            >
+              <img
+                src={url}
+                alt={`Rúbrica ${index + 1}`}
+              />
+
+              <button
+                type="button"
+                onClick={() =>
+                  setRubricAttachmentUrls(
+                    (current) =>
+                      current.filter(
+                        (_, itemIndex) =>
+                          itemIndex !== index,
+                      ),
+                  )
+                }
+                aria-label="Eliminar imagen"
+              >
+                <X size={15} />
+              </button>
+            </div>
+          ),
+        )}
+      </div>
+    )}
+  </div>
+)}
 
         {kind === "Trabajo" && (
           <div className="task-form-info">
