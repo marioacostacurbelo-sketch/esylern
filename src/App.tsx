@@ -2170,6 +2170,70 @@ selectedTask.attachmentUrls.length > 0 ? (
   </div>
 )}
           </div>
+          {selectedTask.kind === "Trabajo" && (
+  <div className="detail-section">
+    <div className="detail-section-heading">
+      <div>
+        <span className="detail-section-eyebrow">
+          EVALUACIÓN
+        </span>
+
+        <h2>
+          Rúbrica
+        </h2>
+      </div>
+    </div>
+
+    {selectedTask.rubricAttachmentUrls &&
+    selectedTask.rubricAttachmentUrls.length > 0 ? (
+      <div className="detail-file-section">
+        <div className="detail-file-grid">
+          {selectedTask.rubricAttachmentUrls.map(
+            (url, index) => (
+              <div
+                className="detail-file-preview"
+                key={`${url}-${index}`}
+              >
+                <img
+                  src={url}
+                  alt={`Rúbrica ${index + 1}`}
+                />
+              </div>
+            ),
+          )}
+        </div>
+
+        <div className="detail-file-status">
+          <CircleCheck size={17} />
+
+          <span>
+            {selectedTask.rubricAttachmentUrls.length === 1
+              ? "1 página de rúbrica añadida"
+              : `${selectedTask.rubricAttachmentUrls.length} páginas de rúbrica añadidas`}
+          </span>
+        </div>
+      </div>
+    ) : (
+      <div className="detail-upload-placeholder">
+        <div className="detail-upload-icon">
+          <Plus size={22} />
+        </div>
+
+        <div>
+          <strong>
+            No has añadido la rúbrica
+          </strong>
+
+          <span>
+            Puedes subir la rúbrica del
+            trabajo para que Esylern pueda
+            tenerla en cuenta.
+          </span>
+        </div>
+      </div>
+    )}
+  </div>
+)}
 
           <div className="detail-section">
             <div className="detail-section-heading">
