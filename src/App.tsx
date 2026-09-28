@@ -164,7 +164,10 @@ type StudySettings = {
   preferredSessionMinutes: 25 | 50 | 90;
   preferredStudyMoment: "manana" | "tarde" | "noche";
 };
-
+function getYouTubeSearchUrl(exam: Exam) {
+  const query = `${exam.subject} ${exam.topic} explicación`;
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+}
 
 function getSubjectColor(subject: string): string {
   const value = subject.trim().toLowerCase();
