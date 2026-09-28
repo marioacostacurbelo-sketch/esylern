@@ -3091,8 +3091,9 @@ select {
 
 @media (max-width: 760px) {
   .detail-page {
-    margin: -16px;
-    padding: 16px;
+    margin: 8px 0 18px;
+    padding: 20px 16px 28px;
+    border-radius: 18px;
   }
 
   .detail-header {
