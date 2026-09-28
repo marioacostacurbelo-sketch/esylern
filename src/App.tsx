@@ -1419,8 +1419,6 @@ if (showForm) {
 }
 
 if (selectedTask) {
-
-  if (selectedTask) {
     const subjectColor = getSubjectColor(
       selectedTask.subject,
     );
