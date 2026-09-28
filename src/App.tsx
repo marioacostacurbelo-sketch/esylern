@@ -1906,6 +1906,7 @@ function TasksPage({
   onAddTask,
   onToggleTask,
   onDeleteTask,
+  onUpdateTask,
 }: {
   tasks: Task[];
   onAddTask: (
@@ -1913,6 +1914,10 @@ function TasksPage({
   ) => void;
   onToggleTask: (id: number) => void;
   onDeleteTask: (id: number) => void;
+  onUpdateTask: (
+    id: number,
+    changes: Partial<Omit<Task, "id">>,
+  ) => void;
 }) {
   const [showForm, setShowForm] =
     useState(false);
@@ -1927,109 +1932,120 @@ function TasksPage({
 
   const filteredTasks =
     tasks.filter((task) => {
-      if (filter === "Pendientes")
+      if (filter === "Pendientes") {
         return !task.done;
+      }
 
-      if (filter === "Completadas")
+      if (filter === "Completadas") {
         return task.done;
+      }
 
       return true;
     });
 
   const selectedTask = tasks.find(
-  (task) => task.id === selectedTaskId,
-);
-const handleDetailFiles = (
-  files: FileList | null,
-  field: "attachmentUrls" | "rubricAttachmentUrls",
-) => {
-  if (!files || !selectedTask) return;
-
-  const fileArray = Array.from(files);
-
-  Promise.all(
-    fileArray.map(
-      (file) =>
-        new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-
-          reader.onload = () => {
-            resolve(String(reader.result));
-          };
-
-          reader.onerror = reject;
-
-          reader.readAsDataURL(file);
-        }),
-    ),
-  )
-    .then((urls) => {
-      const currentFiles =
-        selectedTask[field] ?? [];
-
-      const updatedFiles = [
-        ...currentFiles,
-        ...urls,
-      ];
-
-      // Usa la función updateTask que ya tienes
-      updateTask(selectedTask.id, {
-        [field]: updatedFiles,
-      });
-    })
-    .catch((error) => {
-      console.error(
-        "Error al cargar imágenes:",
-        error,
-      );
-    });
-};
-
-const removeDetailFile = (
-  field: "attachmentUrls" | "rubricAttachmentUrls",
-  index: number,
-) => {
-  if (!selectedTask) return;
-
-  const currentFiles =
-    selectedTask[field] ?? [];
-
-  updateTask(selectedTask.id, {
-    [field]: currentFiles.filter(
-      (_, itemIndex) => itemIndex !== index,
-    ),
-  });
-};
-if (showForm) {
-  return (
-    <>
-      <PageHeader
-        eyebrow="ORGANIZACIÓN"
-        title="Tareas"
-        subtitle="Todo lo que tienes que hacer, en un solo lugar."
-      />
-
-      <TaskForm
-        onAdd={(task) => {
-          onAddTask(task);
-          setShowForm(false);
-        }}
-        onCancel={() =>
-          setShowForm(false)
-        }
-      />
-    </>
+    (task) => task.id === selectedTaskId,
   );
-}
 
-if (selectedTask) {
+  const handleDetailFiles = (
+    files: FileList | null,
+    field:
+      | "attachmentUrls"
+      | "rubricAttachmentUrls",
+  ) => {
+    if (!files || !selectedTask) return;
+
+    const fileArray = Array.from(files);
+
+    Promise.all(
+      fileArray.map(
+        (file) =>
+          new Promise<string>(
+            (resolve, reject) => {
+              const reader = new FileReader();
+
+              reader.onload = () => {
+                resolve(
+                  String(reader.result),
+                );
+              };
+
+              reader.onerror = reject;
+
+              reader.readAsDataURL(file);
+            },
+          ),
+      ),
+    )
+      .then((urls) => {
+        const currentFiles =
+          selectedTask[field] ?? [];
+
+        onUpdateTask(selectedTask.id, {
+          [field]: [
+            ...currentFiles,
+            ...urls,
+          ],
+        });
+      })
+      .catch((error) => {
+        console.error(
+          "Error al cargar imágenes:",
+          error,
+        );
+      });
+  };
+
+  const removeDetailFile = (
+    field:
+      | "attachmentUrls"
+      | "rubricAttachmentUrls",
+    index: number,
+  ) => {
+    if (!selectedTask) return;
+
+    const currentFiles =
+      selectedTask[field] ?? [];
+
+    onUpdateTask(selectedTask.id, {
+      [field]: currentFiles.filter(
+        (_, itemIndex) =>
+          itemIndex !== index,
+      ),
+    });
+  };
+
+  if (showForm) {
+    return (
+      <>
+        <PageHeader
+          eyebrow="ORGANIZACIÓN"
+          title="Tareas"
+          subtitle="Todo lo que tienes que hacer, en un solo lugar."
+        />
+
+        <TaskForm
+          onAdd={(task) => {
+            onAddTask(task);
+            setShowForm(false);
+          }}
+          onCancel={() =>
+            setShowForm(false)
+          }
+        />
+      </>
+    );
+  }
+
+  if (selectedTask) {
     const subjectColor = getSubjectColor(
       selectedTask.subject,
     );
 
-    const youtubeSearch = `https://www.youtube.com/results?search_query=${encodeURIComponent(
-      `${selectedTask.subject} ${selectedTask.title} explicación`,
-    )}`;
+    const youtubeSearch =
+      `https://www.youtube.com/results?search_query=${encodeURIComponent(
+        `${selectedTask.subject} ${selectedTask.title} explicación`,
+      )}`;
 
     return (
       <div
@@ -2050,21 +2066,25 @@ if (selectedTask) {
         </button>
 
         <div className="detail-page-content">
+
+          {/* CABECERA */}
           <div className="detail-header">
             <div className="detail-type">
               <div className="detail-type-icon">
-                {selectedTask.kind === "Trabajo" ? (
-  <BookOpen size={22} />
-) : (
-  <ListTodo size={22} />
-)}
+                {selectedTask.kind ===
+                "Trabajo" ? (
+                  <BookOpen size={22} />
+                ) : (
+                  <ListTodo size={22} />
+                )}
               </div>
 
               <span>
-  {selectedTask.kind === "Trabajo"
-    ? "TRABAJO / PROYECTO"
-    : "TAREA"}
-</span>
+                {selectedTask.kind ===
+                "Trabajo"
+                  ? "TRABAJO / PROYECTO"
+                  : "TAREA"}
+              </span>
             </div>
 
             <div className="detail-header-actions">
@@ -2093,6 +2113,7 @@ if (selectedTask) {
                   onDeleteTask(
                     selectedTask.id,
                   );
+
                   setSelectedTaskId(null);
                 }}
               >
@@ -2102,6 +2123,7 @@ if (selectedTask) {
             </div>
           </div>
 
+          {/* TÍTULO */}
           <div className="detail-title-area">
             <span className="detail-subject">
               {selectedTask.subject}
@@ -2137,6 +2159,7 @@ if (selectedTask) {
 
           <div className="detail-divider" />
 
+          {/* AYUDA */}
           <div className="detail-section">
             <div className="detail-section-heading">
               <div>
@@ -2145,7 +2168,10 @@ if (selectedTask) {
                 </span>
 
                 <h2>
-                  Trabaja en esta tarea
+                  {selectedTask.kind ===
+                  "Trabajo"
+                    ? "Trabaja en este proyecto"
+                    : "Trabaja en esta tarea"}
                 </h2>
               </div>
             </div>
@@ -2160,296 +2186,259 @@ if (selectedTask) {
 
                 <p>
                   Podremos subir el enunciado
-                  de la tarea y pedir a Esylern
-                  que lo analice, explique qué
-                  tienes que hacer y te guíe paso
-                  a paso.
+                  y pedir a Esylern que lo
+                  analice, explique qué tienes
+                  que hacer y te guíe paso a
+                  paso.
                 </p>
               </div>
             </div>
           </div>
 
+          {/* ENUNCIADO */}
           <div className="detail-section">
             <div className="detail-section-heading">
               <div>
                 <span className="detail-section-eyebrow">
-                  ARCHIVOS
+                  DOCUMENTACIÓN
                 </span>
 
                 <h2>
-                  Enunciado de la tarea
+                  Enunciado
                 </h2>
               </div>
-            </div>
-            <div className="detail-section">
-  <div className="detail-section-heading">
-    <div>
-      <span className="detail-section-eyebrow">
-        DOCUMENTACIÓN
-      </span>
 
-      <h2>Enunciado</h2>
-    </div>
+              <label className="detail-add-file-button">
+                <Plus size={15} />
+                Añadir fotos
 
-    <label className="detail-add-file-button">
-      <Plus size={15} />
-      Añadir fotos
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(event) => {
+                    handleDetailFiles(
+                      event.target.files,
+                      "attachmentUrls",
+                    );
 
-      <input
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={(event) =>
-          handleDetailFiles(
-            event.target.files,
-            "attachmentUrls",
-          )
-        }
-      />
-    </label>
-  </div>
-
-  {selectedTask.attachmentUrls &&
-  selectedTask.attachmentUrls.length > 0 ? (
-    <div className="detail-file-grid">
-      {selectedTask.attachmentUrls.map(
-        (url, index) => (
-          <div
-            className="detail-file-preview"
-            key={`${url}-${index}`}
-          >
-            <img
-              src={url}
-              alt={`Enunciado ${index + 1}`}
-            />
-
-            <button
-              type="button"
-              className="detail-file-remove"
-              onClick={() =>
-                removeDetailFile(
-                  "attachmentUrls",
-                  index,
-                )
-              }
-              aria-label="Eliminar imagen"
-            >
-              <X size={15} />
-            </button>
-          </div>
-        ),
-      )}
-    </div>
-  ) : (
-    <div className="detail-upload-placeholder">
-      <div className="detail-upload-icon">
-        <Plus size={22} />
-      </div>
-
-      <div>
-        <strong>
-          No has añadido el enunciado
-        </strong>
-
-        <span>
-          Puedes subir una o varias fotos desde aquí.
-        </span>
-      </div>
-    </div>
-  )}
-</div>
-{selectedTask.kind === "Trabajo" && (
-  <div className="detail-section">
-    <div className="detail-section-heading">
-      <div>
-        <span className="detail-section-eyebrow">
-          EVALUACIÓN
-        </span>
-
-        <h2>Rúbrica</h2>
-      </div>
-
-      <label className="detail-add-file-button">
-        <Plus size={15} />
-        Añadir fotos
-
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={(event) =>
-            handleDetailFiles(
-              event.target.files,
-              "rubricAttachmentUrls",
-            )
-          }
-        />
-      </label>
-    </div>
-
-    {selectedTask.rubricAttachmentUrls &&
-    selectedTask.rubricAttachmentUrls.length > 0 ? (
-      <div className="detail-file-grid">
-        {selectedTask.rubricAttachmentUrls.map(
-          (url, index) => (
-            <div
-              className="detail-file-preview"
-              key={`${url}-${index}`}
-            >
-              <img
-                src={url}
-                alt={`Rúbrica ${index + 1}`}
-              />
-
-              <button
-                type="button"
-                className="detail-file-remove"
-                onClick={() =>
-                  removeDetailFile(
-                    "rubricAttachmentUrls",
-                    index,
-                  )
-                }
-                aria-label="Eliminar imagen"
-              >
-                <X size={15} />
-              </button>
-            </div>
-          ),
-        )}
-      </div>
-    ) : (
-      <div className="detail-upload-placeholder">
-        <div className="detail-upload-icon">
-          <Plus size={22} />
-        </div>
-
-        <div>
-          <strong>
-            No has añadido la rúbrica
-          </strong>
-
-          <span>
-            Puedes subir una o varias fotos desde aquí.
-          </span>
-        </div>
-      </div>
-    )}
-  </div>
-)}
-           {selectedTask.attachmentUrls &&
-selectedTask.attachmentUrls.length > 0 ? (
-  <div className="detail-file-section">
-    <div className="detail-file-grid">
-      {selectedTask.attachmentUrls.map(
-        (url, index) => (
-          <div
-            className="detail-file-preview"
-            key={`${url}-${index}`}
-          >
-            <img
-              src={url}
-              alt={`Enunciado ${index + 1}`}
-            />
-          </div>
-        ),
-      )}
-    </div>
-
-    <div className="detail-file-status">
-      <CircleCheck size={17} />
-
-      <span>
-        {selectedTask.attachmentUrls.length === 1
-          ? "1 imagen añadida"
-          : `${selectedTask.attachmentUrls.length} imágenes añadidas`}
-      </span>
-    </div>
-  </div>
-) : (
-  <div className="detail-upload-placeholder">
-    <div className="detail-upload-icon">
-      <Plus size={22} />
-    </div>
-
-    <div>
-      <strong>
-        No has añadido el enunciado
-      </strong>
-
-      <span>
-        Aquí aparecerán las fotos que subas
-        al crear esta tarea.
-      </span>
-    </div>
-  </div>
-)}
-          </div>
-          {selectedTask.kind === "Trabajo" && (
-  <div className="detail-section">
-    <div className="detail-section-heading">
-      <div>
-        <span className="detail-section-eyebrow">
-          EVALUACIÓN
-        </span>
-
-        <h2>
-          Rúbrica
-        </h2>
-      </div>
-    </div>
-
-    {selectedTask.rubricAttachmentUrls &&
-    selectedTask.rubricAttachmentUrls.length > 0 ? (
-      <div className="detail-file-section">
-        <div className="detail-file-grid">
-          {selectedTask.rubricAttachmentUrls.map(
-            (url, index) => (
-              <div
-                className="detail-file-preview"
-                key={`${url}-${index}`}
-              >
-                <img
-                  src={url}
-                  alt={`Rúbrica ${index + 1}`}
+                    event.target.value = "";
+                  }}
                 />
+              </label>
+            </div>
+
+            {selectedTask.attachmentUrls &&
+            selectedTask.attachmentUrls.length >
+              0 ? (
+              <div className="detail-file-section">
+                <div className="detail-file-grid">
+                  {selectedTask.attachmentUrls.map(
+                    (url, index) => (
+                      <div
+                        className="detail-file-preview"
+                        key={`${url}-${index}`}
+                      >
+                        <img
+                          src={url}
+                          alt={`Enunciado ${
+                            index + 1
+                          }`}
+                        />
+
+                        <button
+                          type="button"
+                          className="detail-file-remove"
+                          onClick={() =>
+                            removeDetailFile(
+                              "attachmentUrls",
+                              index,
+                            )
+                          }
+                          aria-label="Eliminar imagen"
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
+                    ),
+                  )}
+                </div>
+
+                <div className="detail-file-status">
+                  <CircleCheck
+                    size={17}
+                  />
+
+                  <span>
+                    {selectedTask
+                      .attachmentUrls
+                      .length === 1
+                      ? "1 imagen añadida"
+                      : `${selectedTask.attachmentUrls.length} imágenes añadidas`}
+                  </span>
+                </div>
               </div>
-            ),
+            ) : (
+              <div className="detail-upload-placeholder">
+                <div className="detail-upload-icon">
+                  <Plus size={22} />
+                </div>
+
+                <div>
+                  <strong>
+                    No has añadido el enunciado
+                  </strong>
+
+                  <span>
+                    Puedes subir una o varias
+                    fotos desde aquí.
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* RÚBRICA */}
+          {selectedTask.kind ===
+            "Trabajo" && (
+            <div className="detail-section">
+              <div className="detail-section-heading">
+                <div>
+                  <span className="detail-section-eyebrow">
+                    EVALUACIÓN
+                  </span>
+
+                  <h2>
+                    Rúbrica
+                  </h2>
+                </div>
+
+                <label className="detail-add-file-button">
+                  <Plus size={15} />
+                  Añadir fotos
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(event) => {
+                      handleDetailFiles(
+                        event.target.files,
+                        "rubricAttachmentUrls",
+                      );
+
+                      event.target.value =
+                        "";
+                    }}
+                  />
+                </label>
+              </div>
+
+              {selectedTask
+                .rubricAttachmentUrls &&
+              selectedTask
+                .rubricAttachmentUrls.length >
+                0 ? (
+                <div className="detail-file-section">
+                  <div className="detail-file-grid">
+                    {selectedTask.rubricAttachmentUrls.map(
+                      (url, index) => (
+                        <div
+                          className="detail-file-preview"
+                          key={`${url}-${index}`}
+                        >
+                          <img
+                            src={url}
+                            alt={`Rúbrica ${
+                              index + 1
+                            }`}
+                          />
+
+                          <button
+                            type="button"
+                            className="detail-file-remove"
+                            onClick={() =>
+                              removeDetailFile(
+                                "rubricAttachmentUrls",
+                                index,
+                              )
+                            }
+                            aria-label="Eliminar imagen"
+                          >
+                            <X size={15} />
+                          </button>
+                        </div>
+                      ),
+                    )}
+                  </div>
+
+                  <div className="detail-file-status">
+                    <CircleCheck
+                      size={17}
+                    />
+
+                    <span>
+                      {selectedTask
+                        .rubricAttachmentUrls
+                        .length === 1
+                        ? "1 página de rúbrica añadida"
+                        : `${selectedTask.rubricAttachmentUrls.length} páginas de rúbrica añadidas`}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="detail-upload-placeholder">
+                  <div className="detail-upload-icon">
+                    <Plus size={22} />
+                  </div>
+
+                  <div>
+                    <strong>
+                      No has añadido la rúbrica
+                    </strong>
+
+                    <span>
+                      Puedes subir la rúbrica
+                      del trabajo para que
+                      Esylern pueda tenerla
+                      en cuenta.
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
-        </div>
 
-        <div className="detail-file-status">
-          <CircleCheck size={17} />
+          {/* DESCRIPCIÓN DEL PROYECTO */}
+          {selectedTask.kind ===
+            "Trabajo" &&
+          selectedTask.description && (
+            <div className="detail-section">
+              <div className="detail-section-heading">
+                <div>
+                  <span className="detail-section-eyebrow">
+                    DETALLES
+                  </span>
 
-          <span>
-            {selectedTask.rubricAttachmentUrls.length === 1
-              ? "1 página de rúbrica añadida"
-              : `${selectedTask.rubricAttachmentUrls.length} páginas de rúbrica añadidas`}
-          </span>
-        </div>
-      </div>
-    ) : (
-      <div className="detail-upload-placeholder">
-        <div className="detail-upload-icon">
-          <Plus size={22} />
-        </div>
+                  <h2>
+                    Descripción
+                  </h2>
+                </div>
+              </div>
 
-        <div>
-          <strong>
-            No has añadido la rúbrica
-          </strong>
+              <div className="detail-placeholder">
+                <BookOpen size={22} />
 
-          <span>
-            Puedes subir la rúbrica del
-            trabajo para que Esylern pueda
-            tenerla en cuenta.
-          </span>
-        </div>
-      </div>
-    )}
-  </div>
-)}
+                <div>
+                  <p>
+                    {selectedTask.description}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
+          {/* YOUTUBE */}
           <div className="detail-section">
             <div className="detail-section-heading">
               <div>
@@ -2487,6 +2476,7 @@ selectedTask.attachmentUrls.length > 0 ? (
               <ChevronRight size={19} />
             </a>
           </div>
+
         </div>
       </div>
     );
@@ -2535,10 +2525,11 @@ selectedTask.attachmentUrls.length > 0 ? (
         ))}
       </div>
 
-
       {filteredTasks.length === 0 ? (
         <EmptyBox
-          icon={<ListTodo size={24} />}
+          icon={
+            <ListTodo size={24} />
+          }
           title="No hay tareas"
           text="Añade tu primera tarea para empezar a organizarte."
           buttonText="Añadir tarea"
