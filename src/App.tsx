@@ -1993,7 +1993,11 @@ if (selectedTask) {
           <div className="detail-header">
             <div className="detail-type">
               <div className="detail-type-icon">
-                <ListTodo size={22} />
+                {selectedTask.kind === "Trabajo" ? (
+  <BookOpen size={22} />
+) : (
+  <ListTodo size={22} />
+)}
               </div>
 
               <span>
