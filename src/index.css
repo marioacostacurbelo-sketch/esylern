@@ -3283,3 +3283,120 @@ select {
     width: 100%;
   }
 }
+.task-kind-selector {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.task-kind-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 82px;
+  padding: 15px;
+  border: 1px solid #dfe3e8;
+  border-radius: 13px;
+  background: #fafbfc;
+  color: #697180;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.task-kind-option:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+
+.task-kind-option.active {
+  border-color: #85729c;
+  background: #f7f4f9;
+  color: #85729c;
+}
+
+.task-kind-option svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.task-kind-option div {
+  min-width: 0;
+}
+
+.task-kind-option strong {
+  display: block;
+  color: #172033;
+  font-size: 13px;
+}
+
+.task-kind-option span {
+  display: block;
+  margin-top: 4px;
+  color: #7a8290;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.form-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 13px;
+  border: 1px solid #dfe3e8;
+  border-radius: 11px;
+  outline: none;
+  background: #fafbfc;
+  color: #172033;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+  resize: vertical;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.form-field textarea::placeholder {
+  color: #9aa1ac;
+}
+
+.form-field textarea:focus {
+  border-color: #85729c;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(133, 114, 156, 0.1);
+}
+
+.task-form-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid #e2dce7;
+  border-radius: 13px;
+  background: #f8f5fa;
+  color: #85729c;
+}
+
+.task-form-info strong {
+  display: block;
+  color: #3c3445;
+  font-size: 13px;
+}
+
+.task-form-info span {
+  display: block;
+  margin-top: 4px;
+  color: #77707d;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .task-kind-selector {
+    grid-template-columns: 1fr;
+  }
+}
