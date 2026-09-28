@@ -1572,7 +1572,6 @@ function TaskForm({
 }
 
 function TasksPage({
-function TasksPage({
   tasks,
   onAddTask,
   onToggleTask,
