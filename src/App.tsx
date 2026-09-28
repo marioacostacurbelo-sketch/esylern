@@ -1939,7 +1939,67 @@ function TasksPage({
   const selectedTask = tasks.find(
   (task) => task.id === selectedTaskId,
 );
+const handleDetailFiles = (
+  files: FileList | null,
+  field: "attachmentUrls" | "rubricAttachmentUrls",
+) => {
+  if (!files || !selectedTask) return;
 
+  const fileArray = Array.from(files);
+
+  Promise.all(
+    fileArray.map(
+      (file) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+
+          reader.onload = () => {
+            resolve(String(reader.result));
+          };
+
+          reader.onerror = reject;
+
+          reader.readAsDataURL(file);
+        }),
+    ),
+  )
+    .then((urls) => {
+      const currentFiles =
+        selectedTask[field] ?? [];
+
+      const updatedFiles = [
+        ...currentFiles,
+        ...urls,
+      ];
+
+      // Usa la función updateTask que ya tienes
+      updateTask(selectedTask.id, {
+        [field]: updatedFiles,
+      });
+    })
+    .catch((error) => {
+      console.error(
+        "Error al cargar imágenes:",
+        error,
+      );
+    });
+};
+
+const removeDetailFile = (
+  field: "attachmentUrls" | "rubricAttachmentUrls",
+  index: number,
+) => {
+  if (!selectedTask) return;
+
+  const currentFiles =
+    selectedTask[field] ?? [];
+
+  updateTask(selectedTask.id, {
+    [field]: currentFiles.filter(
+      (_, itemIndex) => itemIndex !== index,
+    ),
+  });
+};
 if (showForm) {
   return (
     <>
