@@ -1365,20 +1365,39 @@ function TaskForm({
   onAdd: (task: Omit<Task, "id">) => void;
   onCancel: () => void;
 }) {
-  const [title, setTitle] = useState("");
-  const [subject, setSubject] = useState("");
-  const [date, setDate] = useState(
-    formatDateInput(new Date()),
-  );
+  const [kind, setKind] =
+    useState<Task["kind"]>("Tarea");
+
+  const [title, setTitle] =
+    useState("");
+
+  const [subject, setSubject] =
+    useState("");
+
+  const [description, setDescription] =
+    useState("");
+
+  const [date, setDate] =
+    useState(
+      formatDateInput(new Date()),
+    );
+
   const [priority, setPriority] =
     useState<Task["priority"]>("Media");
+
   const [estimatedMinutes, setEstimatedMinutes] =
     useState(30);
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = (
+    event: FormEvent,
+  ) => {
     event.preventDefault();
 
-    if (!title.trim() || !subject.trim() || !date) {
+    if (
+      !title.trim() ||
+      !subject.trim() ||
+      !date
+    ) {
       return;
     }
 
@@ -1389,6 +1408,9 @@ function TaskForm({
       priority,
       estimatedMinutes,
       done: false,
+      kind,
+      description:
+        description.trim() || undefined,
     });
   };
 
@@ -1397,16 +1419,17 @@ function TaskForm({
       <div className="task-form-header">
         <div>
           <span className="detail-section-eyebrow">
-            NUEVA TAREA
+            NUEVO ELEMENTO
           </span>
 
           <h2>
-            Añade algo que tengas que hacer
+            ¿Qué tienes que hacer?
           </h2>
 
           <p>
-            Completa los datos para que Esylern pueda
-            organizarla en tu plan de estudio.
+            Añádelo a Esylern y podremos
+            ayudarte a organizar cuándo
+            trabajar en ello.
           </p>
         </div>
 
@@ -1425,8 +1448,66 @@ function TaskForm({
         onSubmit={handleSubmit}
       >
         <div className="form-field">
+          <label>
+            Tipo
+          </label>
+
+          <div className="task-kind-selector">
+            <button
+              type="button"
+              className={`task-kind-option ${
+                kind === "Tarea"
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                setKind("Tarea")
+              }
+            >
+              <ListTodo size={19} />
+
+              <div>
+                <strong>
+                  Tarea
+                </strong>
+
+                <span>
+                  Ejercicios, deberes o actividades
+                </span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className={`task-kind-option ${
+                kind === "Trabajo"
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                setKind("Trabajo")
+              }
+            >
+              <BookOpen size={19} />
+
+              <div>
+                <strong>
+                  Trabajo / proyecto
+                </strong>
+
+                <span>
+                  Trabajos más largos o proyectos
+                </span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div className="form-field">
           <label htmlFor="task-title">
-            Tarea
+            {kind === "Trabajo"
+              ? "Nombre del trabajo"
+              : "Tarea"}
           </label>
 
           <input
@@ -1434,9 +1515,15 @@ function TaskForm({
             type="text"
             value={title}
             onChange={(event) =>
-              setTitle(event.target.value)
+              setTitle(
+                event.target.value,
+              )
             }
-            placeholder="Ej. Ejercicios de matemáticas"
+            placeholder={
+              kind === "Trabajo"
+                ? "Ej. Trabajo sobre la Revolución Francesa"
+                : "Ej. Ejercicios de matemáticas"
+            }
             autoFocus
           />
         </div>
@@ -1451,11 +1538,33 @@ function TaskForm({
             type="text"
             value={subject}
             onChange={(event) =>
-              setSubject(event.target.value)
+              setSubject(
+                event.target.value,
+              )
             }
-            placeholder="Ej. Matemáticas"
+            placeholder="Ej. Historia"
           />
         </div>
+
+        {kind === "Trabajo" && (
+          <div className="form-field">
+            <label htmlFor="task-description">
+              Descripción
+            </label>
+
+            <textarea
+              id="task-description"
+              value={description}
+              onChange={(event) =>
+                setDescription(
+                  event.target.value,
+                )
+              }
+              placeholder="Escribe aquí lo que tengas que hacer o cualquier información importante..."
+              rows={5}
+            />
+          </div>
+        )}
 
         <div className="form-row">
           <div className="form-field">
@@ -1468,7 +1577,9 @@ function TaskForm({
               type="date"
               value={date}
               onChange={(event) =>
-                setDate(event.target.value)
+                setDate(
+                  event.target.value,
+                )
               }
             />
           </div>
@@ -1483,7 +1594,9 @@ function TaskForm({
               value={estimatedMinutes}
               onChange={(event) =>
                 setEstimatedMinutes(
-                  Number(event.target.value),
+                  Number(
+                    event.target.value,
+                  ),
                 )
               }
             >
@@ -1513,6 +1626,10 @@ function TaskForm({
 
               <option value={180}>
                 3 horas
+              </option>
+
+              <option value={240}>
+                4 horas
               </option>
             </select>
           </div>
@@ -1546,6 +1663,25 @@ function TaskForm({
           </select>
         </div>
 
+        {kind === "Trabajo" && (
+          <div className="task-form-info">
+            <Brain size={19} />
+
+            <div>
+              <strong>
+                Próximamente: ayuda con IA
+              </strong>
+
+              <span>
+                Podrás subir el enunciado y
+                la rúbrica para que Esylern
+                te ayude a entender y organizar
+                el trabajo.
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="task-form-actions">
           <button
             type="button"
@@ -1565,7 +1701,10 @@ function TaskForm({
             }
           >
             <Plus size={18} />
-            Añadir tarea
+
+            {kind === "Trabajo"
+              ? "Añadir trabajo"
+              : "Añadir tarea"}
           </button>
         </div>
       </form>
