@@ -1445,17 +1445,25 @@ const [rubricAttachmentUrls, setRubricAttachmentUrls] =
       return;
     }
 
-    onAdd({
-      title: title.trim(),
-      subject: subject.trim(),
-      date,
-      priority,
-      estimatedMinutes,
-      done: false,
-      kind,
-      description:
-        description.trim() || undefined,
-    });
+   onAdd({
+  title: title.trim(),
+  subject: subject.trim(),
+  date,
+  priority,
+  estimatedMinutes,
+  done: false,
+  kind,
+  description:
+    description.trim() || undefined,
+  attachmentUrls:
+    attachmentUrls.length > 0
+      ? attachmentUrls
+      : undefined,
+  rubricAttachmentUrls:
+    rubricAttachmentUrls.length > 0
+      ? rubricAttachmentUrls
+      : undefined,
+});
   };
 
   return (
