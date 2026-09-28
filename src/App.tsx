@@ -1373,6 +1373,9 @@ function TasksPage({
   const [showForm, setShowForm] =
     useState(false);
 
+  const [selectedTaskId, setSelectedTaskId] =
+    useState<number | null>(null);
+
   const [filter, setFilter] =
     useState<
       "Todas" | "Pendientes" | "Completadas"
@@ -1388,6 +1391,223 @@ function TasksPage({
 
       return true;
     });
+
+  const selectedTask = tasks.find(
+    (task) => task.id === selectedTaskId,
+  );
+
+  if (selectedTask) {
+    const subjectColor = getSubjectColor(
+      selectedTask.subject,
+    );
+
+    const youtubeSearch = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+      `${selectedTask.subject} ${selectedTask.title} explicación`,
+    )}`;
+
+    return (
+      <div
+        className={`detail-page subject-${subjectColor} ${
+          selectedTask.done
+            ? "detail-page-completed"
+            : ""
+        }`}
+      >
+        <button
+          className="detail-back-button"
+          onClick={() =>
+            setSelectedTaskId(null)
+          }
+        >
+          <ChevronLeft size={18} />
+          Volver a tareas
+        </button>
+
+        <div className="detail-page-content">
+          <div className="detail-header">
+            <div className="detail-type">
+              <div className="detail-type-icon">
+                <ListTodo size={22} />
+              </div>
+
+              <span>TAREA</span>
+            </div>
+
+            <div className="detail-header-actions">
+              <button
+                className={`detail-complete-button ${
+                  selectedTask.done
+                    ? "completed"
+                    : ""
+                }`}
+                onClick={() =>
+                  onToggleTask(
+                    selectedTask.id,
+                  )
+                }
+              >
+                <CircleCheck size={17} />
+
+                {selectedTask.done
+                  ? "Completada"
+                  : "Marcar como completada"}
+              </button>
+
+              <button
+                className="detail-delete-button"
+                onClick={() => {
+                  onDeleteTask(
+                    selectedTask.id,
+                  );
+                  setSelectedTaskId(null);
+                }}
+              >
+                <Trash2 size={17} />
+                Eliminar
+              </button>
+            </div>
+          </div>
+
+          <div className="detail-title-area">
+            <span className="detail-subject">
+              {selectedTask.subject}
+            </span>
+
+            <h1>
+              {selectedTask.title}
+            </h1>
+
+            <div className="detail-meta">
+              <span>
+                Entrega{" "}
+                {formatLongDate(
+                  new Date(
+                    selectedTask.date,
+                  ),
+                )}
+              </span>
+
+              <span>
+                {formatMinutes(
+                  selectedTask.estimatedMinutes,
+                )}{" "}
+                estimados
+              </span>
+
+              <span>
+                Prioridad{" "}
+                {selectedTask.priority.toLowerCase()}
+              </span>
+            </div>
+          </div>
+
+          <div className="detail-divider" />
+
+          <div className="detail-section">
+            <div className="detail-section-heading">
+              <div>
+                <span className="detail-section-eyebrow">
+                  AYUDA
+                </span>
+
+                <h2>
+                  Trabaja en esta tarea
+                </h2>
+              </div>
+            </div>
+
+            <div className="detail-placeholder">
+              <Brain size={22} />
+
+              <div>
+                <strong>
+                  Ayuda con IA
+                </strong>
+
+                <p>
+                  Podremos subir el enunciado
+                  de la tarea y pedir a Esylern
+                  que lo analice, explique qué
+                  tienes que hacer y te guíe paso
+                  a paso.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="detail-section">
+            <div className="detail-section-heading">
+              <div>
+                <span className="detail-section-eyebrow">
+                  ARCHIVOS
+                </span>
+
+                <h2>
+                  Enunciado de la tarea
+                </h2>
+              </div>
+            </div>
+
+            <div className="detail-upload-placeholder">
+              <div className="detail-upload-icon">
+                <Plus size={22} />
+              </div>
+
+              <div>
+                <strong>
+                  Añadir fotos
+                </strong>
+
+                <span>
+                  Próximamente podrás subir
+                  fotos del enunciado para que
+                  Esylern pueda analizarlo.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="detail-section">
+            <div className="detail-section-heading">
+              <div>
+                <span className="detail-section-eyebrow">
+                  RECURSOS
+                </span>
+
+                <h2>
+                  Buscar ayuda en YouTube
+                </h2>
+              </div>
+            </div>
+
+            <a
+              href={youtubeSearch}
+              target="_blank"
+              rel="noreferrer"
+              className="youtube-resource"
+            >
+              <div className="youtube-resource-icon">
+                <Youtube size={21} />
+              </div>
+
+              <div>
+                <strong>
+                  Buscar explicaciones
+                </strong>
+
+                <span>
+                  Buscar vídeos relacionados
+                  con esta tarea en YouTube.
+                </span>
+              </div>
+
+              <ChevronRight size={19} />
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -1462,8 +1682,27 @@ function TasksPage({
                 task.done
                   ? "completed"
                   : ""
-              }`}
+              } subject-${getSubjectColor(
+                task.subject,
+              )}`}
               key={task.id}
+              onClick={() =>
+                setSelectedTaskId(
+                  task.id,
+                )
+              }
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (
+                  event.key === "Enter" ||
+                  event.key === " "
+                ) {
+                  setSelectedTaskId(
+                    task.id,
+                  );
+                }
+              }}
             >
               <button
                 className={`task-check ${
@@ -1471,9 +1710,13 @@ function TasksPage({
                     ? "checked"
                     : ""
                 }`}
-                onClick={() =>
-                  onToggleTask(task.id)
-                }
+                onClick={(event) => {
+                  event.stopPropagation();
+
+                  onToggleTask(
+                    task.id,
+                  );
+                }}
               >
                 {task.done && (
                   <CircleCheck size={19} />
@@ -1503,9 +1746,13 @@ function TasksPage({
 
               <button
                 className="delete-button"
-                onClick={() =>
-                  onDeleteTask(task.id)
-                }
+                onClick={(event) => {
+                  event.stopPropagation();
+
+                  onDeleteTask(
+                    task.id,
+                  );
+                }}
                 aria-label="Eliminar tarea"
               >
                 <Trash2 size={17} />
@@ -1515,207 +1762,6 @@ function TasksPage({
         </div>
       )}
     </>
-  );
-}
-
-function TaskForm({
-  onAdd,
-  onCancel,
-}: {
-  onAdd: (
-    task: Omit<Task, "id">,
-  ) => void;
-  onCancel: () => void;
-}) {
-  const [title, setTitle] =
-    useState("");
-
-  const [subject, setSubject] =
-    useState("");
-
-  const [date, setDate] =
-    useState(
-      formatDateInput(new Date()),
-    );
-
-  const [priority, setPriority] =
-    useState<Task["priority"]>(
-      "Media",
-    );
-
-  const [
-    estimatedMinutes,
-    setEstimatedMinutes,
-  ] = useState(30);
-
-  const submit = (
-    event: FormEvent,
-  ) => {
-    event.preventDefault();
-
-    if (
-      !title.trim() ||
-      !subject.trim() ||
-      !date
-    ) {
-      return;
-    }
-
-    onAdd({
-      title: title.trim(),
-      subject: subject.trim(),
-      date,
-      priority,
-      estimatedMinutes,
-      done: false,
-    });
-  };
-
-  return (
-    <form
-      className="form-card"
-      onSubmit={submit}
-    >
-      <div className="form-header">
-        <div>
-          <h3>Nueva tarea</h3>
-          <p>
-            Añade algo que tengas pendiente.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          className="close-button"
-          onClick={onCancel}
-        >
-          <X size={18} />
-        </button>
-      </div>
-
-      <div className="form-grid">
-        <label>
-          Tarea
-
-          <input
-            value={title}
-            onChange={(event) =>
-              setTitle(event.target.value)
-            }
-            placeholder="Ej. Hacer ejercicios de matemáticas"
-          />
-        </label>
-
-        <label>
-          Asignatura
-
-          <input
-            value={subject}
-            onChange={(event) =>
-              setSubject(
-                event.target.value,
-              )
-            }
-            placeholder="Ej. Matemáticas"
-          />
-        </label>
-
-        <label>
-          Fecha
-
-          <input
-            type="date"
-            value={date}
-            onChange={(event) =>
-              setDate(event.target.value)
-            }
-          />
-        </label>
-
-        <label>
-          Prioridad
-
-          <select
-            value={priority}
-            onChange={(event) =>
-              setPriority(
-                event.target
-                  .value as Task["priority"],
-              )
-            }
-          >
-            <option>Baja</option>
-            <option>Media</option>
-            <option>Alta</option>
-          </select>
-        </label>
-
-        <label>
-          Tiempo estimado
-
-          <select
-            value={estimatedMinutes}
-            onChange={(event) =>
-              setEstimatedMinutes(
-                Number(
-                  event.target.value,
-                ),
-              )
-            }
-          >
-            <option value={15}>
-              15 minutos
-            </option>
-
-            <option value={30}>
-              30 minutos
-            </option>
-
-            <option value={45}>
-              45 minutos
-            </option>
-
-            <option value={60}>
-              1 hora
-            </option>
-
-            <option value={90}>
-              1 hora 30 minutos
-            </option>
-
-            <option value={120}>
-              2 horas
-            </option>
-
-            <option value={150}>
-              2 horas 30 minutos
-            </option>
-
-            <option value={180}>
-              3 horas
-            </option>
-          </select>
-        </label>
-      </div>
-
-      <div className="form-actions">
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={onCancel}
-        >
-          Cancelar
-        </button>
-
-        <button
-          type="submit"
-          className="primary-button"
-        >
-          <Plus size={17} />
-          Crear tarea
-        </button>
-      </div>
-    </form>
   );
 }
 
