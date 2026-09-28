@@ -2122,23 +2122,53 @@ if (selectedTask) {
               </div>
             </div>
 
-            <div className="detail-upload-placeholder">
-              <div className="detail-upload-icon">
-                <Plus size={22} />
-              </div>
+           {selectedTask.attachmentUrls &&
+selectedTask.attachmentUrls.length > 0 ? (
+  <div className="detail-file-section">
+    <div className="detail-file-grid">
+      {selectedTask.attachmentUrls.map(
+        (url, index) => (
+          <div
+            className="detail-file-preview"
+            key={`${url}-${index}`}
+          >
+            <img
+              src={url}
+              alt={`Enunciado ${index + 1}`}
+            />
+          </div>
+        ),
+      )}
+    </div>
 
-              <div>
-                <strong>
-                  Añadir fotos
-                </strong>
+    <div className="detail-file-status">
+      <CircleCheck size={17} />
 
-                <span>
-                  Próximamente podrás subir
-                  fotos del enunciado para que
-                  Esylern pueda analizarlo.
-                </span>
-              </div>
-            </div>
+      <span>
+        {selectedTask.attachmentUrls.length === 1
+          ? "1 imagen añadida"
+          : `${selectedTask.attachmentUrls.length} imágenes añadidas`}
+      </span>
+    </div>
+  </div>
+) : (
+  <div className="detail-upload-placeholder">
+    <div className="detail-upload-icon">
+      <Plus size={22} />
+    </div>
+
+    <div>
+      <strong>
+        No has añadido el enunciado
+      </strong>
+
+      <span>
+        Aquí aparecerán las fotos que subas
+        al crear esta tarea.
+      </span>
+    </div>
+  </div>
+)}
           </div>
 
           <div className="detail-section">
