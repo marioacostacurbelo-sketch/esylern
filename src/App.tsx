@@ -1676,17 +1676,6 @@ if (selectedTask) {
         ))}
       </div>
 
-      {showForm && (
-        <TaskForm
-          onAdd={(task) => {
-            onAddTask(task);
-            setShowForm(false);
-          }}
-          onCancel={() =>
-            setShowForm(false)
-          }
-        />
-      )}
 
       {filteredTasks.length === 0 ? (
         <EmptyBox
