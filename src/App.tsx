@@ -1737,11 +1737,215 @@ function ExamsPage({
   const [showForm, setShowForm] =
     useState(false);
 
+  const [selectedExamId, setSelectedExamId] =
+    useState<number | null>(null);
+
   const sortedExams = [...exams].sort(
     (a, b) =>
       new Date(a.date).getTime() -
       new Date(b.date).getTime(),
   );
+
+  const selectedExam = exams.find(
+    (exam) => exam.id === selectedExamId,
+  );
+
+  if (selectedExam) {
+    const subjectColor = getSubjectColor(
+      selectedExam.subject,
+    );
+
+    const youtubeSearch = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+      `${selectedExam.subject} ${selectedExam.topic} explicación`,
+    )}`;
+
+    return (
+      <div
+        className={`detail-page subject-${subjectColor}`}
+      >
+        <button
+          className="detail-back-button"
+          onClick={() =>
+            setSelectedExamId(null)
+          }
+        >
+          <ChevronLeft size={18} />
+          Volver a exámenes
+        </button>
+
+        <div className="detail-page-content">
+          <div className="detail-header">
+            <div className="detail-type">
+              <div className="detail-type-icon">
+                <GraduationCap size={22} />
+              </div>
+
+              <span>EXAMEN</span>
+            </div>
+
+            <button
+              className="detail-delete-button"
+              onClick={() => {
+                onDeleteExam(
+                  selectedExam.id,
+                );
+                setSelectedExamId(null);
+              }}
+            >
+              <Trash2 size={17} />
+              Eliminar
+            </button>
+          </div>
+
+          <div className="detail-title-area">
+            <span className="detail-subject">
+              {selectedExam.subject}
+            </span>
+
+            <h1>
+              {selectedExam.topic}
+            </h1>
+
+            <div className="detail-meta">
+              <span>
+                {formatLongDate(
+                  new Date(
+                    selectedExam.date,
+                  ),
+                )}
+              </span>
+
+              <span>
+                {getDaysRemaining(
+                  selectedExam.date,
+                )}{" "}
+                días restantes
+              </span>
+
+              <span>
+                {formatMinutes(
+                  selectedExam.studyMinutes,
+                )}{" "}
+                de estudio
+              </span>
+            </div>
+          </div>
+
+          <div className="detail-divider" />
+
+          <div className="detail-section">
+            <div className="detail-section-heading">
+              <div>
+                <span className="detail-section-eyebrow">
+                  PREPARACIÓN
+                </span>
+
+                <h2>
+                  Recursos para estudiar
+                </h2>
+              </div>
+            </div>
+
+            <a
+              href={youtubeSearch}
+              target="_blank"
+              rel="noreferrer"
+              className="youtube-resource"
+            >
+              <div className="youtube-resource-icon">
+                <Youtube size={21} />
+              </div>
+
+              <div>
+                <strong>
+                  Buscar vídeos explicativos
+                </strong>
+
+                <span>
+                  YouTube buscará vídeos sobre{" "}
+                  {selectedExam.subject} y{" "}
+                  {selectedExam.topic}.
+                </span>
+              </div>
+
+              <ChevronRight size={19} />
+            </a>
+          </div>
+
+          <div className="detail-section">
+            <div className="detail-section-heading">
+              <div>
+                <span className="detail-section-eyebrow">
+                  PRÓXIMAMENTE
+                </span>
+
+                <h2>
+                  Explicación del tema
+                </h2>
+              </div>
+            </div>
+
+            <div className="detail-placeholder">
+              <Brain size={22} />
+
+              <div>
+                <strong>
+                  Explicación con IA
+                </strong>
+
+                <p>
+                  Aquí podremos generar una
+                  explicación del tema, conceptos
+                  importantes y puntos que deberías
+                  dominar antes del examen.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="detail-section">
+            <div className="detail-section-heading">
+              <div>
+                <span className="detail-section-eyebrow">
+                  ORGANIZACIÓN
+                </span>
+
+                <h2>
+                  Preparación del examen
+                </h2>
+              </div>
+            </div>
+
+            <div className="detail-info-grid">
+              <div className="detail-info-card">
+                <span>
+                  Tiempo necesario
+                </span>
+
+                <strong>
+                  {formatMinutes(
+                    selectedExam.studyMinutes,
+                  )}
+                </strong>
+              </div>
+
+              <div className="detail-info-card">
+                <span>
+                  Fecha
+                </span>
+
+                <strong>
+                  {formatShortDate(
+                    selectedExam.date,
+                  )}
+                </strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -1794,6 +1998,23 @@ function ExamsPage({
                 exam.subject,
               )}`}
               key={exam.id}
+              onClick={() =>
+                setSelectedExamId(
+                  exam.id,
+                )
+              }
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (
+                  event.key === "Enter" ||
+                  event.key === " "
+                ) {
+                  setSelectedExamId(
+                    exam.id,
+                  );
+                }
+              }}
             >
               <div className="exam-icon">
                 <GraduationCap size={22} />
@@ -1827,11 +2048,14 @@ function ExamsPage({
 
               <button
                 className="delete-button"
-                onClick={() =>
+                onClick={(event) => {
+                  event.stopPropagation();
+
                   onDeleteExam(
                     exam.id,
-                  )
-                }
+                  );
+                }}
+                aria-label="Eliminar examen"
               >
                 <Trash2 size={17} />
               </button>
