@@ -2181,6 +2181,83 @@ if (selectedTask) {
                 </h2>
               </div>
             </div>
+            <div className="detail-section">
+  <div className="detail-section-heading">
+    <div>
+      <span className="detail-section-eyebrow">
+        DOCUMENTACIÓN
+      </span>
+
+      <h2>Enunciado</h2>
+    </div>
+
+    <label className="detail-add-file-button">
+      <Plus size={15} />
+      Añadir fotos
+
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={(event) =>
+          handleDetailFiles(
+            event.target.files,
+            "attachmentUrls",
+          )
+        }
+      />
+    </label>
+  </div>
+
+  {selectedTask.attachmentUrls &&
+  selectedTask.attachmentUrls.length > 0 ? (
+    <div className="detail-file-grid">
+      {selectedTask.attachmentUrls.map(
+        (url, index) => (
+          <div
+            className="detail-file-preview"
+            key={`${url}-${index}`}
+          >
+            <img
+              src={url}
+              alt={`Enunciado ${index + 1}`}
+            />
+
+            <button
+              type="button"
+              className="detail-file-remove"
+              onClick={() =>
+                removeDetailFile(
+                  "attachmentUrls",
+                  index,
+                )
+              }
+              aria-label="Eliminar imagen"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        ),
+      )}
+    </div>
+  ) : (
+    <div className="detail-upload-placeholder">
+      <div className="detail-upload-icon">
+        <Plus size={22} />
+      </div>
+
+      <div>
+        <strong>
+          No has añadido el enunciado
+        </strong>
+
+        <span>
+          Puedes subir una o varias fotos desde aquí.
+        </span>
+      </div>
+    </div>
+  )}
+</div>
 
            {selectedTask.attachmentUrls &&
 selectedTask.attachmentUrls.length > 0 ? (
