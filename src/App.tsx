@@ -1356,7 +1356,222 @@ function Dashboard({
 /* =========================
    TAREAS
 ========================= */
+function TaskForm({
+  onAdd,
+  onCancel,
+}: {
+  onAdd: (task: Omit<Task, "id">) => void;
+  onCancel: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [subject, setSubject] = useState("");
+  const [date, setDate] = useState(
+    formatDateInput(new Date()),
+  );
+  const [priority, setPriority] =
+    useState<Task["priority"]>("Media");
+  const [estimatedMinutes, setEstimatedMinutes] =
+    useState(30);
 
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+
+    if (!title.trim() || !subject.trim() || !date) {
+      return;
+    }
+
+    onAdd({
+      title: title.trim(),
+      subject: subject.trim(),
+      date,
+      priority,
+      estimatedMinutes,
+      done: false,
+    });
+  };
+
+  return (
+    <div className="task-form-card">
+      <div className="task-form-header">
+        <div>
+          <span className="detail-section-eyebrow">
+            NUEVA TAREA
+          </span>
+
+          <h2>
+            Añade algo que tengas que hacer
+          </h2>
+
+          <p>
+            Completa los datos para que Esylern pueda
+            organizarla en tu plan de estudio.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="detail-back-button"
+          onClick={onCancel}
+        >
+          <X size={17} />
+          Cancelar
+        </button>
+      </div>
+
+      <form
+        className="task-form"
+        onSubmit={handleSubmit}
+      >
+        <div className="form-field">
+          <label htmlFor="task-title">
+            Tarea
+          </label>
+
+          <input
+            id="task-title"
+            type="text"
+            value={title}
+            onChange={(event) =>
+              setTitle(event.target.value)
+            }
+            placeholder="Ej. Ejercicios de matemáticas"
+            autoFocus
+          />
+        </div>
+
+        <div className="form-field">
+          <label htmlFor="task-subject">
+            Asignatura
+          </label>
+
+          <input
+            id="task-subject"
+            type="text"
+            value={subject}
+            onChange={(event) =>
+              setSubject(event.target.value)
+            }
+            placeholder="Ej. Matemáticas"
+          />
+        </div>
+
+        <div className="form-row">
+          <div className="form-field">
+            <label htmlFor="task-date">
+              Fecha de entrega
+            </label>
+
+            <input
+              id="task-date"
+              type="date"
+              value={date}
+              onChange={(event) =>
+                setDate(event.target.value)
+              }
+            />
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="task-minutes">
+              Tiempo estimado
+            </label>
+
+            <select
+              id="task-minutes"
+              value={estimatedMinutes}
+              onChange={(event) =>
+                setEstimatedMinutes(
+                  Number(event.target.value),
+                )
+              }
+            >
+              <option value={15}>
+                15 minutos
+              </option>
+
+              <option value={30}>
+                30 minutos
+              </option>
+
+              <option value={45}>
+                45 minutos
+              </option>
+
+              <option value={60}>
+                1 hora
+              </option>
+
+              <option value={90}>
+                1 h 30 min
+              </option>
+
+              <option value={120}>
+                2 horas
+              </option>
+
+              <option value={180}>
+                3 horas
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div className="form-field">
+          <label htmlFor="task-priority">
+            Prioridad
+          </label>
+
+          <select
+            id="task-priority"
+            value={priority}
+            onChange={(event) =>
+              setPriority(
+                event.target.value as Task["priority"],
+              )
+            }
+          >
+            <option value="Baja">
+              Baja
+            </option>
+
+            <option value="Media">
+              Media
+            </option>
+
+            <option value="Alta">
+              Alta
+            </option>
+          </select>
+        </div>
+
+        <div className="task-form-actions">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onCancel}
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            className="add-button"
+            disabled={
+              !title.trim() ||
+              !subject.trim() ||
+              !date
+            }
+          >
+            <Plus size={18} />
+            Añadir tarea
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function TasksPage({
 function TasksPage({
   tasks,
   onAddTask,
