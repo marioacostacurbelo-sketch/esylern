@@ -2258,7 +2258,85 @@ if (selectedTask) {
     </div>
   )}
 </div>
+{selectedTask.kind === "Trabajo" && (
+  <div className="detail-section">
+    <div className="detail-section-heading">
+      <div>
+        <span className="detail-section-eyebrow">
+          EVALUACIÓN
+        </span>
 
+        <h2>Rúbrica</h2>
+      </div>
+
+      <label className="detail-add-file-button">
+        <Plus size={15} />
+        Añadir fotos
+
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={(event) =>
+            handleDetailFiles(
+              event.target.files,
+              "rubricAttachmentUrls",
+            )
+          }
+        />
+      </label>
+    </div>
+
+    {selectedTask.rubricAttachmentUrls &&
+    selectedTask.rubricAttachmentUrls.length > 0 ? (
+      <div className="detail-file-grid">
+        {selectedTask.rubricAttachmentUrls.map(
+          (url, index) => (
+            <div
+              className="detail-file-preview"
+              key={`${url}-${index}`}
+            >
+              <img
+                src={url}
+                alt={`Rúbrica ${index + 1}`}
+              />
+
+              <button
+                type="button"
+                className="detail-file-remove"
+                onClick={() =>
+                  removeDetailFile(
+                    "rubricAttachmentUrls",
+                    index,
+                  )
+                }
+                aria-label="Eliminar imagen"
+              >
+                <X size={15} />
+              </button>
+            </div>
+          ),
+        )}
+      </div>
+    ) : (
+      <div className="detail-upload-placeholder">
+        <div className="detail-upload-icon">
+          <Plus size={22} />
+        </div>
+
+        <div>
+          <strong>
+            No has añadido la rúbrica
+          </strong>
+
+          <span>
+            Puedes subir una o varias fotos desde aquí.
+          </span>
+        </div>
+      </div>
+    )}
+  </div>
+)}
            {selectedTask.attachmentUrls &&
 selectedTask.attachmentUrls.length > 0 ? (
   <div className="detail-file-section">
