@@ -43,6 +43,8 @@ type Task = {
   priority: "Baja" | "Media" | "Alta";
   estimatedMinutes: number;
   done: boolean;
+  kind?: "Tarea" | "Trabajo";
+  description?: string;
 };
 
 type Exam = {
