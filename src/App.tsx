@@ -5,6 +5,7 @@ import {
   CheckSquare,
   Clock3,
   GraduationCap,
+  Youtube,
   LayoutDashboard,
   ListTodo,
   MessageCircle,
