@@ -1394,6 +1394,43 @@ const [rubricAttachmentUrls, setRubricAttachmentUrls] =
 
   const [estimatedMinutes, setEstimatedMinutes] =
     useState(30);
+  const handleFiles = (
+  files: FileList | null,
+  setter: React.Dispatch<React.SetStateAction<string[]>>,
+) => {
+  if (!files) return;
+
+  const fileArray = Array.from(files);
+
+  Promise.all(
+    fileArray.map(
+      (file) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+
+          reader.onload = () => {
+            resolve(String(reader.result));
+          };
+
+          reader.onerror = reject;
+
+          reader.readAsDataURL(file);
+        }),
+    ),
+  )
+    .then((urls) => {
+      setter((current) => [
+        ...current,
+        ...urls,
+      ]);
+    })
+    .catch((error) => {
+      console.error(
+        "Error al cargar imágenes:",
+        error,
+      );
+    });
+};
 
   const handleSubmit = (
     event: FormEvent,
