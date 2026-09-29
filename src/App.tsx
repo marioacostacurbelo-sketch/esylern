@@ -2198,15 +2198,18 @@ if (!response.ok) {
   );
 }
 
-setAiResult(
+const generatedResponse =
   data?.response ||
-    "No he podido generar una respuesta.",
+  "No he podido generar una respuesta.";
+
+setAiResult(generatedResponse);
+
+saveAIResponse(
+  selectedTask.id,
+  helpType,
+  generatedResponse,
 );
 
-setAiResult(
-  data?.response ||
-    "No he podido generar una respuesta.",
-);
   } catch (error: any) {
     console.error(
       "Error con Esylern AI:",
