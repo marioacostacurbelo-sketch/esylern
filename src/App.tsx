@@ -2078,7 +2078,43 @@ const askTaskAI = async (
   instruction: string,
 ) => {
   if (!selectedTask) return;
+const normalizedInstruction =
+  instruction.toLowerCase();
 
+let helpType: AIHelpType = "understand";
+
+if (
+  normalizedInstruction.includes("paso a paso") ||
+  normalizedInstruction.includes("guía")
+) {
+  helpType = "steps";
+}
+
+if (
+  normalizedInstruction.includes("ejemplo")
+) {
+  helpType = "example";
+}
+
+setAiHelpType(helpType);
+
+const savedResponse = getSavedAIResponse(
+  selectedTask.id,
+  helpType,
+);
+
+if (savedResponse) {
+  console.log(
+    "⚡ Usando respuesta de IA guardada:",
+    helpType,
+  );
+
+  setAiResult(savedResponse);
+  setAiError("");
+  setAiLoading(false);
+
+  return;
+}
   console.log(
     "🧠 CLICK IA",
     selectedTask,
