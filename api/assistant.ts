@@ -894,7 +894,7 @@ No resuelvas los ejercicios ni proporciones respuestas para copiar.
             "auto",
         },
       );
-
+console.log("✅ OPENROUTER RESPONDIÓ");
     const assistantMessage =
       response.choices[0]
         ?.message;
