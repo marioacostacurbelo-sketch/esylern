@@ -2090,20 +2090,83 @@ Ayúdalo a entenderlo y a hacerlo por sí mismo.`,
       },
     );
 
-    const data =
-      await response.json();
+   const response = await fetch(
+  "/api/assistant",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      message: `${instruction}
 
-    if (!response.ok) {
-      throw new Error(
-        data?.error ||
-          "No se pudo obtener ayuda de Esylern AI.",
-      );
-    }
+ESTA ES LA TAREA/TRABAJO SOBRE LA QUE DEBES AYUDAR:
 
-    setAiResult(
-      data?.response ||
-        "No he podido generar una respuesta.",
-    );
+Título: ${selectedTask.title}
+
+Asignatura: ${selectedTask.subject}
+
+Tipo: ${
+        selectedTask.kind === "Trabajo"
+          ? "Trabajo / proyecto"
+          : "Tarea"
+      }
+
+Fecha de entrega: ${selectedTask.date}
+
+Tiempo estimado: ${
+        selectedTask.estimatedMinutes
+      } minutos
+
+Prioridad: ${selectedTask.priority}
+
+Descripción: ${
+        selectedTask.description ||
+        "No hay descripción."
+      }
+
+IMPORTANTE:
+Si hay imágenes del enunciado o de la rúbrica, deben analizarse antes de responder.
+
+No hagas el trabajo completo por el estudiante.
+Ayúdalo a entenderlo y a hacerlo por sí mismo.`,
+      messages: [],
+      tasks: [selectedTask],
+      exams: [],
+      studyPlan: [],
+      busySlots: [],
+      studyDailyMinutes: 120,
+      taskForAnalysis: selectedTask,
+    }),
+  },
+);
+
+const responseText = await response.text();
+
+let data: any = null;
+
+try {
+  data = responseText
+    ? JSON.parse(responseText)
+    : null;
+} catch {
+  throw new Error(
+    responseText ||
+      `El servidor respondió con un error (${response.status}).`,
+  );
+}
+
+if (!response.ok) {
+  throw new Error(
+    data?.error ||
+      `El servidor respondió con un error (${response.status}).`,
+  );
+}
+
+setAiResult(
+  data?.response ||
+    "No he podido generar una respuesta.",
+);
   } catch (error: any) {
     console.error(
       "Error con Esylern AI:",
