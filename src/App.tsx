@@ -1930,6 +1930,14 @@ function TasksPage({
     useState<
       "Todas" | "Pendientes" | "Completadas"
     >("Todas");
+  const [aiLoading, setAiLoading] =
+  useState(false);
+
+const [aiResult, setAiResult] =
+  useState("");
+
+const [aiError, setAiError] =
+  useState("");
 
   const filteredTasks =
     tasks.filter((task) => {
