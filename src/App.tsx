@@ -2012,7 +2012,7 @@ const [aiError, setAiError] =
     index: number,
   ) => {
     if (!selectedTask) return;
-    const askTaskAI = async (
+   const askTaskAI = async (
   instruction: string,
 ) => {
   if (!selectedTask) return;
@@ -2031,8 +2031,53 @@ const [aiError, setAiError] =
             "application/json",
         },
         body: JSON.stringify({
-          message: `${instruction}
+          message: instruction,
 
+          messages: [],
+
+          tasks: [selectedTask],
+
+          exams: [],
+
+          studyPlan: [],
+
+          busySlots: [],
+
+          studyDailyMinutes: 120,
+
+          taskForAnalysis: selectedTask,
+        }),
+      },
+    );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data?.error ||
+          "No se pudo obtener ayuda de Esylern AI.",
+      );
+    }
+
+    setAiResult(
+      data?.response ||
+        "No he podido generar una respuesta.",
+    );
+  } catch (error: any) {
+    console.error(
+      "Error con Esylern AI:",
+      error,
+    );
+
+    setAiError(
+      error?.message ||
+        "Ha ocurrido un error al conectar con Esylern AI.",
+    );
+  } finally {
+    setAiLoading(false);
+  }
+};
 ESTA ES LA TAREA/TRABAJO SOBRE LA QUE DEBES AYUDAR:
 
 Título: ${selectedTask.title}
