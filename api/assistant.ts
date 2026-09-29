@@ -786,40 +786,29 @@ No hay imágenes adjuntas del enunciado ni de la rúbrica.
 Utiliza únicamente la información textual disponible.
 `;
 
-    const finalUserContent: any[] =
-      [
-        {
-          type: "text",
+    const finalUserContent: any[] = [
+  {
+    type: "text",
 
-          text: `${message}
+    text: `${message}
 
 INFORMACIÓN DE LA TAREA:
 
 Título:
-${
-  taskForAnalysis?.title ||
-  "No disponible"
-}
+${taskForAnalysis?.title || "No disponible"}
 
 Asignatura:
-${
-  taskForAnalysis?.subject ||
-  "No disponible"
-}
+${taskForAnalysis?.subject || "No disponible"}
 
 Tipo:
 ${
-  taskForAnalysis?.kind ===
-  "Trabajo"
+  taskForAnalysis?.kind === "Trabajo"
     ? "Trabajo / proyecto"
     : "Tarea"
 }
 
 Fecha de entrega:
-${
-  taskForAnalysis?.date ||
-  "No disponible"
-}
+${taskForAnalysis?.date || "No disponible"}
 
 Tiempo estimado:
 ${
@@ -828,10 +817,7 @@ ${
 } minutos
 
 Prioridad:
-${
-  taskForAnalysis?.priority ||
-  "No disponible"
-}
+${taskForAnalysis?.priority || "No disponible"}
 
 Descripción:
 ${
@@ -845,7 +831,7 @@ MODO DE AYUDA:
 
 La petición actual determina el formato de respuesta.
 
-Si la petición solicita "Entender qué me piden", utiliza exactamente los cuatro apartados indicados por el sistema:
+Si la petición solicita "Entender qué me piden", utiliza exactamente estos cuatro apartados:
 
 QUÉ TIENES QUE HACER
 EJERCICIOS O PARTES
@@ -856,35 +842,50 @@ No añadas otros apartados.
 
 La respuesta debe ser breve, clara y educativa.
 
-No resuelvas los ejercicios ni proporciones respuestas para copiar`.
-        },
+No resuelvas los ejercicios ni proporciones respuestas para copiar.`,
+  },
 
-        ...taskImages,
-      ];
+  ...taskImages,
+];
 
-    const conversationMessages: any[] =
-      [
-        {
-          role: "system",
-          content:
-            systemMessage,
-        },
+const conversationMessages: any[] = [
+  {
+    role: "system",
+    content: systemMessage,
+  },
 
-        ...history,
+  ...history,
 
-        {
-          role: "user",
-          content:
-            finalUserContent,
-        },
-      ];
-console.log("🚀 ENVIANDO PETICIÓN A OPENROUTER");
+  {
+    role: "user",
+    content: finalUserContent,
+  },
+];
+    console.log("🚀 ENVIANDO PETICIÓN A OPENROUTER");
 console.log("🧠 Modelo:", "openrouter/free");
 console.log("🖼️ Imágenes:", taskImages.length);
 console.log(
   "📦 Mensajes:",
   conversationMessages.length,
 );
+
+const response =
+  await openai.chat.completions.create(
+    {
+      model:
+        "openrouter/free",
+
+      messages:
+        conversationMessages,
+
+      tools,
+
+      tool_choice:
+        "auto",
+    },
+  );
+
+console.log("✅ OPENROUTER RESPONDIÓ");
     const response =
       await openai.chat.completions.create(
         {
