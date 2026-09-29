@@ -684,14 +684,15 @@ REGLAS OBLIGATORIAS PARA ESTE FORMATO:
 - No inventes una rúbrica.
 - Si existe una rúbrica, menciona únicamente los criterios visibles.
 - Sé breve.
-- Utiliza lenguaje sencillo para un estudiante de bachillerato.
-- No utilices símbolos $ para fórmulas matemáticas.
-- No utilices LaTeX.
-- No escribas fórmulas entre $...$ ni $$...$$.
-- Escribe las expresiones matemáticas en texto normal.
-- Por ejemplo, escribe f(x) = 5 en lugar de $f(x) = 5$.
-- Por ejemplo, escribe f'(x) = 0 en lugar de $f'(x) = 0$.
-- Utiliza exponentes normales como x² cuando sea posible.
+- No utilices símbolos $ ni delimitadores de LaTeX.
+- No escribas fórmulas usando palabras como "times", "por", "multiplicado por" o similares cuando puedas usar símbolos matemáticos.
+- Utiliza notación matemática normal y sencilla.
+- Escribe ax, 2ax, x², 3x + 2, f(x) = 5, etc.
+- Utiliza × o · solo cuando sea necesario para que una multiplicación sea clara.
+- Utiliza exponentes normales como x², x³, etc.
+- Por ejemplo, escribe "la derivada de ax es a", no "la derivada de a times x es a".
+- Por ejemplo, escribe "la derivada de ax² es 2ax", no "la derivada de a por x al cuadrado es 2 veces a por x".
+- Mantén las expresiones matemáticas tal y como se escribirían normalmente en un cuaderno de bachillerato.
 ========================
 FORMATO PARA "GUÍA PASO A PASO"
 ========================
