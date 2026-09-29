@@ -2027,70 +2027,31 @@ const [aiError, setAiError] =
       {
         method: "POST",
         headers: {
-          "Content-Type":
-            "application/json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message: instruction,
+          message: `${instruction}
 
-          messages: [],
-
-          tasks: [selectedTask],
-
-          exams: [],
-
-          studyPlan: [],
-
-          busySlots: [],
-
-          studyDailyMinutes: 120,
-
-          taskForAnalysis: selectedTask,
-        }),
-      },
-    );
-
-    const data =
-      await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data?.error ||
-          "No se pudo obtener ayuda de Esylern AI.",
-      );
-    }
-
-    setAiResult(
-      data?.response ||
-        "No he podido generar una respuesta.",
-    );
-  } catch (error: any) {
-    console.error(
-      "Error con Esylern AI:",
-      error,
-    );
-
-    setAiError(
-      error?.message ||
-        "Ha ocurrido un error al conectar con Esylern AI.",
-    );
-  } finally {
-    setAiLoading(false);
-  }
-};
 ESTA ES LA TAREA/TRABAJO SOBRE LA QUE DEBES AYUDAR:
 
 Título: ${selectedTask.title}
+
 Asignatura: ${selectedTask.subject}
+
 Tipo: ${
-            selectedTask.kind ===
-            "Trabajo"
+            selectedTask.kind === "Trabajo"
               ? "Trabajo / proyecto"
               : "Tarea"
           }
+
 Fecha de entrega: ${selectedTask.date}
-Tiempo estimado: ${selectedTask.estimatedMinutes} minutos
+
+Tiempo estimado: ${
+            selectedTask.estimatedMinutes
+          } minutos
+
 Prioridad: ${selectedTask.priority}
+
 Descripción: ${
             selectedTask.description ||
             "No hay descripción."
@@ -2098,6 +2059,7 @@ Descripción: ${
 
 IMPORTANTE:
 Si hay imágenes del enunciado o de la rúbrica, deben analizarse antes de responder.
+
 No hagas el trabajo completo por el estudiante.
 Ayúdalo a entenderlo y a hacerlo por sí mismo.`,
           messages: [],
@@ -2106,12 +2068,12 @@ Ayúdalo a entenderlo y a hacerlo por sí mismo.`,
           studyPlan: [],
           busySlots: [],
           studyDailyMinutes: 120,
+          taskForAnalysis: selectedTask,
         }),
       },
     );
 
-    const data =
-      await response.json();
+    const data = await response.json();
 
     if (!response.ok) {
       throw new Error(
