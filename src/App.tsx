@@ -2306,7 +2306,8 @@ Ayúdalo a entenderlo y a hacerlo por sí mismo.`,
         disabled={aiLoading}
         onClick={() =>
           askTaskAI(
-           "Analiza la tarea y explícame de forma clara y breve qué tiene que hacer el estudiante.
+           askTaskAI(
+  `Analiza la tarea y explícame de forma clara y breve qué tiene que hacer el estudiante.
 
 Organiza la respuesta exactamente con esta estructura:
 
@@ -2329,7 +2330,8 @@ IMPORTANTE:
 - Si hay una rúbrica, explica qué aspectos debe tener en cuenta.
 - Si el enunciado contiene imágenes, utiliza la información visible en ellas.
 - No añadas secciones innecesarias.
-- Evita respuestas largas.",
+- Evita respuestas largas.`,
+)
           )
         }
       >
