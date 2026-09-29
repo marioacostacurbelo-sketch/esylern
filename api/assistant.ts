@@ -886,22 +886,7 @@ const response =
   );
 
 console.log("✅ OPENROUTER RESPONDIÓ");
-    const response =
-      await openai.chat.completions.create(
-        {
-          model:
-            "openrouter/free",
-
-          messages:
-            conversationMessages,
-
-          tools,
-
-          tool_choice:
-            "auto",
-        },
-      );
-console.log("✅ OPENROUTER RESPONDIÓ");
+    
     const assistantMessage =
       response.choices[0]
         ?.message;
