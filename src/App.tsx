@@ -2250,40 +2250,133 @@ Ayúdalo a entenderlo y a hacerlo por sí mismo.`,
           <div className="detail-divider" />
 
           {/* AYUDA */}
-          <div className="detail-section">
-            <div className="detail-section-heading">
-              <div>
-                <span className="detail-section-eyebrow">
-                  AYUDA
-                </span>
+<div className="detail-section">
+  <div className="detail-section-heading">
+    <div>
+      <span className="detail-section-eyebrow">
+        AYUDA CON IA
+      </span>
 
-                <h2>
-                  {selectedTask.kind ===
-                  "Trabajo"
-                    ? "Trabaja en este proyecto"
-                    : "Trabaja en esta tarea"}
-                </h2>
-              </div>
-            </div>
+      <h2>
+        {selectedTask.kind ===
+        "Trabajo"
+          ? "Trabaja en este proyecto"
+          : "Trabaja en esta tarea"}
+      </h2>
+    </div>
+  </div>
 
-            <div className="detail-placeholder">
-              <Brain size={22} />
+  <div className="ai-help-card">
+    <div className="ai-help-header">
+      <div className="ai-help-icon">
+        <Brain size={22} />
+      </div>
 
-              <div>
-                <strong>
-                  Ayuda con IA
-                </strong>
+      <div>
+        <strong>
+          Esylern AI
+        </strong>
 
-                <p>
-                  Podremos subir el enunciado
-                  y pedir a Esylern que lo
-                  analice, explique qué tienes
-                  que hacer y te guíe paso a
-                  paso.
-                </p>
-              </div>
-            </div>
-          </div>
+        <p>
+          Analiza lo que tienes que hacer
+          y recibe ayuda sin que la IA haga
+          el trabajo por ti.
+        </p>
+      </div>
+    </div>
+
+    <div className="ai-help-actions">
+      <button
+        type="button"
+        className="ai-help-button"
+        disabled={aiLoading}
+        onClick={() =>
+          askTaskAI(
+            "Explícame exactamente qué me piden en esta tarea o trabajo. Divide el enunciado en los objetivos y requisitos que debo cumplir. Si hay rúbrica, úsala para explicar qué espera el profesor.",
+          )
+        }
+      >
+        <Brain size={17} />
+
+        <span>
+          Entender qué me piden
+        </span>
+      </button>
+
+      <button
+        type="button"
+        className="ai-help-button"
+        disabled={aiLoading}
+        onClick={() =>
+          askTaskAI(
+            "Crea una guía paso a paso para que pueda realizar esta tarea o trabajo. Ordena las acciones desde el principio hasta la entrega y explica qué debería hacer en cada paso.",
+          )
+        }
+      >
+        <ListTodo size={17} />
+
+        <span>
+          Guía paso a paso
+        </span>
+      </button>
+
+      <button
+        type="button"
+        className="ai-help-button"
+        disabled={aiLoading}
+        onClick={() =>
+          askTaskAI(
+            "Dame un ejemplo orientativo de cómo podría abordar esta tarea o trabajo. No hagas el trabajo completo ni me des una respuesta para copiar. Quiero entender cómo empezar y qué aspecto podría tener un buen resultado.",
+          )
+        }
+      >
+        <BookOpen size={17} />
+
+        <span>
+          Ver un ejemplo
+        </span>
+      </button>
+    </div>
+
+    {aiLoading && (
+      <div className="ai-help-status">
+        <Brain size={18} />
+
+        <span>
+          Esylern está analizando la tarea...
+        </span>
+      </div>
+    )}
+
+    {aiError && (
+      <div className="ai-help-error">
+        <strong>
+          No se ha podido obtener la ayuda.
+        </strong>
+
+        <span>
+          {aiError}
+        </span>
+      </div>
+    )}
+
+    {aiResult && !aiLoading && (
+      <div className="ai-help-result">
+        <div className="ai-help-result-header">
+          <Brain size={18} />
+
+          <strong>
+            Ayuda de Esylern AI
+          </strong>
+        </div>
+
+        <div className="ai-help-result-content">
+          {aiResult}
+        </div>
+      </div>
+    )}
+  </div>
+</div>
 
           {/* ENUNCIADO */}
           <div className="detail-section">
