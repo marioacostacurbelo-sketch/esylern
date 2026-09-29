@@ -25,25 +25,33 @@ const tools = [
                 type: {
                   type: "string",
                   enum: [
-  "create_task",
-  "update_task",
-  "set_task_done",
-  "delete_task",
-  "create_exam",
-  "update_exam",
-  "delete_exam",
-  "create_busy_slot",
-  "delete_busy_slot",
-  "set_daily_study_minutes",
-  "set_setting",
-  "generate_study_plan",
-  "navigate",
-],
+                    "create_task",
+                    "update_task",
+                    "set_task_done",
+                    "delete_task",
+                    "create_exam",
+                    "update_exam",
+                    "delete_exam",
+                    "create_busy_slot",
+                    "delete_busy_slot",
+                    "set_daily_study_minutes",
+                    "set_setting",
+                    "generate_study_plan",
+                    "navigate",
+                  ],
                 },
 
-                id: { type: "number" },
-                done: { type: "boolean" },
-                minutes: { type: "number" },
+                id: {
+                  type: "number",
+                },
+
+                done: {
+                  type: "boolean",
+                },
+
+                minutes: {
+                  type: "number",
+                },
 
                 page: {
                   type: "string",
@@ -77,16 +85,48 @@ const tools = [
                 task: {
                   type: "object",
                   properties: {
-                    title: { type: "string" },
-                    subject: { type: "string" },
-                    date: { type: "string" },
+                    title: {
+                      type: "string",
+                    },
+
+                    subject: {
+                      type: "string",
+                    },
+
+                    date: {
+                      type: "string",
+                    },
+
                     priority: {
                       type: "string",
-                      enum: ["Baja", "Media", "Alta"],
+                      enum: [
+                        "Baja",
+                        "Media",
+                        "Alta",
+                      ],
                     },
-                    estimatedMinutes: { type: "number" },
-                    done: { type: "boolean" },
+
+                    estimatedMinutes: {
+                      type: "number",
+                    },
+
+                    done: {
+                      type: "boolean",
+                    },
+
+                    kind: {
+                      type: "string",
+                      enum: [
+                        "Tarea",
+                        "Trabajo",
+                      ],
+                    },
+
+                    description: {
+                      type: "string",
+                    },
                   },
+
                   required: [
                     "title",
                     "subject",
@@ -104,11 +144,23 @@ const tools = [
                 exam: {
                   type: "object",
                   properties: {
-                    subject: { type: "string" },
-                    topic: { type: "string" },
-                    date: { type: "string" },
-                    studyMinutes: { type: "number" },
+                    subject: {
+                      type: "string",
+                    },
+
+                    topic: {
+                      type: "string",
+                    },
+
+                    date: {
+                      type: "string",
+                    },
+
+                    studyMinutes: {
+                      type: "number",
+                    },
                   },
+
                   required: [
                     "subject",
                     "topic",
@@ -120,12 +172,27 @@ const tools = [
                 slot: {
                   type: "object",
                   properties: {
-                    day: { type: "number" },
-                    startTime: { type: "string" },
-                    endTime: { type: "string" },
-                    repeatWeekly: { type: "boolean" },
-                    date: { type: "string" },
+                    day: {
+                      type: "number",
+                    },
+
+                    startTime: {
+                      type: "string",
+                    },
+
+                    endTime: {
+                      type: "string",
+                    },
+
+                    repeatWeekly: {
+                      type: "boolean",
+                    },
+
+                    date: {
+                      type: "string",
+                    },
                   },
+
                   required: [
                     "day",
                     "startTime",
@@ -148,8 +215,14 @@ const tools = [
 
 function formatDate(date: Date): string {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+
+  const month = String(
+    date.getMonth() + 1,
+  ).padStart(2, "0");
+
+  const day = String(
+    date.getDate(),
+  ).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
@@ -158,26 +231,33 @@ function getNextWeekday(
   today: Date,
   targetDay: number,
 ): string {
-  const currentDay = today.getDay();
+  const currentDay =
+    today.getDay();
 
   let difference =
-    (targetDay - currentDay + 7) % 7;
+    (targetDay -
+      currentDay +
+      7) %
+    7;
 
-  // Si es hoy, interpretamos "el miércoles" como
-  // el próximo miércoles, no como hoy.
   if (difference === 0) {
     difference = 7;
   }
 
-  const result = new Date(today);
+  const result =
+    new Date(today);
+
   result.setDate(
-    today.getDate() + difference,
+    today.getDate() +
+      difference,
   );
 
   return formatDate(result);
 }
 
-function getDateReference(today: Date): string {
+function getDateReference(
+  today: Date,
+): string {
   const weekdayNames = [
     "domingo",
     "lunes",
@@ -189,38 +269,86 @@ function getDateReference(today: Date): string {
   ];
 
   const lines = [
-    `Hoy: ${formatDate(today)} (${weekdayNames[today.getDay()]})`,
+    `Hoy: ${formatDate(
+      today,
+    )} (${weekdayNames[
+      today.getDay()
+    ]})`,
+
     "",
+
     "PRÓXIMOS DÍAS:",
   ];
 
-  for (let i = 1; i <= 7; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
+  for (
+    let i = 1;
+    i <= 7;
+    i++
+  ) {
+    const date =
+      new Date(today);
+
+    date.setDate(
+      today.getDate() + i,
+    );
 
     lines.push(
-      `${weekdayNames[date.getDay()]} → ${formatDate(date)}`,
+      `${weekdayNames[
+        date.getDay()
+      ]} → ${formatDate(date)}`,
     );
   }
 
   lines.push(
     "",
+
     "REFERENCIA EXACTA DE LOS PRÓXIMOS DÍAS DE LA SEMANA:",
-    `lunes → ${getNextWeekday(today, 1)}`,
-    `martes → ${getNextWeekday(today, 2)}`,
-    `miércoles → ${getNextWeekday(today, 3)}`,
-    `jueves → ${getNextWeekday(today, 4)}`,
-    `viernes → ${getNextWeekday(today, 5)}`,
-    `sábado → ${getNextWeekday(today, 6)}`,
-    `domingo → ${getNextWeekday(today, 0)}`,
+
+    `lunes → ${getNextWeekday(
+      today,
+      1,
+    )}`,
+
+    `martes → ${getNextWeekday(
+      today,
+      2,
+    )}`,
+
+    `miércoles → ${getNextWeekday(
+      today,
+      3,
+    )}`,
+
+    `jueves → ${getNextWeekday(
+      today,
+      4,
+    )}`,
+
+    `viernes → ${getNextWeekday(
+      today,
+      5,
+    )}`,
+
+    `sábado → ${getNextWeekday(
+      today,
+      6,
+    )}`,
+
+    `domingo → ${getNextWeekday(
+      today,
+      0,
+    )}`,
   );
 
   return lines.join("\n");
 }
+
 function buildTaskImageContent(
   task: any,
 ) {
-  if (!task) return [];
+  if (!task) {
+    return [];
+  }
 
   const content: any[] = [];
 
@@ -241,8 +369,11 @@ function buildTaskImageContent(
   attachmentUrls.forEach(
     (url: string) => {
       if (
-        typeof url === "string" &&
-        url.startsWith("data:image/")
+        typeof url ===
+          "string" &&
+        url.startsWith(
+          "data:image/",
+        )
       ) {
         content.push({
           type: "image_url",
@@ -257,8 +388,11 @@ function buildTaskImageContent(
   rubricAttachmentUrls.forEach(
     (url: string) => {
       if (
-        typeof url === "string" &&
-        url.startsWith("data:image/")
+        typeof url ===
+          "string" &&
+        url.startsWith(
+          "data:image/",
+        )
       ) {
         content.push({
           type: "image_url",
@@ -272,68 +406,88 @@ function buildTaskImageContent(
 
   return content;
 }
+
 export default async function handler(
   req: any,
   res: any,
 ) {
   if (req.method !== "POST") {
     return res.status(405).json({
-      error: "Método no permitido",
+      error:
+        "Método no permitido",
     });
   }
 
   try {
-   const {
-  message,
-  messages,
-  tasks,
-  exams,
-  studyPlan,
-  busySlots,
-  studyDailyMinutes,
-  taskForAnalysis,
-} = req.body;
+    const {
+      message,
+      messages,
+      tasks,
+      exams,
+      studyPlan,
+      busySlots,
+      studyDailyMinutes,
+      taskForAnalysis,
+    } = req.body;
 
     if (
       !message ||
-      typeof message !== "string"
+      typeof message !==
+        "string"
     ) {
       return res.status(400).json({
-        error: "Falta el mensaje.",
+        error:
+          "Falta el mensaje.",
       });
     }
 
     const context = {
-      tasks: Array.isArray(tasks)
+      tasks: Array.isArray(
+        tasks,
+      )
         ? tasks
         : [],
 
-      exams: Array.isArray(exams)
+      exams: Array.isArray(
+        exams,
+      )
         ? exams
         : [],
 
-      studyPlan: Array.isArray(studyPlan)
+      studyPlan: Array.isArray(
+        studyPlan,
+      )
         ? studyPlan
         : [],
 
-      busySlots: Array.isArray(busySlots)
+      busySlots: Array.isArray(
+        busySlots,
+      )
         ? busySlots
         : [],
 
       studyDailyMinutes:
-        typeof studyDailyMinutes === "number"
+        typeof studyDailyMinutes ===
+        "number"
           ? studyDailyMinutes
           : 120,
     };
 
-    const today = new Date(
-      new Date().toLocaleString("en-US", {
-        timeZone: "Atlantic/Canary",
-      }),
-    );
+    const today =
+      new Date(
+        new Date().toLocaleString(
+          "en-US",
+          {
+            timeZone:
+              "Atlantic/Canary",
+          },
+        ),
+      );
 
     const dateReference =
-      getDateReference(today);
+      getDateReference(
+        today,
+      );
 
     const systemMessage = `
 Eres Esylern AI, el asistente inteligente de una aplicación de planificación académica.
@@ -347,7 +501,6 @@ ${dateReference}
 Estas fechas son calculadas por el sistema y son la referencia oficial.
 
 Cuando el estudiante diga:
-
 - "mañana"
 - "pasado mañana"
 - "el lunes"
@@ -363,13 +516,6 @@ debes utilizar las fechas calculadas anteriormente.
 NUNCA inventes una fecha para un día de la semana.
 
 NUNCA utilices una fecha pasada cuando el estudiante se refiera a un día de la semana sin especificar una fecha pasada.
-
-Por ejemplo, si hoy es domingo 27/09/2026:
-
-"el miércoles" = 2026-09-30
-"el viernes" = 2026-10-02
-
-Si mañana es una nueva fecha, el sistema volverá a calcular automáticamente todos los días.
 
 Las fechas de tareas y exámenes deben guardarse SIEMPRE como YYYY-MM-DD.
 
@@ -397,16 +543,6 @@ Estudiante:
 NO significa cambiar el límite diario.
 
 Solo utiliza set_daily_study_minutes cuando el estudiante pida explícitamente cambiar su límite diario.
-
-Si preguntas:
-
-"¿Cuántos minutos necesitas?"
-
-y responde:
-
-"120"
-
-debes utilizar esos 120 minutos en la acción que estaba pendiente.
 
 ========================
 REGLAS GENERALES
@@ -457,6 +593,7 @@ Eliminar un periodo ocupado.
 
 set_daily_study_minutes:
 Cambiar el límite diario de estudio.
+
 UTILÍZALA SOLO si el estudiante quiere cambiar explícitamente ese límite.
 
 generate_study_plan:
@@ -465,6 +602,7 @@ Generar o reorganizar el plan de estudio utilizando el algoritmo de planificaci�
 UTILÍZALA cuando el estudiante pida organizar, planificar, repartir o reorganizar su estudio.
 
 No inventes horarios ni sesiones de estudio manualmente.
+
 La aplicación calculará automáticamente los horarios respetando:
 - fechas límite
 - exámenes
@@ -481,6 +619,50 @@ navigate:
 Navegar a una sección de Esylern.
 
 ========================
+ANÁLISIS DE TAREAS Y TRABAJOS
+========================
+
+Cuando recibas imágenes de un enunciado:
+
+- analiza cuidadosamente el texto visible
+- identifica qué pide el profesor
+- identifica los objetivos
+- identifica los entregables
+- identifica instrucciones importantes
+- identifica fechas o requisitos que aparezcan
+- no inventes información que no aparezca
+
+Cuando recibas imágenes de una rúbrica:
+
+- identifica los criterios de evaluación
+- explica qué debe conseguir el estudiante
+- utiliza la rúbrica para orientar la ayuda
+- señala los requisitos importantes
+- no inventes criterios que no aparezcan
+
+Si el estudiante pide:
+
+"Entender qué me piden"
+
+explica el enunciado de forma sencilla.
+
+Si pide:
+
+"Guía paso a paso"
+
+divide el trabajo en pasos concretos y ordenados.
+
+Si pide:
+
+"Ver un ejemplo"
+
+proporciona un ejemplo orientativo que sirva para entender cómo empezar.
+
+NO hagas el trabajo completo para que el estudiante pueda copiarlo directamente.
+
+La finalidad de Esylern es ayudar al estudiante a comprender y realizar su propio trabajo.
+
+========================
 CONTEXTO ACTUAL
 ========================
 
@@ -491,78 +673,211 @@ ${JSON.stringify(
 )}
 `;
 
-    const history = Array.isArray(messages)
-      ? messages
-          .filter(
-            (item: any) =>
-              item &&
-              (item.role === "user" ||
-                item.role === "ai") &&
-              typeof item.text === "string",
-          )
-          .slice(-12)
-          .map((item: any) => ({
-            role:
-              item.role === "user"
-                ? ("user" as const)
-                : ("assistant" as const),
+    const history =
+      Array.isArray(
+        messages,
+      )
+        ? messages
+            .filter(
+              (item: any) =>
+                item &&
+                (
+                  item.role ===
+                    "user" ||
+                  item.role ===
+                    "ai"
+                ) &&
+                typeof item.text ===
+                  "string",
+            )
+            .slice(-12)
+            .map(
+              (
+                item: any,
+              ) => ({
+                role:
+                  item.role ===
+                  "user"
+                    ? ("user" as const)
+                    : ("assistant" as const),
 
-            content: item.text,
-          }))
-      : [];
+                content:
+                  item.text,
+              }),
+            )
+        : [];
 
-    const conversationMessages: any[] = [
-      {
-        role: "system",
-        content: systemMessage,
-      },
+    const taskImages =
+      buildTaskImageContent(
+        taskForAnalysis,
+      );
 
-      ...history,
+    const taskImageInstruction =
+      taskImages.length >
+      0
+        ? `
 
-      {
-        role: "user",
-        content: message,
-      },
-    ];
+IMPORTANTE:
+
+Se han adjuntado ${taskImages.length} imagen(es) pertenecientes a la tarea.
+
+Debes analizar visualmente estas imágenes antes de responder.
+
+Las imágenes del enunciado contienen las instrucciones de la tarea.
+
+Las imágenes de la rúbrica contienen los criterios de evaluación cuando existan.
+
+No inventes información que no aparezca en las imágenes.
+
+Si alguna imagen no se puede leer con suficiente claridad, indícalo.
+`
+        : `
+
+No hay imágenes adjuntas del enunciado ni de la rúbrica.
+
+Utiliza únicamente la información textual disponible.
+`;
+
+    const finalUserContent: any[] =
+      [
+        {
+          type: "text",
+
+          text: `${message}
+
+INFORMACIÓN DE LA TAREA:
+
+Título:
+${
+  taskForAnalysis?.title ||
+  "No disponible"
+}
+
+Asignatura:
+${
+  taskForAnalysis?.subject ||
+  "No disponible"
+}
+
+Tipo:
+${
+  taskForAnalysis?.kind ===
+  "Trabajo"
+    ? "Trabajo / proyecto"
+    : "Tarea"
+}
+
+Fecha de entrega:
+${
+  taskForAnalysis?.date ||
+  "No disponible"
+}
+
+Tiempo estimado:
+${
+  taskForAnalysis?.estimatedMinutes ??
+  "No disponible"
+} minutos
+
+Prioridad:
+${
+  taskForAnalysis?.priority ||
+  "No disponible"
+}
+
+Descripción:
+${
+  taskForAnalysis?.description ||
+  "No hay descripción."
+}
+
+${taskImageInstruction}
+
+REGLA EDUCATIVA:
+
+Ayuda al estudiante a comprender y realizar el trabajo por sí mismo.
+
+No presentes una respuesta como si fuera para copiar y entregar directamente.
+
+Si se pide un ejemplo, que sea un ejemplo orientativo y claramente diferenciado del trabajo real del estudiante.`,
+        },
+
+        ...taskImages,
+      ];
+
+    const conversationMessages: any[] =
+      [
+        {
+          role: "system",
+          content:
+            systemMessage,
+        },
+
+        ...history,
+
+        {
+          role: "user",
+          content:
+            finalUserContent,
+        },
+      ];
 
     const response =
-      await openai.chat.completions.create({
-        model: "openrouter/free",
+      await openai.chat.completions.create(
+        {
+          model:
+            "openrouter/free",
 
-        messages: conversationMessages,
+          messages:
+            conversationMessages,
 
-        tools,
+          tools,
 
-        tool_choice: "auto",
-      });
+          tool_choice:
+            "auto",
+        },
+      );
 
     const assistantMessage =
-      response.choices[0]?.message;
+      response.choices[0]
+        ?.message;
 
     const toolCalls =
-      assistantMessage?.tool_calls ?? [];
+      assistantMessage
+        ?.tool_calls ?? [];
 
-    const actions: any[] = [];
+    const actions: any[] =
+      [];
 
-    for (const toolCall of toolCalls) {
-      if (toolCall.type !== "function") {
+    for (
+      const toolCall of toolCalls
+    ) {
+      if (
+        toolCall.type !==
+        "function"
+      ) {
         continue;
       }
 
       if (
-        toolCall.function.name !==
+        toolCall.function
+          .name !==
         "execute_esylern_actions"
       ) {
         continue;
       }
 
       try {
-        const parsed = JSON.parse(
-          toolCall.function.arguments,
-        );
+        const parsed =
+          JSON.parse(
+            toolCall.function
+              .arguments,
+          );
 
         if (
-          Array.isArray(parsed?.actions)
+          Array.isArray(
+            parsed?.actions,
+          )
         ) {
           actions.push(
             ...parsed.actions,
@@ -581,14 +896,17 @@ ${JSON.stringify(
         "string" &&
       assistantMessage.content.trim()
         ? assistantMessage.content
-        : actions.length > 0
+        : actions.length >
+            0
           ? "He realizado los cambios en tu planificación."
           : "No he podido generar una respuesta.";
 
-    return res.status(200).json({
-      response: answer,
-      actions,
-    });
+    return res.status(200).json(
+      {
+        response: answer,
+        actions,
+      },
+    );
   } catch (error: any) {
     console.error(
       "OPENROUTER ERROR COMPLETO:",
