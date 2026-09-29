@@ -1941,6 +1941,54 @@ const [aiError, setAiError] =
 type AIHelpType = "understand" | "steps" | "example";
 
 const [aiHelpType, setAiHelpType] = useState<AIHelpType | null>(null);
+  const getSavedAIResponse = (
+  taskId: number,
+  type: AIHelpType,
+) => {
+  try {
+    const saved = localStorage.getItem(
+      "esylern_ai_task_help",
+    );
+
+    if (!saved) return null;
+
+    const data = JSON.parse(saved);
+
+    return data?.[taskId]?.[type] || null;
+  } catch {
+    return null;
+  }
+};
+
+const saveAIResponse = (
+  taskId: number,
+  type: AIHelpType,
+  response: string,
+) => {
+  try {
+    const saved = localStorage.getItem(
+      "esylern_ai_task_help",
+    );
+
+    const data = saved ? JSON.parse(saved) : {};
+
+    if (!data[taskId]) {
+      data[taskId] = {};
+    }
+
+    data[taskId][type] = response;
+
+    localStorage.setItem(
+      "esylern_ai_task_help",
+      JSON.stringify(data),
+    );
+  } catch (error) {
+    console.error(
+      "No se pudo guardar la respuesta de IA:",
+      error,
+    );
+  }
+};
   const filteredTasks =
     tasks.filter((task) => {
       if (filter === "Pendientes") {
