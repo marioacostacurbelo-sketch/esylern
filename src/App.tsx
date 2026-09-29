@@ -829,12 +829,13 @@ function App() {
         )}
 
         {currentPage === "Tareas" && (
-          <TasksPage
-            tasks={tasks}
-            onAddTask={addTask}
-            onToggleTask={toggleTask}
-            onDeleteTask={deleteTask}
-          />
+         <TasksPage
+  tasks={tasks}
+  onAddTask={addTask}
+  onToggleTask={toggleTask}
+  onDeleteTask={deleteTask}
+  onUpdateTask={updateTask}
+/>
         )}
 
         {currentPage === "Exámenes" && (
