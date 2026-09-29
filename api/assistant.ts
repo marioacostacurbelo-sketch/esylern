@@ -856,7 +856,7 @@ No añadas otros apartados.
 
 La respuesta debe ser breve, clara y educativa.
 
-No resuelvas los ejercicios ni proporciones respuestas para copiar.
+No resuelvas los ejercicios ni proporciones respuestas para copiar`.
         },
 
         ...taskImages,
