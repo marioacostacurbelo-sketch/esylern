@@ -2040,57 +2040,6 @@ const askTaskAI = async (
 
   try {
     const response = await fetch(
-      "/api/assistant",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: `${instruction}
-
-ESTA ES LA TAREA/TRABAJO SOBRE LA QUE DEBES AYUDAR:
-
-Título: ${selectedTask.title}
-
-Asignatura: ${selectedTask.subject}
-
-Tipo: ${
-            selectedTask.kind === "Trabajo"
-              ? "Trabajo / proyecto"
-              : "Tarea"
-          }
-
-Fecha de entrega: ${selectedTask.date}
-
-Tiempo estimado: ${
-            selectedTask.estimatedMinutes
-          } minutos
-
-Prioridad: ${selectedTask.priority}
-
-Descripción: ${
-            selectedTask.description ||
-            "No hay descripción."
-          }
-
-IMPORTANTE:
-Si hay imágenes del enunciado o de la rúbrica, deben analizarse antes de responder.
-
-No hagas el trabajo completo por el estudiante.
-Ayúdalo a entenderlo y a hacerlo por sí mismo.`,
-          messages: [],
-          tasks: [selectedTask],
-          exams: [],
-          studyPlan: [],
-          busySlots: [],
-          studyDailyMinutes: 120,
-          taskForAnalysis: selectedTask,
-        }),
-      },
-    );
-
-   const response = await fetch(
   "/api/assistant",
   {
     method: "POST",
@@ -2162,6 +2111,11 @@ if (!response.ok) {
       `El servidor respondió con un error (${response.status}).`,
   );
 }
+
+setAiResult(
+  data?.response ||
+    "No he podido generar una respuesta.",
+);
 
 setAiResult(
   data?.response ||
