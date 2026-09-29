@@ -2012,6 +2012,87 @@ const [aiError, setAiError] =
     index: number,
   ) => {
     if (!selectedTask) return;
+    const askTaskAI = async (
+  instruction: string,
+) => {
+  if (!selectedTask) return;
+
+  setAiLoading(true);
+  setAiResult("");
+  setAiError("");
+
+  try {
+    const response = await fetch(
+      "/api/assistant",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify({
+          message: `${instruction}
+
+ESTA ES LA TAREA/TRABAJO SOBRE LA QUE DEBES AYUDAR:
+
+Título: ${selectedTask.title}
+Asignatura: ${selectedTask.subject}
+Tipo: ${
+            selectedTask.kind ===
+            "Trabajo"
+              ? "Trabajo / proyecto"
+              : "Tarea"
+          }
+Fecha de entrega: ${selectedTask.date}
+Tiempo estimado: ${selectedTask.estimatedMinutes} minutos
+Prioridad: ${selectedTask.priority}
+Descripción: ${
+            selectedTask.description ||
+            "No hay descripción."
+          }
+
+IMPORTANTE:
+Si hay imágenes del enunciado o de la rúbrica, deben analizarse antes de responder.
+No hagas el trabajo completo por el estudiante.
+Ayúdalo a entenderlo y a hacerlo por sí mismo.`,
+          messages: [],
+          tasks: [selectedTask],
+          exams: [],
+          studyPlan: [],
+          busySlots: [],
+          studyDailyMinutes: 120,
+        }),
+      },
+    );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data?.error ||
+          "No se pudo obtener ayuda de Esylern AI.",
+      );
+    }
+
+    setAiResult(
+      data?.response ||
+        "No he podido generar una respuesta.",
+    );
+  } catch (error: any) {
+    console.error(
+      "Error con Esylern AI:",
+      error,
+    );
+
+    setAiError(
+      error?.message ||
+        "Ha ocurrido un error al conectar con Esylern AI.",
+    );
+  } finally {
+    setAiLoading(false);
+  }
+};
 
     const currentFiles =
       selectedTask[field] ?? [];
