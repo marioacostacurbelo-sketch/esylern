@@ -878,7 +878,13 @@ No resuelvas los ejercicios ni proporciones respuestas para copiar`.
             finalUserContent,
         },
       ];
-
+console.log("🚀 ENVIANDO PETICIÓN A OPENROUTER");
+console.log("🧠 Modelo:", "openrouter/free");
+console.log("🖼️ Imágenes:", taskImages.length);
+console.log(
+  "📦 Mensajes:",
+  conversationMessages.length,
+);
     const response =
       await openai.chat.completions.create(
         {
