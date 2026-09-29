@@ -2006,16 +2006,33 @@ const [aiError, setAiError] =
   };
 
   const removeDetailFile = (
-    field:
-      | "attachmentUrls"
-      | "rubricAttachmentUrls",
-    index: number,
-  ) => {
-    if (!selectedTask) return;
-   const askTaskAI = async (
+  field:
+    | "attachmentUrls"
+    | "rubricAttachmentUrls",
+  index: number,
+) => {
+  if (!selectedTask) return;
+
+  const currentFiles =
+    selectedTask[field] ?? [];
+
+  onUpdateTask(selectedTask.id, {
+    [field]: currentFiles.filter(
+      (_, itemIndex) =>
+        itemIndex !== index,
+    ),
+  });
+};
+
+const askTaskAI = async (
   instruction: string,
 ) => {
   if (!selectedTask) return;
+
+  console.log(
+    "🧠 CLICK IA",
+    selectedTask,
+  );
 
   setAiLoading(true);
   setAiResult("");
@@ -2073,7 +2090,8 @@ Ayúdalo a entenderlo y a hacerlo por sí mismo.`,
       },
     );
 
-    const data = await response.json();
+    const data =
+      await response.json();
 
     if (!response.ok) {
       throw new Error(
@@ -2100,17 +2118,6 @@ Ayúdalo a entenderlo y a hacerlo por sí mismo.`,
     setAiLoading(false);
   }
 };
-
-    const currentFiles =
-      selectedTask[field] ?? [];
-
-    onUpdateTask(selectedTask.id, {
-      [field]: currentFiles.filter(
-        (_, itemIndex) =>
-          itemIndex !== index,
-      ),
-    });
-  };
 
   if (showForm) {
     return (
