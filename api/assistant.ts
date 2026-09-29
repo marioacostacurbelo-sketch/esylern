@@ -229,15 +229,16 @@ export default async function handler(
   }
 
   try {
-    const {
-      message,
-      messages,
-      tasks,
-      exams,
-      studyPlan,
-      busySlots,
-      studyDailyMinutes,
-    } = req.body;
+   const {
+  message,
+  messages,
+  tasks,
+  exams,
+  studyPlan,
+  busySlots,
+  studyDailyMinutes,
+  taskForAnalysis,
+} = req.body;
 
     if (
       !message ||
