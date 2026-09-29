@@ -1938,7 +1938,9 @@ const [aiResult, setAiResult] =
 
 const [aiError, setAiError] =
   useState("");
+type AIHelpType = "understand" | "steps" | "example";
 
+const [aiHelpType, setAiHelpType] = useState<AIHelpType | null>(null);
   const filteredTasks =
     tasks.filter((task) => {
       if (filter === "Pendientes") {
