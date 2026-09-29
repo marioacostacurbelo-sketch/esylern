@@ -2306,7 +2306,30 @@ Ayúdalo a entenderlo y a hacerlo por sí mismo.`,
         disabled={aiLoading}
         onClick={() =>
           askTaskAI(
-            "Explícame exactamente qué me piden en esta tarea o trabajo. Divide el enunciado en los objetivos y requisitos que debo cumplir. Si hay rúbrica, úsala para explicar qué espera el profesor.",
+           "Analiza la tarea y explícame de forma clara y breve qué tiene que hacer el estudiante.
+
+Organiza la respuesta exactamente con esta estructura:
+
+QUÉ TIENES QUE HACER
+Explica en 1 o 2 frases cuál es el objetivo de la tarea.
+
+EJERCICIOS O PARTES
+Enumera los ejercicios, apartados o requisitos que aparecen en el enunciado.
+
+QUÉ NECESITAS
+Indica las reglas, conceptos o conocimientos que necesita para realizarla.
+
+CÓMO EMPEZAR
+Indica el primer paso que debería hacer el estudiante.
+
+IMPORTANTE:
+- Sé claro y fácil de entender.
+- No hagas los ejercicios ni des las respuestas finales.
+- No inventes información que no aparezca en el enunciado.
+- Si hay una rúbrica, explica qué aspectos debe tener en cuenta.
+- Si el enunciado contiene imágenes, utiliza la información visible en ellas.
+- No añadas secciones innecesarias.
+- Evita respuestas largas.",
           )
         }
       >
