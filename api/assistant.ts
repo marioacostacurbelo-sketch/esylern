@@ -217,7 +217,61 @@ function getDateReference(today: Date): string {
 
   return lines.join("\n");
 }
+function buildTaskImageContent(
+  task: any,
+) {
+  if (!task) return [];
 
+  const content: any[] = [];
+
+  const attachmentUrls =
+    Array.isArray(
+      task.attachmentUrls,
+    )
+      ? task.attachmentUrls
+      : [];
+
+  const rubricAttachmentUrls =
+    Array.isArray(
+      task.rubricAttachmentUrls,
+    )
+      ? task.rubricAttachmentUrls
+      : [];
+
+  attachmentUrls.forEach(
+    (url: string) => {
+      if (
+        typeof url === "string" &&
+        url.startsWith("data:image/")
+      ) {
+        content.push({
+          type: "image_url",
+          image_url: {
+            url,
+          },
+        });
+      }
+    },
+  );
+
+  rubricAttachmentUrls.forEach(
+    (url: string) => {
+      if (
+        typeof url === "string" &&
+        url.startsWith("data:image/")
+      ) {
+        content.push({
+          type: "image_url",
+          image_url: {
+            url,
+          },
+        });
+      }
+    },
+  );
+
+  return content;
+}
 export default async function handler(
   req: any,
   res: any,
