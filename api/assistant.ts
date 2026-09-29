@@ -685,7 +685,13 @@ REGLAS OBLIGATORIAS PARA ESTE FORMATO:
 - Si existe una rúbrica, menciona únicamente los criterios visibles.
 - Sé breve.
 - Utiliza lenguaje sencillo para un estudiante de bachillerato.
-
+- No utilices símbolos $ para fórmulas matemáticas.
+- No utilices LaTeX.
+- No escribas fórmulas entre $...$ ni $$...$$.
+- Escribe las expresiones matemáticas en texto normal.
+- Por ejemplo, escribe f(x) = 5 en lugar de $f(x) = 5$.
+- Por ejemplo, escribe f'(x) = 0 en lugar de $f'(x) = 0$.
+- Utiliza exponentes normales como x² cuando sea posible.
 ========================
 FORMATO PARA "GUÍA PASO A PASO"
 ========================
