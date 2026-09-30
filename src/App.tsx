@@ -2980,18 +2980,29 @@ function ExamsPage({
   exams,
   onAddExam,
   onDeleteExam,
+  openExamId,
 }: {
   exams: Exam[];
   onAddExam: (
     exam: Omit<Exam, "id">,
   ) => void;
   onDeleteExam: (id: number) => void;
+  openExamId?: number | null;
 }) {
   const [showForm, setShowForm] =
     useState(false);
 
   const [selectedExamId, setSelectedExamId] =
     useState<number | null>(null);
+
+  useEffect(() => {
+    if (
+      openExamId !== null &&
+      openExamId !== undefined
+    ) {
+      setSelectedExamId(openExamId);
+    }
+  }, [openExamId]);
 
   const sortedExams = [...exams].sort(
     (a, b) =>
@@ -3000,17 +3011,20 @@ function ExamsPage({
   );
 
   const selectedExam = exams.find(
-    (exam) => exam.id === selectedExamId,
+    (exam) =>
+      exam.id === selectedExamId,
   );
 
   if (selectedExam) {
-    const subjectColor = getSubjectColor(
-      selectedExam.subject,
-    );
+    const subjectColor =
+      getSubjectColor(
+        selectedExam.subject,
+      );
 
-    const youtubeSearch = `https://www.youtube.com/results?search_query=${encodeURIComponent(
-      `${selectedExam.subject} ${selectedExam.topic} explicación`,
-    )}`;
+    const youtubeSearch =
+      `https://www.youtube.com/results?search_query=${encodeURIComponent(
+        `${selectedExam.subject} ${selectedExam.topic} explicación`,
+      )}`;
 
     return (
       <div
@@ -3021,6 +3035,7 @@ function ExamsPage({
           onClick={() =>
             setSelectedExamId(null)
           }
+          type="button"
         >
           <ChevronLeft size={18} />
           Volver a exámenes
@@ -3030,7 +3045,9 @@ function ExamsPage({
           <div className="detail-header">
             <div className="detail-type">
               <div className="detail-type-icon">
-                <GraduationCap size={22} />
+                <GraduationCap
+                  size={22}
+                />
               </div>
 
               <span>EXAMEN</span>
@@ -3042,8 +3059,10 @@ function ExamsPage({
                 onDeleteExam(
                   selectedExam.id,
                 );
+
                 setSelectedExamId(null);
               }}
+              type="button"
             >
               <Trash2 size={17} />
               Eliminar
@@ -3115,13 +3134,17 @@ function ExamsPage({
                 </strong>
 
                 <span>
-                  YouTube buscará vídeos sobre{" "}
-                  {selectedExam.subject} y{" "}
+                  YouTube buscará vídeos
+                  sobre{" "}
+                  {selectedExam.subject}{" "}
+                  y{" "}
                   {selectedExam.topic}.
                 </span>
               </div>
 
-              <ChevronRight size={19} />
+              <ChevronRight
+                size={19}
+              />
             </a>
           </div>
 
@@ -3147,9 +3170,10 @@ function ExamsPage({
                 </strong>
 
                 <p>
-                  Aquí podremos generar una
-                  explicación del tema, conceptos
-                  importantes y puntos que deberías
+                  Aquí podremos generar
+                  una explicación del tema,
+                  conceptos importantes y
+                  puntos que deberías
                   dominar antes del examen.
                 </p>
               </div>
@@ -3212,6 +3236,7 @@ function ExamsPage({
             onClick={() =>
               setShowForm(true)
             }
+            type="button"
           >
             <Plus size={18} />
             Nuevo examen
@@ -3260,9 +3285,13 @@ function ExamsPage({
               tabIndex={0}
               onKeyDown={(event) => {
                 if (
-                  event.key === "Enter" ||
-                  event.key === " "
+                  event.key ===
+                    "Enter" ||
+                  event.key ===
+                    " "
                 ) {
+                  event.preventDefault();
+
                   setSelectedExamId(
                     exam.id,
                   );
@@ -3270,7 +3299,9 @@ function ExamsPage({
               }}
             >
               <div className="exam-icon">
-                <GraduationCap size={22} />
+                <GraduationCap
+                  size={22}
+                />
               </div>
 
               <div className="exam-main">
@@ -3278,7 +3309,9 @@ function ExamsPage({
                   {exam.subject}
                 </span>
 
-                <h3>{exam.topic}</h3>
+                <h3>
+                  {exam.topic}
+                </h3>
 
                 <p>
                   {formatLongDate(
@@ -3296,7 +3329,9 @@ function ExamsPage({
                   )}
                 </strong>
 
-                <span>restantes</span>
+                <span>
+                  restantes
+                </span>
               </div>
 
               <button
@@ -3309,6 +3344,7 @@ function ExamsPage({
                   );
                 }}
                 aria-label="Eliminar examen"
+                type="button"
               >
                 <Trash2 size={17} />
               </button>
@@ -3319,7 +3355,6 @@ function ExamsPage({
     </>
   );
 }
-
 function ExamForm({
   onAdd,
   onCancel,
