@@ -3514,10 +3514,12 @@ function CalendarPage({
   tasks,
   exams,
   studyPlan,
+  onOpenTask,
 }: {
   tasks: Task[];
   exams: Exam[];
   studyPlan: StudySession[];
+  onOpenTask: (taskId: number) => void;
 }) {
   const [currentMonth, setCurrentMonth] =
     useState(new Date());
