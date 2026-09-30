@@ -3523,6 +3523,8 @@ function CalendarPage({
 }) {
   const [currentMonth, setCurrentMonth] =
     useState(new Date());
+  const [selectedDate, setSelectedDate] =
+  useState<string | null>(null);
 
   const year =
     currentMonth.getFullYear();
@@ -3604,6 +3606,23 @@ function CalendarPage({
 
   const todayString =
     formatDateInput(new Date());
+  const selectedDateTasks = selectedDate
+  ? tasks.filter(
+      (task) => task.date === selectedDate,
+    )
+  : [];
+
+const selectedDateExams = selectedDate
+  ? exams.filter(
+      (exam) => exam.date === selectedDate,
+    )
+  : [];
+
+const selectedDateStudySessions = selectedDate
+  ? studyPlan.filter(
+      (session) => session.date === selectedDate,
+    )
+  : [];
 
   return (
     <>
