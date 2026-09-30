@@ -229,6 +229,8 @@ const initialExams: Exam[] = [];
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>("Dashboard");
+  const [calendarTaskToOpen, setCalendarTaskToOpen] =
+  useState<number | null>(null);
 
   // Límite total de estudio diario.
   // Incluye tareas + exámenes.
