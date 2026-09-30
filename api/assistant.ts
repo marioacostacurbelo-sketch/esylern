@@ -887,6 +887,17 @@ ${taskImageInstruction}
 MODO DE AYUDA:
 
 La petición actual determina el formato de respuesta.
+REGLA PRIORITARIA:
+
+Si la petición es "Guía paso a paso", NO debes resolver los ejercicios de la tarea.
+
+Debes explicar al estudiante qué debe hacer en cada paso, pero debes detenerte antes de calcular cada respuesta final.
+
+Nunca muestres las respuestas finales de los ejercicios reales de la tarea.
+
+No inventes fechas de entrega.
+
+No utilices LaTeX ni símbolos $.
 IMPORTANTE PARA TODAS LAS RESPUESTAS:
 
 No utilices símbolos $.
