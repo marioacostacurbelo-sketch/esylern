@@ -3524,11 +3524,13 @@ function CalendarPage({
   exams,
   studyPlan,
   onOpenTask,
+  onOpenExam,
 }: {
   tasks: Task[];
   exams: Exam[];
   studyPlan: StudySession[];
   onOpenTask: (taskId: number) => void;
+  onOpenExam: (examId: number) => void;
 }) {
   const [currentMonth, setCurrentMonth] =
     useState(new Date());
@@ -3656,10 +3658,9 @@ function CalendarPage({
         <div className="calendar-navigation">
           <button
             className="icon-button"
-            onClick={
-              previousMonth
-            }
+            onClick={previousMonth}
             aria-label="Mes anterior"
+            type="button"
           >
             <ChevronLeft
               size={18}
@@ -3675,10 +3676,9 @@ function CalendarPage({
 
           <button
             className="icon-button"
-            onClick={
-              nextMonth
-            }
+            onClick={nextMonth}
             aria-label="Mes siguiente"
+            type="button"
           >
             <ChevronRight
               size={18}
@@ -3793,13 +3793,43 @@ function CalendarPage({
                             )}`}
                             key={`exam-${exam.id}`}
                             title={`Examen: ${exam.subject} — ${exam.topic}`}
+                            onClick={(
+                              event,
+                            ) => {
+                              event.stopPropagation();
+
+                              onOpenExam(
+                                exam.id,
+                              );
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(
+                              event,
+                            ) => {
+                              if (
+                                event.key ===
+                                  "Enter" ||
+                                event.key ===
+                                  " "
+                              ) {
+                                event.preventDefault();
+                                event.stopPropagation();
+
+                                onOpenExam(
+                                  exam.id,
+                                );
+                              }
+                            }}
                           >
                             <span className="calendar-event-type">
                               EXAMEN
                             </span>
 
                             <span className="calendar-event-title">
-                              {exam.subject}
+                              {
+                                exam.subject
+                              }
                             </span>
                           </div>
                         ),
@@ -3840,6 +3870,7 @@ function CalendarPage({
                                   " "
                               ) {
                                 event.preventDefault();
+                                event.stopPropagation();
 
                                 onOpenTask(
                                   task.id,
@@ -3855,7 +3886,9 @@ function CalendarPage({
                             </span>
 
                             <span className="calendar-event-title">
-                              {task.title}
+                              {
+                                task.title
+                              }
                             </span>
                           </div>
                         ),
@@ -3914,9 +3947,7 @@ function CalendarPage({
           <div
             className="calendar-day-overlay"
             onClick={() =>
-              setSelectedDate(
-                null,
-              )
+              setSelectedDate(null)
             }
           />
 
@@ -3944,11 +3975,10 @@ function CalendarPage({
               <button
                 className="icon-button"
                 onClick={() =>
-                  setSelectedDate(
-                    null,
-                  )
+                  setSelectedDate(null)
                 }
                 aria-label="Cerrar"
+                type="button"
               >
                 <X size={18} />
               </button>
@@ -3987,11 +4017,17 @@ function CalendarPage({
 
                       {selectedDateExams.map(
                         (exam) => (
-                          <div
+                          <button
+                            type="button"
                             className={`calendar-panel-item exam subject-${getSubjectColor(
                               exam.subject,
                             )}`}
                             key={exam.id}
+                            onClick={() =>
+                              onOpenExam(
+                                exam.id,
+                              )
+                            }
                           >
                             <div className="calendar-panel-item-icon">
                               <BookOpen
@@ -4016,7 +4052,11 @@ function CalendarPage({
                                 }
                               </p>
                             </div>
-                          </div>
+
+                            <ChevronRight
+                              size={17}
+                            />
+                          </button>
                         ),
                       )}
                     </div>
@@ -4090,8 +4130,7 @@ function CalendarPage({
                     0 && (
                     <div className="calendar-day-section">
                       <span className="calendar-day-section-title">
-                        SESIONES DE
-                        ESTUDIO
+                        SESIONES DE ESTUDIO
                       </span>
 
                       {selectedDateStudySessions.map(
