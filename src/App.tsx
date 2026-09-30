@@ -3506,14 +3506,14 @@ function ExamForm({
 function CalendarPage({
   tasks,
   exams,
+  studyPlan,
 }: {
   tasks: Task[];
   exams: Exam[];
+  studyPlan: StudySession[];
 }) {
   const [currentMonth, setCurrentMonth] =
-    useState(
-      new Date(2026, 8, 1),
-    );
+    useState(new Date());
 
   const year =
     currentMonth.getFullYear();
@@ -3521,22 +3521,20 @@ function CalendarPage({
   const month =
     currentMonth.getMonth();
 
-  const firstDay = new Date(
-    year,
-    month,
-    1,
-  ).getDay();
+  const firstDay =
+    new Date(year, month, 1).getDay();
 
   const mondayOffset =
     firstDay === 0
       ? 6
       : firstDay - 1;
 
-  const daysInMonth = new Date(
-    year,
-    month + 1,
-    0,
-  ).getDate();
+  const daysInMonth =
+    new Date(
+      year,
+      month + 1,
+      0,
+    ).getDate();
 
   const totalCells =
     Math.ceil(
@@ -3595,12 +3593,15 @@ function CalendarPage({
       },
     );
 
+  const todayString =
+    formatDateInput(new Date());
+
   return (
     <>
       <PageHeader
         eyebrow="ORGANIZACIÓN"
         title="Calendario"
-        subtitle="Visualiza tus tareas y exámenes."
+        subtitle="Visualiza tus tareas, exámenes y sesiones de estudio."
       />
 
       <div className="calendar-toolbar">
@@ -3610,6 +3611,7 @@ function CalendarPage({
             onClick={
               previousMonth
             }
+            aria-label="Mes anterior"
           >
             <ChevronLeft
               size={18}
@@ -3628,6 +3630,7 @@ function CalendarPage({
             onClick={
               nextMonth
             }
+            aria-label="Mes siguiente"
           >
             <ChevronRight
               size={18}
@@ -3695,10 +3698,17 @@ function CalendarPage({
                     dateString,
                 );
 
-              const todayString =
-                formatDateInput(
-                  new Date(),
+              const dayStudySessions =
+                studyPlan.filter(
+                  (session) =>
+                    session.date ===
+                    dateString,
                 );
+
+              const totalEvents =
+                dayTasks.length +
+                dayExams.length +
+                dayStudySessions.length;
 
               return (
                 <div
@@ -3714,48 +3724,96 @@ function CalendarPage({
                     {day}
                   </span>
 
-                  {dayTasks
-                    .slice(0, 2)
-                    .map(
-                      (task) => (
-                        <div
-                          className={`calendar-event subject-${getSubjectColor(
-                            task.subject,
-                          )} ${
-                            task.done
-                              ? "done"
-                              : ""
-                          }`}
-                          key={
-                            task.id
-                          }
-                        >
-                          {
-                            task.title
-                          }
-                        </div>
-                      ),
-                    )}
+                  <div className="calendar-events">
+                    {dayExams
+                      .slice(0, 2)
+                      .map(
+                        (exam) => (
+                          <div
+                            className={`calendar-event exam subject-${getSubjectColor(
+                              exam.subject,
+                            )}`}
+                            key={`exam-${exam.id}`}
+                            title={`Examen: ${exam.subject} — ${exam.topic}`}
+                          >
+                            <span className="calendar-event-type">
+                              EXAMEN
+                            </span>
 
-                  {dayExams
-                    .slice(0, 1)
-                    .map(
-                      (exam) => (
-                        <div
-                          className={`calendar-event exam subject-${getSubjectColor(
-                            exam.subject,
-                          )}`}
-                          key={
-                            exam.id
-                          }
-                        >
-                          Examen:{" "}
-                          {
-                            exam.subject
-                          }
-                        </div>
-                      ),
+                            <span className="calendar-event-title">
+                              {exam.subject}
+                            </span>
+                          </div>
+                        ),
+                      )}
+
+                    {dayTasks
+                      .slice(0, 2)
+                      .map(
+                        (task) => (
+                          <div
+                            className={`calendar-event task subject-${getSubjectColor(
+                              task.subject,
+                            )} ${
+                              task.done
+                                ? "done"
+                                : ""
+                            }`}
+                            key={`task-${task.id}`}
+                            title={`Tarea: ${task.title}`}
+                          >
+                            <span className="calendar-event-type">
+                              {task.kind ===
+                              "Trabajo"
+                                ? "TRABAJO"
+                                : "TAREA"}
+                            </span>
+
+                            <span className="calendar-event-title">
+                              {task.title}
+                            </span>
+                          </div>
+                        ),
+                      )}
+
+                    {dayStudySessions
+                      .slice(0, 2)
+                      .map(
+                        (
+                          session,
+                          sessionIndex,
+                        ) => (
+                          <div
+                            className={`calendar-event study subject-${getSubjectColor(
+                              session.subject,
+                            )}`}
+                            key={`study-${dateString}-${sessionIndex}-${session.title}`}
+                            title={`Estudio: ${session.title} — ${session.startTime}–${session.endTime}`}
+                          >
+                            <span className="calendar-event-type">
+                              ESTUDIO
+                            </span>
+
+                            <span className="calendar-event-title">
+                              {session.startTime} ·{" "}
+                              {
+                                session.title
+                              }
+                            </span>
+                          </div>
+                        ),
+                      )}
+
+                    {totalEvents >
+                      6 && (
+                      <div className="calendar-more">
+                        +
+                        {totalEvents -
+                          6}{" "}
+                        más
+                      </div>
                     )}
+                  </div>
                 </div>
               );
             },
@@ -3765,10 +3823,6 @@ function CalendarPage({
     </>
   );
 }
-
-/* =========================
-   PLAN
-========================= */
 
 function StudyPlanPage({
   tasks,
