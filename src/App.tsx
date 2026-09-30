@@ -842,6 +842,7 @@ function App() {
   onToggleTask={toggleTask}
   onDeleteTask={deleteTask}
   onUpdateTask={updateTask}
+  openTaskId={calendarTaskToOpen}
 />
         )}
 
