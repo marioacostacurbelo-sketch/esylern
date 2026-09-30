@@ -824,12 +824,16 @@ function App() {
         )}
 
         {currentPage === "Calendario" && (
-          <CalendarPage
-            tasks={tasks}
-            exams={exams}
-            studyPlan={studyPlan}
-          />
-        )}
+  <CalendarPage
+    tasks={tasks}
+    exams={exams}
+    studyPlan={studyPlan}
+    onOpenTask={(taskId) => {
+      setCalendarTaskToOpen(taskId);
+      setCurrentPage("Tareas");
+    }}
+  />
+)}
 
         {currentPage === "Tareas" && (
          <TasksPage
