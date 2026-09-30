@@ -3523,8 +3523,9 @@ function CalendarPage({
 }) {
   const [currentMonth, setCurrentMonth] =
     useState(new Date());
+
   const [selectedDate, setSelectedDate] =
-  useState<string | null>(null);
+    useState<string | null>(null);
 
   const year =
     currentMonth.getFullYear();
@@ -3606,23 +3607,33 @@ function CalendarPage({
 
   const todayString =
     formatDateInput(new Date());
-  const selectedDateTasks = selectedDate
-  ? tasks.filter(
-      (task) => task.date === selectedDate,
-    )
-  : [];
 
-const selectedDateExams = selectedDate
-  ? exams.filter(
-      (exam) => exam.date === selectedDate,
-    )
-  : [];
+  const selectedDateTasks =
+    selectedDate
+      ? tasks.filter(
+          (task) =>
+            task.date ===
+            selectedDate,
+        )
+      : [];
 
-const selectedDateStudySessions = selectedDate
-  ? studyPlan.filter(
-      (session) => session.date === selectedDate,
-    )
-  : [];
+  const selectedDateExams =
+    selectedDate
+      ? exams.filter(
+          (exam) =>
+            exam.date ===
+            selectedDate,
+        )
+      : [];
+
+  const selectedDateStudySessions =
+    selectedDate
+      ? studyPlan.filter(
+          (session) =>
+            session.date ===
+            selectedDate,
+        )
+      : [];
 
   return (
     <>
@@ -3740,20 +3751,24 @@ const selectedDateStudySessions = selectedDate
 
               return (
                 <div
-  className={`calendar-cell ${
-    dateString === todayString
-      ? "today"
-      : ""
-  } ${
-    selectedDate === dateString
-      ? "selected"
-      : ""
-  }`}
-  key={index}
-  onClick={() =>
-    setSelectedDate(dateString)
-  }
->
+                  className={`calendar-cell ${
+                    dateString ===
+                    todayString
+                      ? "today"
+                      : ""
+                  } ${
+                    selectedDate ===
+                    dateString
+                      ? "selected"
+                      : ""
+                  }`}
+                  key={index}
+                  onClick={() =>
+                    setSelectedDate(
+                      dateString,
+                    )
+                  }
+                >
                   <span className="calendar-number">
                     {day}
                   </span>
@@ -3785,32 +3800,43 @@ const selectedDateStudySessions = selectedDate
                       .slice(0, 2)
                       .map(
                         (task) => (
-                         <div
-  className={`calendar-event task subject-${getSubjectColor(
-    task.subject,
-  )} ${
-    task.done
-      ? "done"
-      : ""
-  }`}
-  key={`task-${task.id}`}
-  onClick={(event) => {
-    event.stopPropagation();
-    onOpenTask(task.id);
-  }}
-  role="button"
-  tabIndex={0}
-  onKeyDown={(event) => {
-    if (
-      event.key === "Enter" ||
-      event.key === " "
-    ) {
-      event.preventDefault();
-      onOpenTask(task.id);
-    }
-  }}
->
+                          <div
+                            className={`calendar-event task subject-${getSubjectColor(
+                              task.subject,
+                            )} ${
+                              task.done
+                                ? "done"
+                                : ""
+                            }`}
+                            key={`task-${task.id}`}
                             title={`Tarea: ${task.title}`}
+                            onClick={(
+                              event,
+                            ) => {
+                              event.stopPropagation();
+
+                              onOpenTask(
+                                task.id,
+                              );
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(
+                              event,
+                            ) => {
+                              if (
+                                event.key ===
+                                  "Enter" ||
+                                event.key ===
+                                  " "
+                              ) {
+                                event.preventDefault();
+
+                                onOpenTask(
+                                  task.id,
+                                );
+                              }
+                            }}
                           >
                             <span className="calendar-event-type">
                               {task.kind ===
@@ -3845,7 +3871,10 @@ const selectedDateStudySessions = selectedDate
                             </span>
 
                             <span className="calendar-event-title">
-                              {session.startTime} ·{" "}
+                              {
+                                session.startTime
+                              }{" "}
+                              ·{" "}
                               {
                                 session.title
                               }
@@ -3870,10 +3899,249 @@ const selectedDateStudySessions = selectedDate
           )}
         </div>
       </div>
+
+      {selectedDate && (
+        <>
+          <div
+            className="calendar-day-overlay"
+            onClick={() =>
+              setSelectedDate(
+                null,
+              )
+            }
+          />
+
+          <aside
+            className="calendar-day-panel"
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
+            <div className="calendar-day-panel-header">
+              <div>
+                <span className="calendar-day-panel-eyebrow">
+                  AGENDA DEL DÍA
+                </span>
+
+                <h2>
+                  {formatLongDate(
+                    new Date(
+                      `${selectedDate}T00:00:00`,
+                    ),
+                  )}
+                </h2>
+              </div>
+
+              <button
+                className="icon-button"
+                onClick={() =>
+                  setSelectedDate(
+                    null,
+                  )
+                }
+                aria-label="Cerrar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="calendar-day-panel-content">
+              {selectedDateExams.length ===
+                0 &&
+              selectedDateTasks.length ===
+                0 &&
+              selectedDateStudySessions.length ===
+                0 ? (
+                <div className="calendar-day-empty">
+                  <CalendarDays
+                    size={24}
+                  />
+
+                  <strong>
+                    No tienes nada
+                    programado
+                  </strong>
+
+                  <span>
+                    Este día está
+                    libre.
+                  </span>
+                </div>
+              ) : (
+                <>
+                  {selectedDateExams.length >
+                    0 && (
+                    <div className="calendar-day-section">
+                      <span className="calendar-day-section-title">
+                        EXÁMENES
+                      </span>
+
+                      {selectedDateExams.map(
+                        (exam) => (
+                          <div
+                            className={`calendar-panel-item exam subject-${getSubjectColor(
+                              exam.subject,
+                            )}`}
+                            key={exam.id}
+                          >
+                            <div className="calendar-panel-item-icon">
+                              <BookOpen
+                                size={18}
+                              />
+                            </div>
+
+                            <div>
+                              <span>
+                                EXAMEN
+                              </span>
+
+                              <strong>
+                                {
+                                  exam.subject
+                                }
+                              </strong>
+
+                              <p>
+                                {
+                                  exam.topic
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  )}
+
+                  {selectedDateTasks.length >
+                    0 && (
+                    <div className="calendar-day-section">
+                      <span className="calendar-day-section-title">
+                        TAREAS Y TRABAJOS
+                      </span>
+
+                      {selectedDateTasks.map(
+                        (task) => (
+                          <button
+                            type="button"
+                            className={`calendar-panel-item task subject-${getSubjectColor(
+                              task.subject,
+                            )}`}
+                            key={task.id}
+                            onClick={() =>
+                              onOpenTask(
+                                task.id,
+                              )
+                            }
+                          >
+                            <div className="calendar-panel-item-icon">
+                              {task.kind ===
+                              "Trabajo" ? (
+                                <BookOpen
+                                  size={18}
+                                />
+                              ) : (
+                                <ListTodo
+                                  size={18}
+                                />
+                              )}
+                            </div>
+
+                            <div>
+                              <span>
+                                {task.kind ===
+                                "Trabajo"
+                                  ? "TRABAJO / PROYECTO"
+                                  : "TAREA"}
+                              </span>
+
+                              <strong>
+                                {
+                                  task.title
+                                }
+                              </strong>
+
+                              <p>
+                                {
+                                  task.subject
+                                }
+                              </p>
+                            </div>
+
+                            <ChevronRight
+                              size={17}
+                            />
+                          </button>
+                        ),
+                      )}
+                    </div>
+                  )}
+
+                  {selectedDateStudySessions.length >
+                    0 && (
+                    <div className="calendar-day-section">
+                      <span className="calendar-day-section-title">
+                        SESIONES DE
+                        ESTUDIO
+                      </span>
+
+                      {selectedDateStudySessions.map(
+                        (
+                          session,
+                          sessionIndex,
+                        ) => (
+                          <div
+                            className={`calendar-panel-item study subject-${getSubjectColor(
+                              session.subject,
+                            )}`}
+                            key={`${session.date}-${session.startTime}-${sessionIndex}`}
+                          >
+                            <div className="calendar-panel-item-icon">
+                              <Clock
+                                size={18}
+                              />
+                            </div>
+
+                            <div>
+                              <span>
+                                ESTUDIO
+                              </span>
+
+                              <strong>
+                                {
+                                  session.title
+                                }
+                              </strong>
+
+                              <p>
+                                {
+                                  session.startTime
+                                }{" "}
+                                –{" "}
+                                {
+                                  session.endTime
+                                }{" "}
+                                ·{" "}
+                                {
+                                  session.minutes
+                                }{" "}
+                                min
+                              </p>
+                            </div>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </aside>
+        </>
+      )}
     </>
   );
 }
-
 function StudyPlanPage({
   tasks,
   exams,
