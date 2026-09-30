@@ -825,6 +825,7 @@ function App() {
           <CalendarPage
             tasks={tasks}
             exams={exams}
+            studyPlan={studyPlan}
           />
         )}
 
