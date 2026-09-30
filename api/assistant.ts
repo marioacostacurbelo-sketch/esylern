@@ -740,13 +740,14 @@ REGLAS OBLIGATORIAS PARA ESTE FORMATO:
 - Escribe las matemáticas con notación normal de bachillerato.
 - Utiliza expresiones como f(x) = -2x² - 5 y f'(x) = -4x.
 - No escribas fórmulas usando palabras como "times" o "por" cuando puedas utilizar símbolos.
-- El ejemplo debe explicar el MÉTODO, no completar la tarea del estudiante.
-- No resuelvas todos los ejercicios.
-- No des las respuestas finales de los ejercicios que aparecen en la tarea.
-- Si utilizas un ejercicio de la tarea como ejemplo, detente antes de revelar su resultado final.
-- Utiliza un ejemplo sencillo y parecido al tipo de ejercicio, pero que no sea uno de los ejercicios que el estudiante tiene que entregar.
-- El ejemplo debe servir para enseñar cómo aplicar una regla, no para hacer la tarea.
-- No inventes información que no aparezca en la tarea.
+- El objetivo es enseñar el método, no hacer la tarea del estudiante.
+- Utiliza un ejemplo parecido al ejercicio real, pero diferente.
+- No utilices directamente ninguno de los ejercicios que aparecen en la tarea como ejemplo.
+- No des las respuestas finales de los ejercicios de la tarea.
+- Explica el procedimiento paso a paso utilizando el ejemplo diferente.
+- Después del ejemplo, explica brevemente cómo el estudiante puede aplicar el mismo método a su tarea, pero sin resolverla.
+- No inventes información sobre la tarea.
+- Utiliza lenguaje sencillo para un estudiante de bachillerato.
 ========================
 CONTEXTO ACTUAL
 ========================
