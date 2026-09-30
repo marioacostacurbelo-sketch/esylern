@@ -1938,6 +1938,14 @@ function TasksPage({
     useState<
       "Todas" | "Pendientes" | "Completadas"
     >("Todas");
+  useEffect(() => {
+  if (
+    openTaskId !== null &&
+    openTaskId !== undefined
+  ) {
+    setSelectedTaskId(openTaskId);
+  }
+}, [openTaskId]);
   const [aiLoading, setAiLoading] =
   useState(false);
 
