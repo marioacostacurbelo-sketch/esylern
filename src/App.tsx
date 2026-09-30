@@ -3740,14 +3740,20 @@ const selectedDateStudySessions = selectedDate
 
               return (
                 <div
-                  className={`calendar-cell ${
-                    dateString ===
-                    todayString
-                      ? "today"
-                      : ""
-                  }`}
-                  key={index}
-                >
+  className={`calendar-cell ${
+    dateString === todayString
+      ? "today"
+      : ""
+  } ${
+    selectedDate === dateString
+      ? "selected"
+      : ""
+  }`}
+  key={index}
+  onClick={() =>
+    setSelectedDate(dateString)
+  }
+>
                   <span className="calendar-number">
                     {day}
                   </span>
