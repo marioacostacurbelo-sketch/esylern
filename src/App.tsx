@@ -1916,17 +1916,17 @@ function TasksPage({
   onToggleTask,
   onDeleteTask,
   onUpdateTask,
+  openTaskId,
 }: {
   tasks: Task[];
-  onAddTask: (
-    task: Omit<Task, "id">,
-  ) => void;
+  onAddTask: (task: Omit<Task, "id">) => void;
   onToggleTask: (id: number) => void;
   onDeleteTask: (id: number) => void;
   onUpdateTask: (
     id: number,
     changes: Partial<Omit<Task, "id">>,
   ) => void;
+  openTaskId?: number | null;
 }) {
   const [showForm, setShowForm] =
     useState(false);
