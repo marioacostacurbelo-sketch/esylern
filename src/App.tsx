@@ -826,15 +826,19 @@ function App() {
         )}
 
         {currentPage === "Calendario" && (
-  <CalendarPage
-    tasks={tasks}
-    exams={exams}
-    studyPlan={studyPlan}
-    onOpenTask={(taskId) => {
-      setCalendarTaskToOpen(taskId);
-      setCurrentPage("Tareas");
-    }}
-  />
+ <CalendarPage
+  tasks={tasks}
+  exams={exams}
+  studyPlan={studyPlan}
+  onOpenTask={(taskId) => {
+    setCalendarTaskToOpen(taskId);
+    setCurrentPage("Tareas");
+  }}
+  onOpenExam={(examId) => {
+    setCalendarExamToOpen(examId);
+    setCurrentPage("Exámenes");
+  }}
+/>
 )}
 
         {currentPage === "Tareas" && (
