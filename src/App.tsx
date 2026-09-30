@@ -3785,15 +3785,31 @@ const selectedDateStudySessions = selectedDate
                       .slice(0, 2)
                       .map(
                         (task) => (
-                          <div
-                            className={`calendar-event task subject-${getSubjectColor(
-                              task.subject,
-                            )} ${
-                              task.done
-                                ? "done"
-                                : ""
-                            }`}
-                            key={`task-${task.id}`}
+                         <div
+  className={`calendar-event task subject-${getSubjectColor(
+    task.subject,
+  )} ${
+    task.done
+      ? "done"
+      : ""
+  }`}
+  key={`task-${task.id}`}
+  onClick={(event) => {
+    event.stopPropagation();
+    onOpenTask(task.id);
+  }}
+  role="button"
+  tabIndex={0}
+  onKeyDown={(event) => {
+    if (
+      event.key === "Enter" ||
+      event.key === " "
+    ) {
+      event.preventDefault();
+      onOpenTask(task.id);
+    }
+  }}
+>
                             title={`Tarea: ${task.title}`}
                           >
                             <span className="calendar-event-type">
