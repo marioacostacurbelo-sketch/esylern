@@ -748,6 +748,10 @@ REGLAS OBLIGATORIAS PARA ESTE FORMATO:
 - Después del ejemplo, explica brevemente cómo el estudiante puede aplicar el mismo método a su tarea, pero sin resolverla.
 - No inventes información sobre la tarea.
 - Utiliza lenguaje sencillo para un estudiante de bachillerato.
+- No utilices guiones para crear listas.
+- Cuando expliques una regla matemática, utiliza directamente la notación matemática.
+- Por ejemplo, escribe "La derivada de ax² es 2ax" en lugar de "La derivada de ax² es 2 veces el coeficiente por x".
+- No incluyas una sección de consejos finales ni instrucciones adicionales después de explicar el ejemplo.
 ========================
 CONTEXTO ACTUAL
 ========================
