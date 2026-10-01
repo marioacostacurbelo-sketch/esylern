@@ -854,6 +854,7 @@ function App() {
 
         {currentPage === "Exámenes" && (
           <ExamsPage
+            openExamId={calendarExamToOpen}
             exams={exams}
             onAddExam={addExam}
             onDeleteExam={deleteExam}
