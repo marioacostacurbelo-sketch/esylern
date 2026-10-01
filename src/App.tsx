@@ -4791,14 +4791,12 @@ function StudyPlanPage({
             item.remaining >
               0
           ) {
-            const sessionMinutes =
-              Math.min(
-                item.remaining,
-                availableToday,
-                window.end -
-                  cursor,
-                90,
-              );
+           const sessionMinutes =
+  Math.min(
+    item.remaining,
+    availableToday,
+    window.end - cursor,
+  );
 
             const finalMinutes =
               sessionMinutes >=
