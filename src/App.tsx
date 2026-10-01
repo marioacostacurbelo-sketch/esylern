@@ -11,6 +11,7 @@ import {
   MessageCircle,
   Plus,
   Settings,
+  Clock,
   Sparkles,
   Target,
   TrendingUp,
